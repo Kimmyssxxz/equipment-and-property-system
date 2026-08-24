@@ -150,35 +150,66 @@ export default function PhysicalInventoryPage() {
 
   const [dbConnected, setDbConnected] = useState(false);
 
+  const [assignmentsHistory, setAssignmentsHistory] = useState([]);
+
   const loadData = async () => {
     try {
-      const emps = StorageManager.getEmployees();
-      const offs = StorageManager.getOffices();
-      const cats = StorageManager.getCategories();
-      const props = StorageManager.getProperties();
+      const emps = StorageManager.getEmployees() || [];
+      const offs = StorageManager.getOffices() || [];
+      const cats = StorageManager.getCategories() || [];
+      const props = StorageManager.getProperties() || [];
+      const asgns = StorageManager.getAssignmentsHistory() || [];
 
       setEmployees(emps);
       setOffices(offs);
       setCategories(cats);
       setProperties(props);
+      setAssignmentsHistory(asgns);
 
-      // Fetch sessions, counts, and properties from Supabase Backend API
+      // Fetch all entities concurrently from API endpoints
       let loadedSessions = [];
       let loadedCounts = [];
-      let loadedProperties = props;
 
       try {
-        const [sessRes, cntsRes, propsRes] = await Promise.all([
-          fetch('/api/inventory-sessions'),
-          fetch('/api/physical-counts'),
-          fetch('/api/properties'),
+        const [sessRes, cntsRes, propsRes, asgnRes, empRes, offRes, catRes] = await Promise.all([
+          fetch('/api/inventory-sessions', { cache: 'no-store' }),
+          fetch('/api/physical-counts', { cache: 'no-store' }),
+          fetch('/api/properties', { cache: 'no-store' }),
+          fetch('/api/assignments', { cache: 'no-store' }),
+          fetch('/api/personnel', { cache: 'no-store' }),
+          fetch('/api/offices', { cache: 'no-store' }),
+          fetch('/api/categories', { cache: 'no-store' }),
         ]);
 
-        const [sessData, cntsData, propsData] = await Promise.all([
-          sessRes.json(),
-          cntsRes.json(),
-          propsRes.json(),
+        const [sessData, cntsData, propsData, asgnData, empData, offData, catData] = await Promise.all([
+          sessRes.json().catch(() => ({})),
+          cntsRes.json().catch(() => ({})),
+          propsRes.json().catch(() => ({})),
+          asgnRes.json().catch(() => ({})),
+          empRes.json().catch(() => ({})),
+          offRes.json().catch(() => ({})),
+          catRes.json().catch(() => ({})),
         ]);
+
+        if (catData.success && Array.isArray(catData.categories)) {
+          setCategories(catData.categories);
+          StorageManager.saveCategories(catData.categories);
+        }
+
+        if (offData.success && Array.isArray(offData.offices)) {
+          setOffices(offData.offices);
+          StorageManager.saveOffices(offData.offices);
+        }
+
+        if (empData.success && Array.isArray(empData.employees)) {
+          setEmployees(empData.employees);
+          StorageManager.saveEmployees(empData.employees);
+        }
+
+        if (asgnData.success && Array.isArray(asgnData.assignments)) {
+          setAssignmentsHistory(asgnData.assignments);
+          StorageManager.saveAssignmentsHistory(asgnData.assignments);
+        }
 
         if (sessRes.ok && sessData.success && Array.isArray(sessData.sessions)) {
           setDbConnected(true);
@@ -196,7 +227,6 @@ export default function PhysicalInventoryPage() {
         }
 
         if (propsRes.ok && propsData.success && Array.isArray(propsData.properties) && propsData.properties.length > 0) {
-          // Map snake_case fields to camelCase if needed
           const apiProps = propsData.properties.map((p) => ({
             ...p,
             propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
@@ -206,8 +236,8 @@ export default function PhysicalInventoryPage() {
             accountablePersonName: p.accountablePersonName || p.accountable_person_name || p.accountableOfficer || '',
             officeName: p.officeName || p.office_name || p.office || '',
           }));
-          loadedProperties = apiProps;
           setProperties(apiProps);
+          StorageManager.saveProperties(apiProps);
         }
       } catch (apiErr) {
         console.warn('API fetch notice, using local cache:', apiErr);
@@ -238,17 +268,144 @@ export default function PhysicalInventoryPage() {
     setSessionPage(1);
   }, [sessionSearch]);
 
-  // Helper to get Category Name of a counted item
+  // Helper to get Category Name of a property or counted item
   const getCategoryName = (item) => {
     if (!item) return 'Office Equipment';
+    if (item.categoryName && item.categoryName !== 'Office Equipment') return item.categoryName;
+    if (item.category_name) return item.category_name;
+    if (item.category && typeof item.category === 'string') return item.category;
+
     const prop = properties.find(
-      (p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber
+      (p) =>
+        p.id === item.propertyId ||
+        p.id === item.id ||
+        (p.propertyNumber && item.propertyNumber && p.propertyNumber.toLowerCase() === item.propertyNumber.toLowerCase())
     );
-    if (prop && prop.categoryId) {
-      const cat = categories.find((c) => c.id === prop.categoryId);
+
+    if (prop) {
+      if (prop.categoryName) return prop.categoryName;
+      if (prop.category_name) return prop.category_name;
+      if (prop.category && typeof prop.category === 'string') return prop.category;
+      if (prop.property_categories?.name) return prop.property_categories.name;
+
+      const catId = prop.categoryId || prop.category_id;
+      if (catId) {
+        const cat = categories.find(
+          (c) => c.id === catId || c.code === catId || (c.name && c.name.toLowerCase() === String(catId).toLowerCase())
+        );
+        if (cat) return cat.name;
+      }
+    }
+
+    const itemCatId = item.categoryId || item.category_id;
+    if (itemCatId) {
+      const cat = categories.find((c) => c.id === itemCatId || c.code === itemCatId);
       if (cat) return cat.name;
     }
+
     return 'Office Equipment';
+  };
+
+  // Helper to get Custodian (Accountable Officer) Name
+  const getCustodianName = (item) => {
+    if (!item) return 'Unassigned';
+
+    const isValidName = (val) =>
+      val && typeof val === 'string' && val.trim() && val !== 'Assigned Officer' && val !== 'Unassigned';
+
+    if (isValidName(item.accountableOfficerName)) return item.accountableOfficerName;
+    if (isValidName(item.accountablePersonName)) return item.accountablePersonName;
+    if (isValidName(item.accountableOfficer)) return item.accountableOfficer;
+    if (isValidName(item.accountable_person_name)) return item.accountable_person_name;
+    if (isValidName(item.employeeName)) return item.employeeName;
+
+    const prop = properties.find(
+      (p) =>
+        p.id === item.propertyId ||
+        p.id === item.id ||
+        (p.propertyNumber && item.propertyNumber && p.propertyNumber.toLowerCase() === item.propertyNumber.toLowerCase())
+    );
+
+    if (prop) {
+      if (isValidName(prop.accountablePersonName)) return prop.accountablePersonName;
+      if (isValidName(prop.accountableOfficerName)) return prop.accountableOfficerName;
+      if (isValidName(prop.accountableOfficer)) return prop.accountableOfficer;
+      if (isValidName(prop.accountable_person_name)) return prop.accountable_person_name;
+      if (isValidName(prop.employeeName)) return prop.employeeName;
+
+      const empId = prop.employeeId || prop.accountablePersonId || prop.employee_id;
+      if (empId) {
+        const emp = employees.find((e) => e.id === empId);
+        if (emp) return emp.name || emp.fullName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+      }
+    }
+
+    // Check active assignment history
+    const propId = item.propertyId || item.id || (prop ? prop.id : null);
+    if (propId && assignmentsHistory.length > 0) {
+      const asgn = assignmentsHistory.find(
+        (a) =>
+          (a.propertyId === propId ||
+            (a.propertyNumber && item.propertyNumber && a.propertyNumber.toLowerCase() === item.propertyNumber.toLowerCase())) &&
+          a.status !== 'RETURNED'
+      );
+      if (asgn) {
+        if (isValidName(asgn.employeeName)) return asgn.employeeName;
+        if (isValidName(asgn.accountablePersonName)) return asgn.accountablePersonName;
+        if (asgn.employeeId) {
+          const emp = employees.find((e) => e.id === asgn.employeeId);
+          if (emp) return emp.name || emp.fullName;
+        }
+      }
+    }
+
+    const itemEmpId = item.employeeId || item.accountablePersonId;
+    if (itemEmpId) {
+      const emp = employees.find((e) => e.id === itemEmpId);
+      if (emp) return emp.name || emp.fullName;
+    }
+
+    return 'Unassigned';
+  };
+
+  // Helper to get Office Name
+  const getOfficeName = (item) => {
+    if (!item) return 'Unassigned Office';
+
+    const isValidOffice = (val) =>
+      val && typeof val === 'string' && val.trim() && val !== 'Assigned Office' && val !== 'Unassigned Office';
+
+    if (isValidOffice(item.officeName)) return item.officeName;
+    if (isValidOffice(item.office_name)) return item.office_name;
+    if (isValidOffice(item.office)) return item.office;
+
+    const prop = properties.find(
+      (p) =>
+        p.id === item.propertyId ||
+        p.id === item.id ||
+        (p.propertyNumber && item.propertyNumber && p.propertyNumber.toLowerCase() === item.propertyNumber.toLowerCase())
+    );
+
+    if (prop) {
+      if (isValidOffice(prop.officeName)) return prop.officeName;
+      if (isValidOffice(prop.office_name)) return prop.office_name;
+      if (isValidOffice(prop.office)) return prop.office;
+      if (isValidOffice(prop.location)) return prop.location;
+
+      const offId = prop.officeId || prop.office_id;
+      if (offId) {
+        const off = offices.find((o) => o.id === offId);
+        if (off) return off.name || off.officeName || off.code;
+      }
+    }
+
+    const itemOffId = item.officeId || item.office_id;
+    if (itemOffId) {
+      const off = offices.find((o) => o.id === itemOffId);
+      if (off) return off.name || off.officeName || off.code;
+    }
+
+    return 'Unassigned Office';
   };
 
   // Open New Session Modal
@@ -1985,9 +2142,9 @@ export default function PhysicalInventoryPage() {
                 </p>
 
                 <div className="pt-1 flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
-                  <span>Custodian: <strong className="text-slate-800">{itemForVerification.accountableOfficerName || 'Assigned Officer'}</strong></span>
+                  <span>Custodian: <strong className="text-slate-800">{getCustodianName(itemForVerification)}</strong></span>
                   <span>•</span>
-                  <span>Office: <strong className="text-slate-800">{itemForVerification.officeName || 'Assigned Office'}</strong></span>
+                  <span>Office: <strong className="text-slate-800">{getOfficeName(itemForVerification)}</strong></span>
                 </div>
               </div>
             </div>
