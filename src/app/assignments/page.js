@@ -1295,22 +1295,22 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                 id="property-tag-print-area"
                 className="rounded-2xl bg-white border-2 border-slate-900 shadow-none font-sans overflow-hidden p-0 max-w-sm mx-auto"
               >
-                {/* Header Band */}
-                <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white px-3 py-2 flex items-center justify-between border-b-2 border-emerald-500">
-                  <div className="flex items-center gap-2">
+                {/* Header Band - ENLARGED LOGO & ULTRA VISIBLE DARK BOLD TEXT */}
+                <div className="bg-white text-slate-950 px-3 py-2 flex items-center justify-between border-b-2 border-slate-900">
+                  <div className="flex items-center gap-2.5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/nfsti logo.png" alt="Logo" className="w-6.5 h-6.5 object-contain shrink-0" />
+                    <img src="/nfsti logo.png" alt="Logo" className="w-10 h-10 object-contain shrink-0" />
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-tight text-slate-100 leading-none">
+                      <p className="text-[12px] font-black uppercase tracking-tight text-slate-950 leading-none">
                         NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
                       </p>
 
-                      <p className="text-[9.5px] font-black text-emerald-400 uppercase tracking-tight mt-0.5">
+                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-tight mt-0.5">
                         PROPERTY & EQUIPMENT TAG
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-black text-slate-100 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-md shadow-2xs">
+                  <span className="text-[10.5px] font-mono font-black text-slate-950 bg-slate-100 border-2 border-slate-900 px-2 py-0.5 rounded-md shadow-2xs">
                     NFSTI
                   </span>
                 </div>
@@ -1546,25 +1546,24 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                         key={item.id || item.propertyNumber + idx}
                         className="border-2 border-slate-900 rounded-xl bg-white flex flex-col justify-between h-full overflow-hidden text-black box-border shadow-2xs print:shadow-none font-sans p-0"
                       >
-                        {/* Top Header Band */}
-                        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white px-2.5 py-1.5 flex items-center justify-between shrink-0 border-b-2 border-emerald-500">
-                          <div className="flex items-center gap-1.5">
+                        {/* Top Header Band - ENLARGED LOGO & ULTRA VISIBLE DARK BOLD TEXT */}
+                        <div className="bg-white text-slate-950 px-2.5 py-1.5 flex items-center justify-between shrink-0 border-b-2 border-slate-900">
+                          <div className="flex items-center gap-2">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/nfsti logo.png" alt="Logo" className="w-5.5 h-5.5 object-contain shrink-0" />
+                            <img src="/nfsti logo.png" alt="Logo" className="w-9 h-9 object-contain shrink-0" />
                             <div>
-                              <p className="text-[9px] font-black uppercase tracking-tight text-slate-100 leading-none">
+                              <p className="text-[11px] font-black uppercase tracking-tight text-slate-950 leading-none">
                                 NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
                               </p>
 
-                              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-tight mt-0.5">
+                              <p className="text-[9.5px] font-black text-emerald-700 uppercase tracking-tight mt-0.5">
                                 PROPERTY & EQUIPMENT TAG
                               </p>
                             </div>
                           </div>
-                          <span className="text-[9.5px] font-mono font-black text-slate-100 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded shadow-2xs">
+                          <span className="text-[10px] font-mono font-black text-slate-950 bg-slate-100 border-2 border-slate-900 px-1.5 py-0.5 rounded shadow-2xs">
                             NFSTI
                           </span>
-
                         </div>
 
                         {/* Main Horizontal Content: Left QR Code | Right Specs */}
