@@ -86,6 +86,23 @@ export default function PhysicalInventoryPage() {
   const [categories, setCategories] = useState([]);
   const [properties, setProperties] = useState([]);
 
+  // Lottie Animated Status Modal (Success & Failed)
+  const [statusModal, setStatusModal] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
+
+  // Custom Deletion / Reset Confirmation Modal
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    itemToDelete: null,
+    deleteType: '',
+  });
+
   // Selected active session for Table View. If null, displays the Session Blocks Grid.
   const [activeSessionId, setActiveSessionId] = useState(null);
 
@@ -517,27 +534,16 @@ export default function PhysicalInventoryPage() {
     }
   };
 
-  const handleDeleteSession = async (session, e) => {
+  // Request Session Deletion -> Trigger Confirmation Modal
+  const handleDeleteSession = (session, e) => {
     if (e) e.stopPropagation();
-    if (
-      confirm(
-        `Are you sure you want to delete session [${session.sessionCode}] "${session.title}"? This will remove its associated physical count entries from the database.`
-      )
-    ) {
-      try {
-        await fetch(`/api/inventory-sessions?id=${session.id}`, { method: 'DELETE' });
-      } catch (e) {}
-
-      if (activeSessionId === session.id) {
-        setActiveSessionId(null);
-      }
-      await loadData();
-      setNotification({
-        title: 'Session Deleted',
-        message: `Inventory session [${session.sessionCode}] was deleted from database.`,
-      });
-      setTimeout(() => setNotification(null), 4000);
-    }
+    setDeleteConfirmModal({
+      isOpen: true,
+      title: 'Delete Inventory Session?',
+      message: `Are you sure you want to delete session [${session.sessionCode}] "${session.title}"? This will permanently remove its associated physical count entries.`,
+      itemToDelete: session,
+      deleteType: 'session',
+    });
   };
 
   // Central Scan Execution Function (Connected to Supabase Backend)
@@ -655,24 +661,63 @@ export default function PhysicalInventoryPage() {
     }
   };
 
-  // Reset an item back to Pending / Unscanned (Connected to Supabase)
-  const handleResetItem = async (item) => {
-    if (confirm(`I-reset ang scan count ng [${item.propertyNumber}] para bumalik ito sa Unscanned list sa database?`)) {
-      try {
+  // Reset / Delete count item -> Trigger Confirmation Modal
+  const handleResetItem = (item) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      title: 'Reset Physical Scan Count?',
+      message: `Are you sure you want to reset scan count for property [${item.propertyNumber}] (${item.article})? It will return to the Unscanned list.`,
+      itemToDelete: item,
+      deleteType: 'reset-count',
+    });
+  };
+
+  // Execute Deletion / Reset after user confirms in Confirmation Modal
+  const handleExecuteDelete = async () => {
+    const { itemToDelete, deleteType } = deleteConfirmModal;
+    if (!itemToDelete) return;
+
+    setDeleteConfirmModal({ isOpen: false, title: '', message: '', itemToDelete: null, deleteType: '' });
+
+    try {
+      if (deleteType === 'session') {
         try {
-          await fetch(`/api/physical-counts?countId=${item.id}`, { method: 'DELETE' });
+          await fetch(`/api/inventory-sessions?id=${itemToDelete.id}`, { method: 'DELETE' });
         } catch (e) {}
 
-        StorageManager.resetPhysicalCount({ countId: item.id });
+        if (activeSessionId === itemToDelete.id) {
+          setActiveSessionId(null);
+        }
         await loadData();
-        setNotification({
-          title: 'Item Reset in Database',
-          message: `Ibinalik sa pending scan ang "${item.propertyNumber}".`,
+
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Session Deleted!',
+          message: `Inventory session [${itemToDelete.sessionCode}] "${itemToDelete.title}" was deleted successfully.`,
         });
-        setTimeout(() => setNotification(null), 3000);
-      } catch (err) {
-        alert(err.message);
+      } else if (deleteType === 'reset-count') {
+        try {
+          await fetch(`/api/physical-counts?countId=${itemToDelete.id}`, { method: 'DELETE' });
+        } catch (e) {}
+
+        StorageManager.resetPhysicalCount({ countId: itemToDelete.id });
+        await loadData();
+
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Count Reset Successful!',
+          message: `Property "${itemToDelete.propertyNumber}" (${itemToDelete.article}) count was reset to pending unscanned.`,
+        });
       }
+    } catch (err) {
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Delete Operation Failed!',
+        message: err.message || 'An error occurred during deletion/reset.',
+      });
     }
   };
 
@@ -837,10 +882,23 @@ export default function PhysicalInventoryPage() {
         title: '✅ Count & Remarks Saved!',
         message: `"${itemForVerification.propertyNumber}" (${itemForVerification.article}) • Count: ${verifyCount} • Remarks: "${finalRemarks}"`,
       });
+
+      setStatusModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Count & Verification Saved!',
+        message: `Physical count for "${itemForVerification.propertyNumber} (${itemForVerification.article})" was recorded: ${verifyCount} unit(s) • Remarks: "${finalRemarks}".`,
+      });
+
       setTimeout(() => setNotification(null), 5000);
       setTimeout(() => setLastScannedId((prev) => (prev === savedCountId ? null : prev)), 4000);
     } catch (err) {
-      alert(err.message || 'Error saving count verification.');
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Failed to Save Count!',
+        message: err.message || 'Error saving count verification.',
+      });
     } finally {
       setIsSavingVerification(false);
     }
@@ -2283,6 +2341,100 @@ export default function PhysicalInventoryPage() {
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{isSavingVerification ? 'Saving to Database...' : 'Confirm & Save Count Entry'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM DELETION / RESET CONFIRMATION MODAL */}
+      {deleteConfirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto shadow-sm">
+              <AlertTriangle className="w-7 h-7" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-black text-slate-900">{deleteConfirmModal.title || 'Confirm Deletion'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {deleteConfirmModal.message}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmModal({ isOpen: false, title: '', message: '', itemToDelete: null, deleteType: '' })}
+                className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteDelete}
+                className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md shadow-rose-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTIE SUCCESS MODAL */}
+      {statusModal.isOpen && statusModal.type === 'success' && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
+              <iframe
+                src="https://lottie.host/embed/b19a9453-e129-45d0-80ee-bfd378a5c97d/ivigsxDbxZ.lottie"
+                className="w-full h-full border-none pointer-events-none"
+                title="Success Animation"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-black text-slate-900">{statusModal.title || 'Action Successful!'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {statusModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal({ isOpen: false, type: 'success', title: '', message: '' })}
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-200 transition-all cursor-pointer"
+              >
+                Continue / Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTIE FAILED MODAL */}
+      {statusModal.isOpen && statusModal.type === 'failed' && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
+              <iframe
+                src="https://lottie.host/embed/4f79ee55-567f-4f30-9426-da61049a7625/VkYoDvJKgF.lottie"
+                className="w-full h-full border-none pointer-events-none"
+                title="Failed Animation"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-black text-rose-600">{statusModal.title || 'Operation Failed'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {statusModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal({ isOpen: false, type: 'failed', title: '', message: '' })}
+                className="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-lg shadow-rose-200 transition-all cursor-pointer"
+              >
+                Close & Try Again
               </button>
             </div>
           </div>
