@@ -820,7 +820,7 @@ export default function PhysicalInventoryPage() {
     if (!code || !code.trim()) return;
     const targetSessionId = activeSessionId || (sessions.length > 0 ? sessions[0].id : null);
     if (!targetSessionId) {
-      alert('Pumili muna o gumawa ng Inventory Session bago mag-scan.');
+      alert('Please select or create an Inventory Session before scanning.');
       return;
     }
 
@@ -1346,7 +1346,7 @@ export default function PhysicalInventoryPage() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        I-scan ang QR code o Barcode sticker gamit ang barcode gun o live camera scanner para agarang mai-record sa inventory.
+                        Scan QR code or Barcode sticker using barcode reader gun or live camera scanner for immediate inventory logging.
                       </p>
                     </div>
                   </div>
@@ -1358,7 +1358,7 @@ export default function PhysicalInventoryPage() {
                     className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer shrink-0"
                   >
                     <Camera className="w-4 h-4" />
-                    <span>Buksan ang Camera QR Scanner</span>
+                    <span>Open Camera QR Scanner</span>
                   </button>
                 </div>
 
@@ -1378,7 +1378,7 @@ export default function PhysicalInventoryPage() {
                       type="text"
                       value={inlineScanCode}
                       onChange={(e) => setInlineScanCode(e.target.value)}
-                      placeholder="I-scan gamit ang Barcode Gun o i-type ang Property Number (e.g. PROP-20260812-0001) tapos pindutin ang Enter..."
+                      placeholder="Scan using Barcode Gun or enter Property Number (e.g. PROP-20260812-0001) then press Enter..."
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                     />
                   </div>
@@ -1563,10 +1563,10 @@ export default function PhysicalInventoryPage() {
                                   <Scan className="w-8 h-8 animate-pulse" />
                                 </div>
                                 <h4 className="text-base font-black text-slate-900">
-                                  Wala Pang Na-Scan na Item sa Session na Ito
+                                  No Items Scanned Yet in This Session
                                 </h4>
                                 <p className="text-xs text-slate-500 leading-relaxed">
-                                  I-scan ang QR code o Barcode sticker ng bawat kagamitan gamit ang Live Camera o Barcode gun upang isa-isang lumabas dito ang mga na-inventory.
+                                  Scan the QR code or Barcode sticker of each equipment using the Live Camera or Barcode Gun to log inventory records.
                                 </p>
                                 <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                                   <button
@@ -1574,13 +1574,13 @@ export default function PhysicalInventoryPage() {
                                     className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 flex items-center gap-2 cursor-pointer transition-all"
                                   >
                                     <Camera className="w-4 h-4" />
-                                    <span>Buksan ang Camera QR Scanner</span>
+                                    <span>Open Camera QR Scanner</span>
                                   </button>
                                   <button
                                     onClick={() => setStatusTab('UNSCANNED')}
                                     className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
                                   >
-                                    Tingnan ang {pendingCount} Unscanned Items
+                                    View {pendingCount} Unscanned Items
                                   </button>
                                 </div>
                               </div>
@@ -1590,16 +1590,16 @@ export default function PhysicalInventoryPage() {
                                   <CheckCircle2 className="w-6 h-6" />
                                 </div>
                                 <h4 className="text-sm font-black text-slate-900">
-                                  Lahat ng Kagamitan ay Na-Scan Na!
+                                  All Registered Items Have Been Scanned!
                                 </h4>
                                 <p className="text-xs text-slate-500">
-                                  100% ng mga nakarehistrong kagamitan para sa session na ito ay matagumpay nang na-inventory.
+                                  100% of registered property items for this session have been successfully inventoried.
                                 </p>
                               </div>
                             ) : (
                               <div className="space-y-1 py-6 text-slate-400 text-xs">
                                 <p className="font-bold">No property items found under this filter.</p>
-                                <p className="text-[11px]">Subukang baguhin ang category filter o search keyword.</p>
+                                <p className="text-[11px]">Try adjusting your category filter or search keyword.</p>
                               </div>
                             )}
                           </td>
