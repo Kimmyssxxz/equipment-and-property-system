@@ -87,22 +87,27 @@ export default function PersonnelPage() {
     message: '',
   });
 
+  const [assignmentsHistory, setAssignmentsHistory] = useState([]);
+
   // Load live data from database
   const loadData = async () => {
     setLoading(true);
     setIsTableMissing(false);
     try {
-      setProperties(StorageManager.getProperties() || []);
       setCounts(StorageManager.getPhysicalCounts() || []);
 
-      // Fetch live employees and live offices concurrently
-      const [empRes, offRes] = await Promise.all([
+      // Fetch live employees, offices, properties, and assignments concurrently
+      const [empRes, offRes, propRes, asgnRes] = await Promise.all([
         fetch('/api/personnel', { cache: 'no-store' }),
         fetch('/api/offices', { cache: 'no-store' }),
+        fetch('/api/properties', { cache: 'no-store' }),
+        fetch('/api/assignments', { cache: 'no-store' }),
       ]);
 
       const empData = await parseJsonSafely(empRes);
       const offData = await parseJsonSafely(offRes);
+      const propData = await parseJsonSafely(propRes);
+      const asgnData = await parseJsonSafely(asgnRes);
 
       if (offData.success && Array.isArray(offData.offices)) {
         setOffices(offData.offices);
@@ -120,10 +125,26 @@ export default function PersonnelPage() {
       } else {
         setEmployees(StorageManager.getEmployees() || []);
       }
+
+      if (propData.success && Array.isArray(propData.properties)) {
+        setProperties(propData.properties);
+        StorageManager.saveProperties(propData.properties);
+      } else {
+        setProperties(StorageManager.getProperties() || []);
+      }
+
+      if (asgnData.success && Array.isArray(asgnData.assignments)) {
+        setAssignmentsHistory(asgnData.assignments);
+        StorageManager.saveAssignmentsHistory(asgnData.assignments);
+      } else {
+        setAssignmentsHistory(StorageManager.getAssignmentsHistory() || []);
+      }
     } catch (err) {
       console.error('Failed to load personnel data:', err);
       setEmployees(StorageManager.getEmployees() || []);
       setOffices(StorageManager.getOffices() || []);
+      setProperties(StorageManager.getProperties() || []);
+      setAssignmentsHistory(StorageManager.getAssignmentsHistory() || []);
     } finally {
       setLoading(false);
     }
@@ -168,22 +189,67 @@ export default function PersonnelPage() {
 
   // Statistics KPI
   const activeEmployeesCount = employees.filter((e) => e.status === 'ACTIVE').length;
-  const totalAssignedProperties = properties.filter((p) => p.accountablePersonId).length;
+  const totalAssignedProperties = properties.filter((p) => {
+    if (p.accountablePersonId || p.employeeId || p.employee_id || p.accountable_person_id) return true;
+    return assignmentsHistory.some((a) => a.propertyId === p.id || a.propertyNumber === p.propertyNumber);
+  }).length;
+
   const totalValuation = properties.reduce(
-    (sum, p) => sum + (p.unitValue || 0) * (p.quantityPerCard || 1),
+    (sum, p) => sum + (parseFloat(p.unitValue || p.unit_value || p.cost) || 0) * (parseInt(p.quantityPerCard || p.quantity_per_card || p.quantity, 10) || 1),
     0
   );
 
-  // Calculations per employee
-  const getEmployeeStats = (empId) => {
-    const assignedProps = properties.filter((p) => p.accountablePersonId === empId);
+  // Calculations per employee (resolving direct properties & active assignment history)
+  const getEmployeeStats = (empInput) => {
+    if (!empInput) {
+      return {
+        propertiesCount: 0,
+        totalValue: 0,
+        assignedProperties: [],
+        countedCount: 0,
+        pendingCount: 0,
+        discrepanciesCount: 0,
+      };
+    }
+
+    const empObj = typeof empInput === 'object' ? empInput : employees.find((e) => e.id === empInput || e.employeeId === empInput);
+    const empId = empObj?.id || (typeof empInput === 'string' ? empInput : '');
+    const empName = (empObj?.name || '').toLowerCase().trim();
+
+    // Latest active assignment mapping for each property
+    const activeAssignmentsByProp = {};
+    assignmentsHistory.forEach((asgn) => {
+      const propKey = asgn.propertyId || asgn.propertyNumber;
+      if (propKey && !activeAssignmentsByProp[propKey]) {
+        activeAssignmentsByProp[propKey] = asgn;
+      }
+    });
+
+    const assignedProps = properties.filter((p) => {
+      const pEmpId = p.accountablePersonId || p.employeeId || p.employee_id || p.accountable_person_id;
+      const pEmpName = (p.accountablePersonName || p.accountable_person_name || p.accountableOfficer || p.employeeName || '').toLowerCase().trim();
+
+      // Direct property assignment check
+      if (empId && pEmpId && pEmpId === empId) return true;
+      if (empName && pEmpName && pEmpName === empName) return true;
+
+      // Active assignment check from assignments history table
+      const activeAsgn = activeAssignmentsByProp[p.id] || activeAssignmentsByProp[p.propertyNumber];
+      if (activeAsgn) {
+        if (empId && activeAsgn.employeeId === empId) return true;
+        if (empName && activeAsgn.employeeName && activeAsgn.employeeName.toLowerCase().trim() === empName) return true;
+      }
+
+      return false;
+    });
+
     const totalVal = assignedProps.reduce(
-      (sum, p) => sum + (p.unitValue || 0) * (p.quantityPerCard || 1),
+      (sum, p) => sum + (parseFloat(p.unitValue || p.unit_value || p.cost) || 0) * (parseInt(p.quantityPerCard || p.quantity_per_card || p.quantity, 10) || 1),
       0
     );
 
     const empCounts = counts.filter((c) =>
-      assignedProps.some((p) => p.propertyNumber === c.propertyNumber)
+      assignedProps.some((p) => p.propertyNumber === c.propertyNumber || p.id === c.propertyId)
     );
     const counted = empCounts.filter((c) => c.status !== 'PENDING').length;
     const pending = empCounts.filter((c) => c.status === 'PENDING').length;
@@ -688,7 +754,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     </tr>
                   ) : (
                     paginatedEmployees.map((emp) => {
-                      const stats = getEmployeeStats(emp.id);
+                      const stats = getEmployeeStats(emp);
                       return (
                         <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors group">
                           {/* ID & Name */}
