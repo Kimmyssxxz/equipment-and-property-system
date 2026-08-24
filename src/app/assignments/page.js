@@ -219,6 +219,22 @@ function AssignmentsContent() {
     loadData();
   }, [preselectedPropId]);
 
+  // Clean single tag selection on afterprint event so batch printing doesn't isolate single stickers
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setSelectedAssignmentForTag(null);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
+
+  const handlePrintAllStickers = () => {
+    setSelectedAssignmentForTag(null);
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
   // Selected Property Object
   const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
   const currentCustodian = employees.find((e) => e.id === selectedProperty?.accountablePersonId);
@@ -958,7 +974,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
 
                 {/* Print All Stickers Button - Direct Print Settings */}
                 <button
-                  onClick={() => window.print()}
+                  onClick={handlePrintAllStickers}
                   disabled={filteredHistory.length === 0}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Print all property QR stickers directly to A4 coupon bond (8 per sheet)"
