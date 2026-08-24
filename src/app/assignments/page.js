@@ -82,6 +82,12 @@ function AssignmentsContent() {
 
   // Notification & Modal State
   const [notification, setNotification] = useState(null);
+  const [statusModal, setStatusModal] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
   const [errorMsg, setErrorMsg] = useState('');
   const [selectedAssignmentForPrint, setSelectedAssignmentForPrint] = useState(null);
   const [selectedAssignmentForDetails, setSelectedAssignmentForDetails] = useState(null);
@@ -333,10 +339,23 @@ function AssignmentsContent() {
         },
       });
 
+      setStatusModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Accountability Successfully Assigned!',
+        message: `Property "${selectedProperty?.propertyNumber} (${selectedProperty?.article})" has been assigned to ${targetEmp?.name} (${targetOff?.name}).`,
+      });
+
       setTimeout(() => setNotification(null), 8000);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || 'Error occurred while saving property assignment.');
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Assignment Failed!',
+        message: err.message || 'An error occurred while attempting to assign property accountability.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -357,11 +376,21 @@ function AssignmentsContent() {
   const handleConfirmReassign = async () => {
     if (!selectedAssignmentForReassign) return;
     if (!reassignEmployeeId) {
-      alert('Please select a new Accountable Custodian.');
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Validation Error',
+        message: 'Please select a new Accountable Custodian before submitting.',
+      });
       return;
     }
     if (!reassignOfficeId) {
-      alert('Please select a new Receiving Office / Location.');
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Validation Error',
+        message: 'Please select a new Receiving Office / Location before submitting.',
+      });
       return;
     }
 
@@ -420,6 +449,13 @@ function AssignmentsContent() {
 
       setSelectedAssignmentForReassign(null);
 
+      setStatusModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Item Re-Assigned & Transferred Successfully!',
+        message: `"${selectedAssignmentForReassign.propertyNumber}" was transferred to ${newEmp?.name} (${newOff?.name}). A new QR sticker tag has been generated!`,
+      });
+
       setNotification({
         title: '✨ Item Successfully Re-Assigned & Transferred!',
         message: `"${selectedAssignmentForReassign.propertyNumber}" is now accountable to ${newEmp?.name} (${newOff?.name}).`,
@@ -430,7 +466,12 @@ function AssignmentsContent() {
 
       setTimeout(() => setNotification(null), 7000);
     } catch (err) {
-      alert(err.message || 'Failed to re-assign property.');
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Re-Assignment Failed!',
+        message: err.message || 'An error occurred while attempting to re-assign/transfer the property.',
+      });
     } finally {
       setIsReassignSubmitting(false);
     }
@@ -1603,6 +1644,65 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
 
         </main>
 
+      {/* LOTTIE SUCCESS MODAL */}
+      {statusModal.isOpen && statusModal.type === 'success' && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
+              <iframe
+                src="https://lottie.host/embed/b19a9453-e129-45d0-80ee-bfd378a5c97d/ivigsxDbxZ.lottie"
+                className="w-full h-full border-none pointer-events-none"
+                title="Success Animation"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-black text-slate-900">{statusModal.title || 'Action Successful!'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {statusModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal({ isOpen: false, type: 'success', title: '', message: '' })}
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-200 transition-all cursor-pointer"
+              >
+                Continue / Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTIE FAILED MODAL */}
+      {statusModal.isOpen && statusModal.type === 'failed' && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
+              <iframe
+                src="https://lottie.host/embed/4f79ee55-567f-4f30-9426-da61049a7625/VkYoDvJKgF.lottie"
+                className="w-full h-full border-none pointer-events-none"
+                title="Failed Animation"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-black text-rose-600">{statusModal.title || 'Operation Failed'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {statusModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal({ isOpen: false, type: 'failed', title: '', message: '' })}
+                className="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-lg shadow-rose-200 transition-all cursor-pointer"
+              >
+                Close & Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
