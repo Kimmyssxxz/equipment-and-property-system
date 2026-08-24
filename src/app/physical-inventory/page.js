@@ -846,11 +846,13 @@ export default function PhysicalInventoryPage() {
           } catch (e) {}
         }
 
-        // Construct New Sticker Data for display modal
+        // Construct New Sticker Data for display modal (Matching Assignments sticker template)
         setGeneratedStickerData({
           propertyNumber: itemForVerification.propertyNumber,
           article: itemForVerification.article,
           description: itemForVerification.description,
+          serialNumber: itemForVerification.serialNumber || itemForVerification.serial_number || '',
+          unitValue: itemForVerification.unitValue || itemForVerification.unit_value || 0,
           oldOffice: getOfficeName(itemForVerification),
           newOffice: targetOfficeObj.name || targetOfficeObj.officeName,
           custodian: getCustodianName(itemForVerification),
@@ -2391,48 +2393,101 @@ export default function PhysicalInventoryPage() {
               </button>
             </div>
 
-            {/* Printable Property Sticker Card */}
-            <div id="printable-sticker-card" className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-slate-50 border-2 border-emerald-500 shadow-md space-y-3">
-              <div className="text-center border-b border-emerald-200 pb-2">
-                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest block">
-                  NATIONAL FIRE ACADEMY / PROPERTY REGISTRY
-                </span>
-                <span className="text-[9px] font-bold text-slate-500 block uppercase">
-                  Official Property Inventory Sticker
+            {/* Printable Official NFSTI Property Sticker Card (Matches Assignments Sticker Design) */}
+            <div
+              id="printable-sticker-card"
+              className="border-2 border-slate-900 rounded-xl bg-white flex flex-col justify-between overflow-hidden text-black box-border shadow-md font-sans p-0 w-full"
+            >
+              {/* Top Header Band */}
+              <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white px-2.5 py-1.5 flex items-center justify-between shrink-0 border-b-2 border-emerald-500">
+                <div className="flex items-center gap-1.5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/nfsti logo.png" alt="Logo" className="w-5.5 h-5.5 object-contain shrink-0" />
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-tight text-slate-100 leading-none">
+                      NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
+                    </p>
+                    <p className="text-[9px] font-black text-emerald-400 uppercase tracking-tight mt-0.5">
+                      PROPERTY & EQUIPMENT TAG
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[9.5px] font-mono font-black text-slate-100 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded shadow-2xs">
+                  NFSTI
                 </span>
               </div>
 
-              <div className="flex items-center justify-center py-1">
-                <div className="p-2 bg-white rounded-xl shadow-xs border border-slate-200 text-center">
-                  <QRCodeDisplay value={generatedStickerData.propertyNumber} size={110} />
-                  <span className="font-mono text-xs font-black text-emerald-950 block mt-1">
-                    {generatedStickerData.propertyNumber}
-                  </span>
+              {/* Main Horizontal Content: Left QR Code | Right Specs */}
+              <div className="grid grid-cols-12 gap-2 p-2.5 items-center flex-1">
+                <div className="col-span-5 flex flex-col items-center justify-center p-1.5 bg-white border-2 border-slate-900 rounded-xl h-full shadow-2xs">
+                  <QRCodeDisplay
+                    value={generatedStickerData.propertyNumber}
+                    size={82}
+                    includeDetails={false}
+                  />
+                  <div className="w-full mt-1 px-1 py-0.5 bg-slate-100 border border-slate-900 rounded text-center">
+                    <p className="font-mono font-black text-slate-950 text-[10px] leading-tight break-all">
+                      {generatedStickerData.propertyNumber}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="col-span-7 flex flex-col justify-between h-full py-0.5 space-y-1 text-left">
+                  <div className="bg-slate-100/90 p-1.5 rounded-lg border border-slate-900 space-y-0.5 shadow-2xs">
+                    <span className="text-[8.5px] font-black text-slate-950 uppercase tracking-wider block">
+                      PROPERTY DESCRIPTION
+                    </span>
+                    <p className="font-black text-slate-950 text-[12px] leading-tight line-clamp-2" title={generatedStickerData.article}>
+                      {generatedStickerData.article} {generatedStickerData.description ? `- ${generatedStickerData.description}` : ''}
+                    </p>
+                  </div>
+
+                  {generatedStickerData.serialNumber ? (
+                    <div className="bg-slate-950 text-white px-1.5 py-0.5 rounded border border-slate-900 flex items-center justify-between shadow-2xs">
+                      <span className="text-[7.5px] font-black text-emerald-400 uppercase tracking-wider shrink-0">SERIAL NUMBER:</span>
+                      <span className="font-mono font-black text-slate-100 text-[9.5px] truncate text-right pl-1">
+                        {generatedStickerData.serialNumber}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-0.5 text-[10px] px-0.5">
+                    <div>
+                      <span className="text-[8px] font-black text-slate-950 uppercase tracking-wider block">ACCOUNTABLE CUSTODIAN</span>
+                      <p className="font-black text-slate-950 text-[11px] truncate">
+                        {generatedStickerData.custodian || 'Unassigned'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[8px] font-black text-slate-950 uppercase tracking-wider block">NEW RECEIVING OFFICE</span>
+                      <p className="font-black text-emerald-700 text-[10.5px] truncate">
+                        {generatedStickerData.newOffice || 'Supply Office'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1.5 text-xs text-slate-800 pt-1">
-                <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                  <span className="text-slate-500 font-bold">Article / Item:</span>
-                  <span className="font-black text-slate-900">{generatedStickerData.article}</span>
+              {/* Footer Bar */}
+              <div className="bg-slate-100/90 border-t-2 border-slate-900 px-2.5 py-1.5 space-y-1 font-sans shrink-0">
+                <div className="flex items-center justify-between text-[9.5px]">
+                  <div>
+                    <span className="text-[8.5px] text-slate-950 font-black uppercase">CATEGORY: </span>
+                    <span className="font-black text-slate-950 text-[10px]">
+                      {generatedStickerData.category}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[8.5px] text-slate-950 font-black uppercase">VALUE: </span>
+                    <span className="font-mono font-black text-slate-950 text-[10.5px]">
+                      ₱{(generatedStickerData.unitValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                  <span className="text-slate-500 font-bold">Category:</span>
-                  <span className="font-extrabold text-slate-900">{generatedStickerData.category}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                  <span className="text-slate-500 font-bold">New Office Location:</span>
-                  <span className="font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                    {generatedStickerData.newOffice}
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                  <span className="text-slate-500 font-bold">Custodian:</span>
-                  <span className="font-extrabold text-slate-900">{generatedStickerData.custodian}</span>
-                </div>
-                <div className="flex justify-between pt-0.5 text-[11px]">
-                  <span className="text-slate-500 font-bold">Date Updated:</span>
-                  <span className="font-mono font-bold text-slate-700">{generatedStickerData.dateTransferred}</span>
+
+                <div className="border-t-2 border-slate-900 pt-1 pb-0.5 flex items-center justify-between text-[9px]">
+                  <span className="text-[8px] text-slate-950 font-black uppercase tracking-wider shrink-0">DATE OF TRANSFER / INVENTORY:</span>
+                  <span className="font-mono font-black text-slate-950 text-[10px] tracking-widest pl-1">{generatedStickerData.dateTransferred}</span>
                 </div>
               </div>
             </div>
