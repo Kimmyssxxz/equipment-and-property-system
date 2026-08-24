@@ -682,13 +682,16 @@ export default function PhysicalInventoryPage() {
   const [verifyCount, setVerifyCount] = useState(1);
   const [verifyRemarks, setVerifyRemarks] = useState('');
   const [isSavingVerification, setIsSavingVerification] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState('GOOD');
+  const [transferOfficeId, setTransferOfficeId] = useState('');
+  const [generatedStickerData, setGeneratedStickerData] = useState(null);
+  const [isStickerModalOpen, setIsStickerModalOpen] = useState(false);
 
   const REMARKS_PRESETS = [
-    { label: 'Good Condition (Maayos)', text: 'In good working condition' },
-    { label: 'Minor Defect (May sira / for repair)', text: 'Serviceable - with minor defect / needs maintenance' },
-    { label: 'Unserviceable (Condemned / Sira)', text: 'Unserviceable - beyond economic repair / for disposal' },
-    { label: 'Missing / Unlocated (Di mahanap)', text: 'Unlocated / Missing during physical counting' },
-    { label: 'Transferred Room / Office (Nalipat)', text: 'Transferred to different room / office' },
+    { id: 'GOOD', label: 'Good Condition (Maayos)', text: 'In good working condition' },
+    { id: 'REPAIR', label: 'For Repair', text: 'Serviceable - For repair / needs maintenance' },
+    { id: 'BER', label: 'Unserviceable (BER)', text: 'Unserviceable (BER) - Beyond Economic Repair' },
+    { id: 'TRANSFERRED', label: 'Transferred Room / Office (Nalipat)', text: 'Transferred to different room / office' },
   ];
 
   // Resolve Scanned Property String
@@ -762,6 +765,8 @@ export default function PhysicalInventoryPage() {
     setItemForVerification(item);
     setVerifyCount(initialCount);
     setVerifyRemarks(initialRem);
+    setSelectedPresetId('GOOD');
+    setTransferOfficeId('');
     setIsVerifyModalOpen(true);
   };
 
@@ -796,6 +801,16 @@ export default function PhysicalInventoryPage() {
     setIsSavingVerification(true);
 
     try {
+      let finalRemarks = verifyRemarks.trim();
+      let targetOfficeObj = null;
+
+      if (transferOfficeId) {
+        targetOfficeObj = offices.find((o) => o.id === transferOfficeId);
+        if (targetOfficeObj) {
+          finalRemarks = `Transferred to ${targetOfficeObj.name || targetOfficeObj.officeName}`;
+        }
+      }
+
       // 1. Post to /api/physical-counts in Supabase
       const res = await fetch('/api/physical-counts', {
         method: 'POST',
@@ -806,19 +821,51 @@ export default function PhysicalInventoryPage() {
           propertyId: itemForVerification.propertyId || itemForVerification.id,
           scannedCode: itemForVerification.propertyNumber,
           physicalCount: verifyCount,
-          remarks: verifyRemarks.trim(),
+          remarks: finalRemarks || 'In good working condition',
           countedBy: 'Admin',
         }),
       });
 
       const data = await res.json();
 
-      // 2. Also update local storage for offline parity
+      // 2. If transferred, update property office in database / storage
+      if (targetOfficeObj) {
+        const realPropId = (itemForVerification.propertyId || itemForVerification.id || '').replace('temp-', '');
+        if (realPropId) {
+          try {
+            await fetch('/api/properties', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: realPropId,
+                officeId: targetOfficeObj.id,
+                officeName: targetOfficeObj.name || targetOfficeObj.officeName,
+                location: targetOfficeObj.name || targetOfficeObj.officeName,
+              }),
+            });
+          } catch (e) {}
+        }
+
+        // Construct New Sticker Data for display modal
+        setGeneratedStickerData({
+          propertyNumber: itemForVerification.propertyNumber,
+          article: itemForVerification.article,
+          description: itemForVerification.description,
+          oldOffice: getOfficeName(itemForVerification),
+          newOffice: targetOfficeObj.name || targetOfficeObj.officeName,
+          custodian: getCustodianName(itemForVerification),
+          category: getCategoryName(itemForVerification),
+          dateTransferred: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+        });
+        setIsStickerModalOpen(true);
+      }
+
+      // 3. Update local storage for offline parity
       StorageManager.scanPropertyIntoSession({
         sessionId: targetSessionId,
         scannedCode: itemForVerification.propertyNumber,
         physicalCount: verifyCount,
-        remarks: verifyRemarks.trim(),
+        remarks: finalRemarks || 'In good working condition',
         countedBy: 'Admin',
       });
 
@@ -832,8 +879,8 @@ export default function PhysicalInventoryPage() {
       setStatusTab('SCANNED');
 
       setNotification({
-        title: '✅ Count & Remarks Saved!',
-        message: `"${itemForVerification.propertyNumber}" (${itemForVerification.article}) • Count: ${verifyCount} • Remarks: "${verifyRemarks.trim() || 'In good working condition'}"`,
+        title: targetOfficeObj ? '✨ Item Transferred & Count Saved!' : '✅ Count & Remarks Saved!',
+        message: `"${itemForVerification.propertyNumber}" (${itemForVerification.article}) • Count: ${verifyCount} • Remarks: "${finalRemarks || 'In good working condition'}"`,
       });
       setTimeout(() => setNotification(null), 5000);
       setTimeout(() => setLastScannedId((prev) => (prev === savedCountId ? null : prev)), 4000);
@@ -2223,22 +2270,66 @@ export default function PhysicalInventoryPage() {
                   Physical Condition & Status Presets (1-Click Selection):
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {REMARKS_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setVerifyRemarks(preset.text)}
-                      className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
-                        verifyRemarks === preset.text
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-[1.02]'
-                          : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
+                  {REMARKS_PRESETS.map((preset) => {
+                    const isSelected = selectedPresetId === preset.id || verifyRemarks === preset.text;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPresetId(preset.id);
+                          setVerifyRemarks(preset.text);
+                          if (preset.id !== 'TRANSFERRED') {
+                            setTransferOfficeId('');
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-[1.02]'
+                            : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Destination Office Dropdown when Transferred is selected */}
+              {(selectedPresetId === 'TRANSFERRED' || verifyRemarks.includes('Transferred')) && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300 space-y-2.5 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-amber-700" />
+                    <label className="text-xs font-extrabold text-amber-900 uppercase tracking-wider">
+                      Select Destination Office / New Location:
+                    </label>
+                  </div>
+                  <select
+                    value={transferOfficeId}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      setTransferOfficeId(selectedId);
+                      const off = offices.find((o) => o.id === selectedId);
+                      if (off) {
+                        setVerifyRemarks(`Transferred to ${off.name || off.officeName}`);
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-amber-300 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
+                  >
+                    <option value="">-- Select Destination Office --</option>
+                    {offices.map((off) => (
+                      <option key={off.id} value={off.id}>
+                        {off.name || off.officeName} ({off.code || 'Office'})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] font-semibold text-amber-800 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>A new updated Property Sticker with QR code will be generated upon saving!</span>
+                  </p>
+                </div>
+              )}
 
               {/* Remarks Textarea */}
               <div className="space-y-1.5">
@@ -2272,6 +2363,96 @@ export default function PhysicalInventoryPage() {
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{isSavingVerification ? 'Saving to Database...' : 'Confirm & Save Count Entry'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generated Property Sticker Modal (For Office Transfer) */}
+      {isStickerModalOpen && generatedStickerData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">New Property Sticker Generated</h3>
+                  <p className="text-xs text-slate-500">Updated location & QR code sticker</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsStickerModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Printable Property Sticker Card */}
+            <div id="printable-sticker-card" className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-slate-50 border-2 border-emerald-500 shadow-md space-y-3">
+              <div className="text-center border-b border-emerald-200 pb-2">
+                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest block">
+                  NATIONAL FIRE ACADEMY / PROPERTY REGISTRY
+                </span>
+                <span className="text-[9px] font-bold text-slate-500 block uppercase">
+                  Official Property Inventory Sticker
+                </span>
+              </div>
+
+              <div className="flex items-center justify-center py-1">
+                <div className="p-2 bg-white rounded-xl shadow-xs border border-slate-200 text-center">
+                  <QRCodeDisplay value={generatedStickerData.propertyNumber} size={110} />
+                  <span className="font-mono text-xs font-black text-emerald-950 block mt-1">
+                    {generatedStickerData.propertyNumber}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs text-slate-800 pt-1">
+                <div className="flex justify-between border-b border-slate-200/60 pb-1">
+                  <span className="text-slate-500 font-bold">Article / Item:</span>
+                  <span className="font-black text-slate-900">{generatedStickerData.article}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-200/60 pb-1">
+                  <span className="text-slate-500 font-bold">Category:</span>
+                  <span className="font-extrabold text-slate-900">{generatedStickerData.category}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-200/60 pb-1">
+                  <span className="text-slate-500 font-bold">New Office Location:</span>
+                  <span className="font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    {generatedStickerData.newOffice}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-slate-200/60 pb-1">
+                  <span className="text-slate-500 font-bold">Custodian:</span>
+                  <span className="font-extrabold text-slate-900">{generatedStickerData.custodian}</span>
+                </div>
+                <div className="flex justify-between pt-0.5 text-[11px]">
+                  <span className="text-slate-500 font-bold">Date Updated:</span>
+                  <span className="font-mono font-bold text-slate-700">{generatedStickerData.dateTransferred}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sticker Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsStickerModalOpen(false)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-200 transition-all cursor-pointer"
+              >
+                <Tag className="w-4 h-4" />
+                <span>Print New Sticker</span>
               </button>
             </div>
           </div>
