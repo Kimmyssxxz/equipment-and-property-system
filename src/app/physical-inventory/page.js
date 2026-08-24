@@ -167,9 +167,11 @@ export default function PhysicalInventoryPage() {
 
   const [dbConnected, setDbConnected] = useState(false);
 
+  const [loading, setLoading] = useState(true);
   const [assignmentsHistory, setAssignmentsHistory] = useState([]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const emps = StorageManager.getEmployees() || [];
       const offs = StorageManager.getOffices() || [];
@@ -218,9 +220,10 @@ export default function PhysicalInventoryPage() {
           StorageManager.saveOffices(offData.offices);
         }
 
-        if (empData.success && Array.isArray(empData.employees)) {
-          setEmployees(empData.employees);
-          StorageManager.saveEmployees(empData.employees);
+        if (empData.success && (Array.isArray(empData.personnel) || Array.isArray(empData.employees))) {
+          const empArr = empData.personnel || empData.employees;
+          setEmployees(empArr);
+          StorageManager.saveEmployees(empArr);
         }
 
         if (asgnData.success && Array.isArray(asgnData.assignments)) {
@@ -1489,7 +1492,37 @@ export default function PhysicalInventoryPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {paginatedTableCounts.length === 0 ? (
+                      {loading ? (
+                        Array.from({ length: 6 }).map((_, idx) => (
+                          <tr key={idx} className="animate-pulse border-b border-slate-100">
+                            <td className="py-4 px-4">
+                              <div className="h-4 w-32 bg-slate-200/80 rounded-lg mb-1"></div>
+                              <div className="h-3 w-40 bg-slate-100 rounded-md"></div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="h-4 w-28 bg-slate-200/80 rounded-lg"></div>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <div className="h-4 w-12 bg-slate-200/80 rounded-lg mx-auto"></div>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <div className="h-4 w-12 bg-slate-200/80 rounded-lg mx-auto"></div>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <div className="h-4 w-12 bg-slate-200/80 rounded-lg mx-auto"></div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="h-5 w-16 bg-slate-200/80 rounded-full"></div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="h-3 w-32 bg-slate-200/80 rounded-md"></div>
+                            </td>
+                            <td className="py-4 px-4 text-right">
+                              <div className="h-7 w-20 bg-slate-200/80 rounded-xl ml-auto"></div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : paginatedTableCounts.length === 0 ? (
                         <tr>
                           <td colSpan="8" className="py-12 px-4 text-center">
                             {statusTab === 'SCANNED' && countedCount === 0 ? (

@@ -987,12 +987,35 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr>
-                      <td colSpan="8" className="py-12 text-center text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-600 mb-2" />
-                        Loading custody logs...
-                      </td>
-                    </tr>
+                    Array.from({ length: 6 }).map((_, idx) => (
+                      <tr key={idx} className="animate-pulse border-b border-slate-100">
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-20 bg-slate-200/80 rounded-lg"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-32 bg-slate-200/80 rounded-lg mb-1"></div>
+                          <div className="h-3 w-40 bg-slate-100 rounded-md"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-28 bg-slate-200/80 rounded-lg"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-36 bg-slate-200/80 rounded-lg"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-28 bg-slate-200/80 rounded-lg"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-3 w-24 bg-slate-200/80 rounded-md"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-20 bg-slate-200/80 rounded-lg"></div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="h-7 w-24 bg-slate-200/80 rounded-xl mx-auto"></div>
+                        </td>
+                      </tr>
+                    ))
                   ) : paginatedHistory.length === 0 ? (
                     <tr>
                       <td colSpan="8" className="py-12 text-center text-slate-400">

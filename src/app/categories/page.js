@@ -623,14 +623,29 @@ CREATE POLICY "Allow full access to property_categories" ON "property_categories
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr>
-                      <td colSpan="6" className="py-16 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <RefreshCw className="w-6 h-6 text-emerald-600 animate-spin" />
-                          <p className="text-xs font-bold text-slate-600">Loading categories...</p>
-                        </div>
-                      </td>
-                    </tr>
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={idx} className="animate-pulse border-b border-slate-100">
+                        <td className="py-4 px-4">
+                          <div className="h-6 w-12 bg-slate-200/80 rounded-xl"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-44 bg-slate-200/80 rounded-lg mb-1.5"></div>
+                          <div className="h-3 w-28 bg-slate-100 rounded-md"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-6 w-20 bg-slate-200/80 rounded-full"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 w-28 bg-slate-200/80 rounded-lg"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-3 w-24 bg-slate-200/80 rounded-md"></div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <div className="h-7 w-20 bg-slate-200/80 rounded-xl ml-auto"></div>
+                        </td>
+                      </tr>
+                    ))
                   ) : paginatedCategories.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="py-16 text-center">

@@ -139,130 +139,145 @@ export default function DashboardPage() {
 
           {/* ================= 8 SUMMARY KPI CARDS ================= */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {/* Card 1: Total Properties */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Properties
-                </span>
-                <Package className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-black text-slate-900 mt-1.5">
-                {totalProperties.toLocaleString()} <span className="text-xs font-normal text-slate-500">units</span>
-              </p>
-              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
-                Registered in Registry
-              </span>
-            </div>
+            {isDataLoading ? (
+              Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs animate-pulse space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3.5 w-24 bg-slate-200/80 rounded-md"></div>
+                    <div className="w-4 h-4 bg-slate-200/80 rounded-full"></div>
+                  </div>
+                  <div className="h-7 w-32 bg-slate-200/80 rounded-lg"></div>
+                  <div className="h-3 w-28 bg-slate-100 rounded-md"></div>
+                </div>
+              ))
+            ) : (
+              <>
+                {/* Card 1: Total Properties */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Total Properties
+                    </span>
+                    <Package className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 mt-1.5">
+                    {totalProperties.toLocaleString()} <span className="text-xs font-normal text-slate-500">units</span>
+                  </p>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                    Registered in Registry
+                  </span>
+                </div>
 
-            {/* Card 2: Total Property Value */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Property Value
-                </span>
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-black text-slate-900 mt-1.5">
-                ₱{totalPropertyValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <span className="text-[10px] text-slate-500 font-medium">
-                Philippine Peso (PHP)
-              </span>
-            </div>
+                {/* Card 2: Total Property Value */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Total Property Value
+                    </span>
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 mt-1.5">
+                    ₱{totalPropertyValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Philippine Peso (PHP)
+                  </span>
+                </div>
 
-            {/* Card 3: Total Personnel */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Personnel
-                </span>
-                <Users className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-black text-slate-900 mt-1.5">
-                {totalPersonnel} <span className="text-xs font-normal text-slate-500">Officers</span>
-              </p>
-              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
-                Accountable Custodians
-              </span>
-            </div>
+                {/* Card 3: Total Personnel */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Personnel
+                    </span>
+                    <Users className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 mt-1.5">
+                    {totalPersonnel} <span className="text-xs font-normal text-slate-500">Employees</span>
+                  </p>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Accountable Custodians
+                  </span>
+                </div>
 
-            {/* Card 4: Total Offices */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Offices
-                </span>
-                <Building2 className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-black text-slate-900 mt-1.5">
-                {totalOffices} <span className="text-xs font-normal text-slate-500">Divisions</span>
-              </p>
-              <span className="text-[10px] text-slate-500 font-medium">
-                Operating Units
-              </span>
-            </div>
+                {/* Card 4: Operating Offices */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Offices
+                    </span>
+                    <Building2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 mt-1.5">
+                    {totalOffices} <span className="text-xs font-normal text-slate-500">Divisions</span>
+                  </p>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Operating Departments
+                  </span>
+                </div>
 
-            {/* Card 5: Properties Counted */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Counted
-                </span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-black text-emerald-800 mt-1.5">
-                {countedProperties} <span className="text-xs font-normal text-slate-500">Counted</span>
-              </p>
-              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
-                Verified in Sessions
-              </span>
-            </div>
+                {/* Card 5: Properties Counted */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                      Counted
+                    </span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-emerald-800 mt-1.5">
+                    {countedProperties} <span className="text-xs font-normal text-slate-500">Counted</span>
+                  </p>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                    Verified in Sessions
+                  </span>
+                </div>
 
-            {/* Card 6: Properties Pending Count */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-amber-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Pending
-                </span>
-                <Clock className="w-4 h-4 text-amber-500" />
-              </div>
-              <p className="text-2xl font-black text-amber-700 mt-1.5">
-                {pendingProperties} <span className="text-xs font-normal text-slate-500">Pending</span>
-              </p>
-              <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full inline-block mt-1">
-                Awaiting Verification
-              </span>
-            </div>
+                {/* Card 6: Properties Pending Count */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-amber-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Pending
+                    </span>
+                    <Clock className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <p className="text-2xl font-black text-amber-700 mt-1.5">
+                    {pendingProperties} <span className="text-xs font-normal text-slate-500">Pending</span>
+                  </p>
+                  <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                    Awaiting Verification
+                  </span>
+                </div>
 
-            {/* Card 7: Shortages */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-rose-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Shortage
-                </span>
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-              </div>
-              <p className="text-2xl font-black text-rose-700 mt-1.5">
-                {shortageCount} <span className="text-xs font-normal text-slate-500">Items</span>
-              </p>
-              <span className="text-[10px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-full inline-block mt-1">
-                Physical &lt; Expected
-              </span>
-            </div>
+                {/* Card 7: Shortages */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-rose-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Shortage
+                    </span>
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                  </div>
+                  <p className="text-2xl font-black text-rose-700 mt-1.5">
+                    {shortageCount} <span className="text-xs font-normal text-slate-500">Items</span>
+                  </p>
+                  <span className="text-[10px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                    Physical &lt; Expected
+                  </span>
+                </div>
 
-            {/* Card 8: Overages */}
-            <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-blue-300 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Overage
-                </span>
-                <Plus className="w-4 h-4 text-blue-600" />
-              </div>
-              <p className="text-2xl font-black text-blue-800 mt-1.5">
-                {overageCount} <span className="text-xs font-normal text-slate-500">Items</span>
-              </p>
-            </div>
+                {/* Card 8: Overages */}
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-blue-300 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Overage
+                    </span>
+                    <Plus className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-black text-blue-800 mt-1.5">
+                    {overageCount} <span className="text-xs font-normal text-slate-500">Items</span>
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* ================= APEX CHARTS & PERSONNEL DIRECTORY SECTION ================= */}
