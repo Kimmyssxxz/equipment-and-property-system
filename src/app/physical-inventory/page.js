@@ -1310,15 +1310,6 @@ export default function PhysicalInventoryPage() {
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    type="button"
-                    onClick={() => openScanner(currentActiveSession?.id)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Camera className="w-4 h-4 text-emerald-700" />
-                    <span>Camera Scanner</span>
-                  </button>
-
-                  <button
                     onClick={(e) => openEditSessionModal(currentActiveSession, e)}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-100 hover:text-emerald-800 text-slate-600 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer border border-slate-200"
                     title="Edit Session Details"
@@ -1360,17 +1351,18 @@ export default function PhysicalInventoryPage() {
                     </div>
                   </div>
 
+                  {/* SINGLE PROMINENT CAMERA QR SCANNER BUTTON */}
                   <button
                     type="button"
                     onClick={() => openScanner(currentActiveSession?.id)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer shrink-0"
+                    className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer shrink-0"
                   >
                     <Camera className="w-4 h-4" />
-                    <span>Buksan ang Camera Scanner</span>
+                    <span>Buksan ang Camera QR Scanner</span>
                   </button>
                 </div>
 
-                {/* Fast Input Form (Supports USB/Bluetooth Barcode Reader Gun & Camera Trigger) */}
+                {/* Fast Input Form (Supports USB/Bluetooth Barcode Reader Gun) */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -1390,14 +1382,6 @@ export default function PhysicalInventoryPage() {
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => openScanner(currentActiveSession?.id)}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs shrink-0"
-                  >
-                    <Camera className="w-4 h-4 text-emerald-700" />
-                    <span>Live Camera Scan</span>
-                  </button>
                   <button
                     type="submit"
                     disabled={!inlineScanCode.trim()}
