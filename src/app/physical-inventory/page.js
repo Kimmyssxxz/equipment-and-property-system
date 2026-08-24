@@ -2387,7 +2387,7 @@ export default function PhysicalInventoryPage() {
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
             <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
               <iframe
-                src="https://lottie.host/embed/b19a9453-e129-45d0-80ee-bfd378a5c97d/ivigsxDbxZ.lottie"
+                src="https://lottie.host/embed/c055864c-7caf-4a4e-b46c-c4b68c43f176/8DsuM6pVVZ.lottie"
                 className="w-full h-full border-none pointer-events-none"
                 title="Success Animation"
               />
