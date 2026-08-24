@@ -115,10 +115,19 @@ export default function AdminLoginPage() {
       {/* Main Glassmorphic Login Card matching App Aesthetic */}
       <div className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl border border-white/80 rounded-[32px] shadow-2xl shadow-slate-900/10 p-7 sm:p-9 space-y-6">
         
-        {/* Header with NFSTI Official Logo */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex p-1.5 bg-white rounded-3xl shadow-xs border border-slate-100 mb-1">
-            <div className="w-16 h-16 rounded-2xl bg-white p-1 flex items-center justify-center overflow-hidden">
+        {/* Header with Lottie Animation & NFSTI Official Logo */}
+        <div className="text-center space-y-2">
+          {/* Animated Hero Lottie Illustration */}
+          <div className="w-36 h-36 sm:w-44 sm:h-44 relative mx-auto flex items-center justify-center overflow-hidden -mt-2">
+            <iframe
+              src="https://lottie.host/embed/9b70e019-e0c0-4c3d-89d6-5399ca8731a4/BnZGYh7qQ7.lottie"
+              className="w-full h-full border-none pointer-events-none scale-125"
+              title="Login Animation"
+            />
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-white p-0.5 flex items-center justify-center overflow-hidden border border-slate-200 shadow-2xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/nfsti logo.png"
@@ -126,17 +135,17 @@ export default function AdminLoginPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-          </div>
-
-          <div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-200">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               National Forensic Science Training Institute
             </span>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-2">
+          </div>
+
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
               NFSTI Administrator Portal
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-1">
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
               Centralized Equipment Accountability & Automated Inventory
             </p>
           </div>
