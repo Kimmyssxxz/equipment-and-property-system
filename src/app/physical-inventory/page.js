@@ -683,15 +683,11 @@ export default function PhysicalInventoryPage() {
   const [verifyRemarks, setVerifyRemarks] = useState('');
   const [isSavingVerification, setIsSavingVerification] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState('GOOD');
-  const [transferOfficeId, setTransferOfficeId] = useState('');
-  const [generatedStickerData, setGeneratedStickerData] = useState(null);
-  const [isStickerModalOpen, setIsStickerModalOpen] = useState(false);
 
   const REMARKS_PRESETS = [
     { id: 'GOOD', label: 'Good Condition (Maayos)', text: 'In good working condition' },
     { id: 'REPAIR', label: 'For Repair', text: 'Serviceable - For repair / needs maintenance' },
     { id: 'BER', label: 'Unserviceable (BER)', text: 'Unserviceable (BER) - Beyond Economic Repair' },
-    { id: 'TRANSFERRED', label: 'Transferred Room / Office (Nalipat)', text: 'Transferred to different room / office' },
   ];
 
   // Resolve Scanned Property String
@@ -766,7 +762,6 @@ export default function PhysicalInventoryPage() {
     setVerifyCount(initialCount);
     setVerifyRemarks(initialRem);
     setSelectedPresetId('GOOD');
-    setTransferOfficeId('');
     setIsVerifyModalOpen(true);
   };
 
@@ -801,15 +796,7 @@ export default function PhysicalInventoryPage() {
     setIsSavingVerification(true);
 
     try {
-      let finalRemarks = verifyRemarks.trim();
-      let targetOfficeObj = null;
-
-      if (transferOfficeId) {
-        targetOfficeObj = offices.find((o) => o.id === transferOfficeId);
-        if (targetOfficeObj) {
-          finalRemarks = `Transferred to ${targetOfficeObj.name || targetOfficeObj.officeName}`;
-        }
-      }
+      const finalRemarks = verifyRemarks.trim() || 'In good working condition';
 
       // 1. Post to /api/physical-counts in Supabase
       const res = await fetch('/api/physical-counts', {
@@ -821,53 +808,19 @@ export default function PhysicalInventoryPage() {
           propertyId: itemForVerification.propertyId || itemForVerification.id,
           scannedCode: itemForVerification.propertyNumber,
           physicalCount: verifyCount,
-          remarks: finalRemarks || 'In good working condition',
+          remarks: finalRemarks,
           countedBy: 'Admin',
         }),
       });
 
       const data = await res.json();
 
-      // 2. If transferred, update property office in database / storage
-      if (targetOfficeObj) {
-        const realPropId = (itemForVerification.propertyId || itemForVerification.id || '').replace('temp-', '');
-        if (realPropId) {
-          try {
-            await fetch('/api/properties', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: realPropId,
-                officeId: targetOfficeObj.id,
-                officeName: targetOfficeObj.name || targetOfficeObj.officeName,
-                location: targetOfficeObj.name || targetOfficeObj.officeName,
-              }),
-            });
-          } catch (e) {}
-        }
-
-        // Construct New Sticker Data for display modal (Matching Assignments sticker template)
-        setGeneratedStickerData({
-          propertyNumber: itemForVerification.propertyNumber,
-          article: itemForVerification.article,
-          description: itemForVerification.description,
-          serialNumber: itemForVerification.serialNumber || itemForVerification.serial_number || '',
-          unitValue: itemForVerification.unitValue || itemForVerification.unit_value || 0,
-          oldOffice: getOfficeName(itemForVerification),
-          newOffice: targetOfficeObj.name || targetOfficeObj.officeName,
-          custodian: getCustodianName(itemForVerification),
-          category: getCategoryName(itemForVerification),
-          dateTransferred: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-        });
-        setIsStickerModalOpen(true);
-      }
-
-      // 3. Update local storage for offline parity
+      // 2. Update local storage for offline parity
       StorageManager.scanPropertyIntoSession({
         sessionId: targetSessionId,
         scannedCode: itemForVerification.propertyNumber,
         physicalCount: verifyCount,
-        remarks: finalRemarks || 'In good working condition',
+        remarks: finalRemarks,
         countedBy: 'Admin',
       });
 
@@ -881,8 +834,8 @@ export default function PhysicalInventoryPage() {
       setStatusTab('SCANNED');
 
       setNotification({
-        title: targetOfficeObj ? '✨ Item Transferred & Count Saved!' : '✅ Count & Remarks Saved!',
-        message: `"${itemForVerification.propertyNumber}" (${itemForVerification.article}) • Count: ${verifyCount} • Remarks: "${finalRemarks || 'In good working condition'}"`,
+        title: '✅ Count & Remarks Saved!',
+        message: `"${itemForVerification.propertyNumber}" (${itemForVerification.article}) • Count: ${verifyCount} • Remarks: "${finalRemarks}"`,
       });
       setTimeout(() => setNotification(null), 5000);
       setTimeout(() => setLastScannedId((prev) => (prev === savedCountId ? null : prev)), 4000);
@@ -2298,41 +2251,6 @@ export default function PhysicalInventoryPage() {
                 </div>
               </div>
 
-              {/* Destination Office Dropdown when Transferred is selected */}
-              {(selectedPresetId === 'TRANSFERRED' || verifyRemarks.includes('Transferred')) && (
-                <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300 space-y-2.5 animate-fadeIn">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-amber-700" />
-                    <label className="text-xs font-extrabold text-amber-900 uppercase tracking-wider">
-                      Select Destination Office / New Location:
-                    </label>
-                  </div>
-                  <select
-                    value={transferOfficeId}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      setTransferOfficeId(selectedId);
-                      const off = offices.find((o) => o.id === selectedId);
-                      if (off) {
-                        setVerifyRemarks(`Transferred to ${off.name || off.officeName}`);
-                      }
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-amber-300 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer"
-                  >
-                    <option value="">-- Select Destination Office --</option>
-                    {offices.map((off) => (
-                      <option key={off.id} value={off.id}>
-                        {off.name || off.officeName} ({off.code || 'Office'})
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] font-semibold text-amber-800 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span>A new updated Property Sticker with QR code will be generated upon saving!</span>
-                  </p>
-                </div>
-              )}
-
               {/* Remarks Textarea */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700">
@@ -2365,149 +2283,6 @@ export default function PhysicalInventoryPage() {
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{isSavingVerification ? 'Saving to Database...' : 'Confirm & Save Count Entry'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Generated Property Sticker Modal (For Office Transfer) */}
-      {isStickerModalOpen && generatedStickerData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-scaleUp">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">New Property Sticker Generated</h3>
-                  <p className="text-xs text-slate-500">Updated location & QR code sticker</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsStickerModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Printable Official NFSTI Property Sticker Card (Matches Assignments Sticker Design) */}
-            <div
-              id="printable-sticker-card"
-              className="border-2 border-slate-900 rounded-xl bg-white flex flex-col justify-between overflow-hidden text-black box-border shadow-md font-sans p-0 w-full"
-            >
-              {/* Top Header Band */}
-              <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white px-2.5 py-1.5 flex items-center justify-between shrink-0 border-b-2 border-emerald-500">
-                <div className="flex items-center gap-1.5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/nfsti logo.png" alt="Logo" className="w-5.5 h-5.5 object-contain shrink-0" />
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-tight text-slate-100 leading-none">
-                      NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
-                    </p>
-                    <p className="text-[9px] font-black text-emerald-400 uppercase tracking-tight mt-0.5">
-                      PROPERTY & EQUIPMENT TAG
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[9.5px] font-mono font-black text-slate-100 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded shadow-2xs">
-                  NFSTI
-                </span>
-              </div>
-
-              {/* Main Horizontal Content: Left QR Code | Right Specs */}
-              <div className="grid grid-cols-12 gap-2 p-2.5 items-center flex-1">
-                <div className="col-span-5 flex flex-col items-center justify-center p-1.5 bg-white border-2 border-slate-900 rounded-xl h-full shadow-2xs">
-                  <QRCodeDisplay
-                    value={generatedStickerData.propertyNumber}
-                    size={82}
-                    includeDetails={false}
-                  />
-                  <div className="w-full mt-1 px-1 py-0.5 bg-slate-100 border border-slate-900 rounded text-center">
-                    <p className="font-mono font-black text-slate-950 text-[10px] leading-tight break-all">
-                      {generatedStickerData.propertyNumber}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="col-span-7 flex flex-col justify-between h-full py-0.5 space-y-1 text-left">
-                  <div className="bg-slate-100/90 p-1.5 rounded-lg border border-slate-900 space-y-0.5 shadow-2xs">
-                    <span className="text-[8.5px] font-black text-slate-950 uppercase tracking-wider block">
-                      PROPERTY DESCRIPTION
-                    </span>
-                    <p className="font-black text-slate-950 text-[12px] leading-tight line-clamp-2" title={generatedStickerData.article}>
-                      {generatedStickerData.article} {generatedStickerData.description ? `- ${generatedStickerData.description}` : ''}
-                    </p>
-                  </div>
-
-                  {generatedStickerData.serialNumber ? (
-                    <div className="bg-slate-950 text-white px-1.5 py-0.5 rounded border border-slate-900 flex items-center justify-between shadow-2xs">
-                      <span className="text-[7.5px] font-black text-emerald-400 uppercase tracking-wider shrink-0">SERIAL NUMBER:</span>
-                      <span className="font-mono font-black text-slate-100 text-[9.5px] truncate text-right pl-1">
-                        {generatedStickerData.serialNumber}
-                      </span>
-                    </div>
-                  ) : null}
-
-                  <div className="space-y-0.5 text-[10px] px-0.5">
-                    <div>
-                      <span className="text-[8px] font-black text-slate-950 uppercase tracking-wider block">ACCOUNTABLE CUSTODIAN</span>
-                      <p className="font-black text-slate-950 text-[11px] truncate">
-                        {generatedStickerData.custodian || 'Unassigned'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[8px] font-black text-slate-950 uppercase tracking-wider block">NEW RECEIVING OFFICE</span>
-                      <p className="font-black text-emerald-700 text-[10.5px] truncate">
-                        {generatedStickerData.newOffice || 'Supply Office'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Bar */}
-              <div className="bg-slate-100/90 border-t-2 border-slate-900 px-2.5 py-1.5 space-y-1 font-sans shrink-0">
-                <div className="flex items-center justify-between text-[9.5px]">
-                  <div>
-                    <span className="text-[8.5px] text-slate-950 font-black uppercase">CATEGORY: </span>
-                    <span className="font-black text-slate-950 text-[10px]">
-                      {generatedStickerData.category}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[8.5px] text-slate-950 font-black uppercase">VALUE: </span>
-                    <span className="font-mono font-black text-slate-950 text-[10.5px]">
-                      ₱{(generatedStickerData.unitValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-t-2 border-slate-900 pt-1 pb-0.5 flex items-center justify-between text-[9px]">
-                  <span className="text-[8px] text-slate-950 font-black uppercase tracking-wider shrink-0">DATE OF TRANSFER / INVENTORY:</span>
-                  <span className="font-mono font-black text-slate-950 text-[10px] tracking-widest pl-1">{generatedStickerData.dateTransferred}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Sticker Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsStickerModalOpen(false)}
-                className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-200 transition-all cursor-pointer"
-              >
-                <Tag className="w-4 h-4" />
-                <span>Print New Sticker</span>
               </button>
             </div>
           </div>
