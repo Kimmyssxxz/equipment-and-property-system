@@ -969,7 +969,13 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                           <div className="font-semibold text-slate-900">{h.article}</div>
                         </td>
                         <td className="py-3.5 px-4 text-slate-500">
-                          {h.previousEmployeeName || 'None (Initial Registration)'}
+                          <div className="font-semibold text-slate-800">{h.previousEmployeeName || 'None (Initial Registration)'}</div>
+                          {h.previousOfficeName && h.previousOfficeName !== 'None (Initial Registration)' && (
+                            <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                              <span>Prev Office: </span>
+                              <span className="font-bold text-slate-600">{h.previousOfficeName}</span>
+                            </div>
+                          )}
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-emerald-900 flex items-center gap-1">

@@ -215,10 +215,17 @@ export default function PersonnelPage() {
     const empObj = typeof empInput === 'object' ? empInput : employees.find((e) => e.id === empInput || e.employeeId === empInput);
     const empId = empObj?.id || (typeof empInput === 'string' ? empInput : '');
     const empName = (empObj?.name || '').toLowerCase().trim();
+    const empCode = (empObj?.employeeId || '').toLowerCase().trim();
 
-    // Latest active assignment mapping for each property
+    // 1. Sort assignments history newest first to locate the active current custodian of each property
+    const sortedAsgns = [...assignmentsHistory].sort((a, b) => {
+      const dateA = new Date(a.assignmentDate || a.createdAt || 0).getTime();
+      const dateB = new Date(b.assignmentDate || b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+
     const activeAssignmentsByProp = {};
-    assignmentsHistory.forEach((asgn) => {
+    sortedAsgns.forEach((asgn) => {
       const propKey = asgn.propertyId || asgn.propertyNumber;
       if (propKey && !activeAssignmentsByProp[propKey]) {
         activeAssignmentsByProp[propKey] = asgn;
@@ -226,19 +233,26 @@ export default function PersonnelPage() {
     });
 
     const assignedProps = properties.filter((p) => {
+      // Direct property accountable person ID check (highest priority single source of truth)
       const pEmpId = p.accountablePersonId || p.employeeId || p.employee_id || p.accountable_person_id;
-      const pEmpName = (p.accountablePersonName || p.accountable_person_name || p.accountableOfficer || p.employeeName || '').toLowerCase().trim();
+      if (pEmpId) {
+        if (empId && pEmpId === empId) return true;
+        if (empCode && pEmpId.toLowerCase() === empCode) return true;
+        // If property has an explicit accountablePersonId set to someone else, it does NOT belong to this employee
+        return false;
+      }
 
-      // Direct property assignment check
-      if (empId && pEmpId && pEmpId === empId) return true;
-      if (empName && pEmpName && pEmpName === empName) return true;
-
-      // Active assignment check from assignments history table
+      // If property object has no accountablePersonId, check active assignment history (newest assignment)
       const activeAsgn = activeAssignmentsByProp[p.id] || activeAssignmentsByProp[p.propertyNumber];
       if (activeAsgn) {
         if (empId && activeAsgn.employeeId === empId) return true;
         if (empName && activeAsgn.employeeName && activeAsgn.employeeName.toLowerCase().trim() === empName) return true;
+        return false;
       }
+
+      // Check legacy name string fallback ONLY if property has no assigned custodian ID or history
+      const pEmpName = (p.accountablePersonName || p.accountable_person_name || p.accountableOfficer || p.employeeName || '').toLowerCase().trim();
+      if (empName && pEmpName && pEmpName === empName) return true;
 
       return false;
     });
