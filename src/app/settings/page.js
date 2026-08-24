@@ -66,6 +66,12 @@ export default function SettingsPage() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditSearch, setAuditSearch] = useState('');
   const [notification, setNotification] = useState(null);
+  const [statusModal, setStatusModal] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
 
   // Supabase & Database Integration State
   const [dbStatus, setDbStatus] = useState({
@@ -201,16 +207,30 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
           title: 'Settings Saved to Supabase!',
           message: 'Organization details saved and synced to Supabase database successfully.',
         });
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Settings Saved Successfully!',
+          message: 'Organization details and system preferences have been saved and synced to database.',
+        });
       } else {
         setNotification({
           title: 'Settings Saved Locally',
           message: 'Organization details updated in local storage.',
         });
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Settings Saved Locally',
+          message: 'Organization details updated in local storage cache.',
+        });
       }
     } catch (err) {
-      setNotification({
-        title: 'Settings Saved Locally',
-        message: 'Organization details updated in local storage.',
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Save Failed',
+        message: 'Could not sync settings to database. Local fallback applied.',
       });
     } finally {
       setIsSaving(false);
@@ -237,16 +257,30 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
           title: 'Signatories Saved to Supabase!',
           message: 'Official signatories matrix saved and synced to Supabase database successfully.',
         });
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Signatories Matrix Saved!',
+          message: 'Official signatories and authority matrix saved and synced successfully.',
+        });
       } else {
         setNotification({
           title: 'Signatories Saved Locally',
           message: 'Default authority matrix updated in local storage.',
         });
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Signatories Saved Locally',
+          message: 'Default authority matrix updated in local storage cache.',
+        });
       }
     } catch (err) {
-      setNotification({
-        title: 'Signatories Saved Locally',
-        message: 'Default authority matrix updated in local storage.',
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Save Failed',
+        message: 'Failed to update signatories matrix.',
       });
     } finally {
       setIsSaving(false);
@@ -285,16 +319,26 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
           title: 'Profile Settings Saved to Supabase!',
           message: 'Admin account profile, credentials, and password updated successfully.',
         });
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Profile & Password Updated!',
+          message: 'Admin account profile, credentials, and password updated successfully.',
+        });
       } else {
-        setNotification({
-          title: 'Profile Updated Locally',
-          message: data.error || 'Profile details updated.',
+        setStatusModal({
+          isOpen: true,
+          type: 'failed',
+          title: 'Profile Update Notice',
+          message: data.error || 'Profile details updated locally.',
         });
       }
     } catch (err) {
-      setNotification({
-        title: 'Profile Saved',
-        message: 'Admin details updated.',
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Profile Save Error',
+        message: 'Could not update admin profile details.',
       });
     } finally {
       setIsSaving(false);
@@ -787,7 +831,38 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
             </div>
           )}
 
-
+          {/* Success / Failed Lottie Animation Modal */}
+          {statusModal.isOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center space-y-4 animate-scaleUp">
+                <div className="w-48 h-48 relative flex items-center justify-center overflow-hidden">
+                  <iframe
+                    src={
+                      statusModal.type === 'success'
+                        ? 'https://lottie.host/embed/c055864c-7caf-4a4e-b46c-c4b68c43f176/8DsuM6pVVZ.lottie'
+                        : 'https://lottie.host/embed/4f79ee55-567f-4f30-9426-da61049a7625/VkYoDvJKgF.lottie'
+                    }
+                    className="w-full h-full border-none pointer-events-none scale-125"
+                    title="Status Animation"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-extrabold text-slate-900">{statusModal.title}</h3>
+                  <p className="text-xs text-slate-500">{statusModal.message}</p>
+                </div>
+                <button
+                  onClick={() => setStatusModal({ ...statusModal, isOpen: false })}
+                  className={`w-full py-2.5 rounded-xl font-bold text-xs text-white shadow-md transition-all cursor-pointer ${
+                    statusModal.type === 'success'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
+                      : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
+                  }`}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
