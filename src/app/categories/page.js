@@ -83,25 +83,51 @@ export default function CategoriesPage() {
     setLoading(true);
     setIsTableMissing(false);
     try {
-      // 1. Fetch live categories from API
-      const res = await fetch('/api/categories', { cache: 'no-store' });
-      const data = await parseJsonSafely(res);
+      // Fetch live categories, properties, personnel, and offices concurrently
+      const [catRes, propRes, empRes, offRes] = await Promise.all([
+        fetch('/api/categories', { cache: 'no-store' }),
+        fetch('/api/properties', { cache: 'no-store' }),
+        fetch('/api/personnel', { cache: 'no-store' }),
+        fetch('/api/offices', { cache: 'no-store' }),
+      ]);
 
-      if (data.tableMissing) {
+      const catData = await parseJsonSafely(catRes);
+      const propData = await parseJsonSafely(propRes);
+      const empData = await parseJsonSafely(empRes);
+      const offData = await parseJsonSafely(offRes);
+
+      if (catData.tableMissing) {
         setIsTableMissing(true);
         setCategories([]);
-      } else if (data.categories) {
-        setCategories(data.categories);
+      } else if (catData.categories) {
+        setCategories(catData.categories);
+        StorageManager.saveCategories(catData.categories);
       } else {
         setCategories([]);
       }
 
-      // Load auxiliary storage data for relationships
-      setProperties(StorageManager.getProperties() || []);
-      setEmployees(StorageManager.getEmployees() || []);
-      setOffices(StorageManager.getOffices() || []);
+      if (propData.success && Array.isArray(propData.properties)) {
+        setProperties(propData.properties);
+        StorageManager.saveProperties(propData.properties);
+      } else {
+        setProperties(StorageManager.getProperties() || []);
+      }
+
+      if (empData.success && Array.isArray(empData.employees)) {
+        setEmployees(empData.employees);
+        StorageManager.saveEmployees(empData.employees);
+      } else {
+        setEmployees(StorageManager.getEmployees() || []);
+      }
+
+      if (offData.success && Array.isArray(offData.offices)) {
+        setOffices(offData.offices);
+        StorageManager.saveOffices(offData.offices);
+      } else {
+        setOffices(StorageManager.getOffices() || []);
+      }
     } catch (e) {
-      console.error('Failed to load categories:', e);
+      console.error('Failed to load categories data:', e);
       setCategories([]);
     } finally {
       setLoading(false);
@@ -117,10 +143,31 @@ export default function CategoriesPage() {
   }, [search, sortBy, pageSize]);
 
   // Statistics calculation for each category
-  const getCategoryStats = (catId) => {
-    const catProps = properties.filter((p) => p.categoryId === catId);
-    const totalVal = catProps.reduce((sum, p) => sum + (p.unitValue || 0) * (p.quantityPerCard || 1), 0);
-    const activeCount = catProps.filter((p) => p.status === 'ACTIVE').length;
+  const getCategoryStats = (catInput) => {
+    if (!catInput) return { propertiesCount: 0, totalValue: 0, activeCount: 0, properties: [] };
+
+    const catObj = typeof catInput === 'object' ? catInput : categories.find((c) => c.id === catInput || c.code === catInput);
+    const catId = catObj?.id || (typeof catInput === 'string' ? catInput : '');
+    const catCode = (catObj?.code || '').toLowerCase().trim();
+    const catName = (catObj?.name || '').toLowerCase().trim();
+
+    const catProps = properties.filter((p) => {
+      const pCatId = p.categoryId || p.category_id;
+      const pCatCode = (p.categoryCode || p.category_code || '').toLowerCase().trim();
+      const pCatName = (p.categoryName || p.category_name || '').toLowerCase().trim();
+
+      if (catId && pCatId && pCatId === catId) return true;
+      if (catCode && pCatCode && pCatCode === catCode) return true;
+      if (catName && pCatName && pCatName === catName) return true;
+
+      return false;
+    });
+
+    const totalVal = catProps.reduce(
+      (sum, p) => sum + (parseFloat(p.unitValue || p.unit_value || p.cost) || 0) * (parseInt(p.quantityPerCard || p.quantity_per_card || p.quantity, 10) || 1),
+      0
+    );
+    const activeCount = catProps.filter((p) => (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
 
     return {
       propertiesCount: catProps.length,
@@ -134,7 +181,7 @@ export default function CategoriesPage() {
   const totalCategoriesCount = categories.length;
   const totalEquipmentCount = properties.length;
   const totalPortfolioValue = properties.reduce(
-    (sum, p) => sum + (p.unitValue || 0) * (p.quantityPerCard || 1),
+    (sum, p) => sum + (parseFloat(p.unitValue || p.unit_value || p.cost) || 0) * (parseInt(p.quantityPerCard || p.quantity_per_card || p.quantity, 10) || 1),
     0
   );
 
@@ -615,7 +662,7 @@ CREATE POLICY "Allow full access to property_categories" ON "property_categories
                     </tr>
                   ) : (
                     paginatedCategories.map((cat) => {
-                      const stats = getCategoryStats(cat.id);
+                      const stats = getCategoryStats(cat);
                       const sharePct =
                         totalPortfolioValue > 0
                           ? ((stats.totalValue / totalPortfolioValue) * 100).toFixed(1)
