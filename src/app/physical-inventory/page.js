@@ -271,6 +271,8 @@ export default function PhysicalInventoryPage() {
       console.error('Error loading inventory data:', e);
       setSessions(StorageManager.getInventorySessions());
       setAllCounts(StorageManager.getPhysicalCounts());
+    } finally {
+      setLoading(false);
     }
   };
 
