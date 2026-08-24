@@ -1,0 +1,268 @@
+// Prisma schema for Equipment and Property Inventory Management System
+// Compatible with PostgreSQL / Supabase / Neon
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // ADMIN, INVENTORY_OFFICER, ACCOUNTABLE_OFFICER, VIEWER
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+
+  @@map("roles")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  email       String   @unique
+  fullName    String
+  roleId      String
+  role        Role     @relation(fields: [roleId], references: [id])
+  employeeId  String?  @unique
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model Office {
+  id          String    @id @default(cuid())
+  code        String    @unique // e.g. ADM-01, SUPPLY-01, FIN-01
+  name        String
+  head        String    // Head of Office / Department Head
+  email       String?
+  phone       String?
+  floor       String?   // Location / Floor / Wing
+  notes       String?
+  status      String    @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employees   Employee[]
+  properties  Property[]
+  assignments PropertyAssignment[]
+  inventorySessions InventorySession[]
+  reports     Report[]
+
+  @@map("offices")
+}
+
+model Employee {
+  id            String   @id @default(cuid())
+  employeeId    String   @unique // e.g. EMP-2021-0045
+  name          String   // Full Name
+  position      String   // e.g. Supply Officer, Administrative Officer V
+  officeId      String
+  office        Office   @relation(fields: [officeId], references: [id])
+  email         String?
+  phone         String?
+  status        String   @default("ACTIVE")
+  assumedDate   DateTime? // Date of assumption of accountability
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User?
+  properties    Property[]
+  assignments   PropertyAssignment[]
+  inventorySessions InventorySession[]
+  reports       Report[]
+
+  @@map("employees")
+}
+
+model PropertyCategory {
+  id          String     @id @default(cuid())
+  name        String     @unique // e.g. Office Equipment, IT Equipment, Furniture & Fixtures
+  code        String     @unique // e.g. OE, IT, FF
+  description String?
+  properties  Property[]
+  createdAt   DateTime   @default(now())
+
+  @@map("property_categories")
+}
+
+model Property {
+  id                  String             @id @default(cuid())
+  propertyNumber      String             @unique // e.g. 2021-05-02-0007 (Must be unique)
+  article             String             // e.g. Air Conditioning Unit, Duplicating Machine
+  description         String             // e.g. Brand: Isosol, Model: TVG60FRC-I Floor Standing, 5 Tonner
+  categoryId          String
+  category            PropertyCategory   @relation(fields: [categoryId], references: [id])
+  unit                String             @default("unit") // unit, pc, set, lot
+  unitValue           Float              @default(0.0) // Unit Value in Philippine Pesos (₱)
+  quantityPerCard     Int                @default(1) // Quantity per Property Card (Standard is 1 for capitalized equipment)
+  acquisitionDate     DateTime?
+  poNumber            String?            // Purchase Order Number e.g. PO No. 2021-03-0022
+  poDate              DateTime?          // Purchase Order Date
+  location            String?            // e.g. Supply Office, Ground Floor
+  remarks             String?            // e.g. PPSA, GF
+  status              String             @default("ACTIVE") // ACTIVE, UNDER_REPAIR, UNATTACHED, DISPOSED, CONDEMNED
+
+  accountablePersonId String?
+  accountablePerson   Employee?          @relation(fields: [accountablePersonId], references: [id], onDelete: SetNull)
+
+  officeId            String?
+  office              Office?            @relation(fields: [officeId], references: [id], onDelete: SetNull)
+
+  assignments         PropertyAssignment[]
+  physicalCounts      PhysicalCount[]
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@map("properties")
+}
+
+model PropertyAssignment {
+  id                  String    @id @default(cuid())
+  propertyId          String
+  property            Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  employeeId          String
+  employee            Employee  @relation(fields: [employeeId], references: [id])
+
+  officeId            String
+  office              Office    @relation(fields: [officeId], references: [id])
+
+  previousEmployeeId  String?
+  previousOfficeId    String?
+
+  assignmentDate      DateTime  @default(now())
+  remarks             String?
+  transferredBy       String?   @default("System Admin")
+  isActive            Boolean   @default(true) // Only one active assignment per property
+
+  createdAt           DateTime  @default(now())
+
+  @@map("property_assignments")
+}
+
+model InventorySession {
+  id                  String          @id @default(cuid())
+  sessionCode         String          @unique // e.g. INV-2026-DEC
+  title               String          // e.g. December 2026 Physical Inventory
+  countingDate        DateTime        @default(now())
+  asOfDate            DateTime        // As of Date e.g. Dec 31, 2026
+  status              String          @default("IN_PROGRESS") // IN_PROGRESS, RECONCILED, FINALIZED
+  
+  accountableOfficerId String?
+  accountableOfficer   Employee?      @relation(fields: [accountableOfficerId], references: [id], onDelete: SetNull)
+
+  officeId            String?
+  office              Office?         @relation(fields: [officeId], references: [id], onDelete: SetNull)
+
+  categoryFilter      String?         // Optional category filter
+  remarks             String?
+  finalizedAt         DateTime?
+  finalizedBy         String?
+
+  physicalCounts      PhysicalCount[]
+  reports             Report[]
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("inventory_sessions")
+}
+
+model PhysicalCount {
+  id                  String           @id @default(cuid())
+  sessionId           String
+  session             InventorySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  propertyId          String
+  property            Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  quantityPerCard     Int              @default(1) // Expected
+  physicalCount       Int?             // Entered count (Null if pending count)
+  difference          Int?             // Auto: physicalCount - quantityPerCard
+  status              String           @default("PENDING") // PENDING, OK, SHORTAGE, OVERAGE
+  remarks             String?          // e.g. Verified in good working condition, Unlocated, etc.
+  
+  countedAt           DateTime?
+  countedBy           String?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@unique([sessionId, propertyId])
+  @@map("physical_counts")
+}
+
+model Report {
+  id                  String           @id @default(cuid())
+  reportNumber        String           @unique // e.g. REP-2026-0012
+  reportType          String           // Office Equipment Report, Property Accountability Report, etc.
+  title               String           // e.g. REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT (OFFICE EQUIPMENT)
+  asOfDate            DateTime
+  
+  accountablePersonId String
+  accountablePerson   Employee         @relation(fields: [accountablePersonId], references: [id])
+
+  officeId            String
+  office              Office           @relation(fields: [officeId], references: [id])
+
+  inventorySessionId  String?
+  inventorySession    InventorySession? @relation(fields: [inventorySessionId], references: [id], onDelete: SetNull)
+
+  generatedBy         String           @default("Admin")
+  status              String           @default("FINALIZED") // DRAFT, FINALIZED, ARCHIVED
+  
+  signatories         Json?            // Stored custom signatories configuration
+  snapshotData        Json?            // Frozen report row data
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@map("reports")
+}
+
+model ReportSignatory {
+  id          String   @id @default(cuid())
+  roleKey     String   @unique // preparedBy, certifiedCorrectBy, teamLeader, approvedBy, verifiedBy
+  label       String   // e.g. "Prepared by:", "Certified Correct by:", "Approved by:"
+  name        String   // Signatory Name
+  title       String   // Signatory Position / Title
+  isDefault   Boolean  @default(true)
+  order       Int      @default(1)
+
+  @@map("report_signatories")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName    String   @default("Admin")
+  action      String   // CREATE, UPDATE, DELETE, ASSIGN, COUNT, RECONCILE, FINALIZE, GENERATE_REPORT
+  entity      String   // PROPERTY, PERSONNEL, OFFICE, ASSIGNMENT, INVENTORY_SESSION, REPORT, SETTING
+  entityId    String?
+  details     String?
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  category    String   @default("GENERAL") // GENERAL, REPORT, ORGANIZATION, SECURITY
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}

@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+*,
+*::before,
+*::after {
+  font-family: 'Century Gothic', CenturyGothic, AppleGothic, 'ITC Avant Garde Gothic', 'URW Gothic L', 'Avant Garde', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  background-color: #f8fafc;
+  background-image: url('/invbg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: 'Century Gothic', CenturyGothic, AppleGothic, 'ITC Avant Garde Gothic', 'URW Gothic L', 'Avant Garde', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea, optgroup {
+  font-family: inherit;
+}
+
+/* Custom soft scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print styling for formal Government Property & Equipment Reports and Property Stickers */
+@media print {
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Default page rule: A4 portrait with zero margin for exact edge-to-edge coupon bond sizing */
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
+  /* Official Philippine Long Bond Paper (Folio) Landscape for official inventory reports */
+  @page landscape-report {
+    size: 13in 8.5in;
+    margin: 0 !important;
+  }
+
+  .report-sheet {
+    page: landscape-report;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10mm 14mm !important;
+    page-break-after: always;
+  }
+
+  /* Reset main and all outer layout wrappers to transparent with zero padding, borders, or rounded corners */
+  main,
+  aside,
+  nav,
+  header,
+  section,
+  .min-h-screen {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  /* Hide navigation, sidebar, main page content, action buttons, modals header/filters during print */
+  aside,
+  nav,
+  header,
+  .no-print,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Ensure modal printable containers display during print */
+  .fixed.inset-0:has(.a4-sticker-sheet),
+  .fixed.inset-0:has(#property-tag-print-area),
+  .fixed.inset-0:has(#printable-par-document) {
+    display: block !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #000000 !important;
+  }
+
+  /* Modal wrapper reset during print - removes outer white rounded background boxes */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: auto !important;
+    max-height: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .fixed.inset-0 > div,
+  .fixed.inset-0 > div > div {
+    max-width: none !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Specialized print layout for A4 Property Sticker Tags (8 Stickers per Coupon Bond Page) */
+  .a4-sticker-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 auto !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    padding: 6mm 8mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+  }
+
+  .no-break-page {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+}
+
+
+
+
+
