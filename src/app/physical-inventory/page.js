@@ -162,19 +162,22 @@ export default function PhysicalInventoryPage() {
       setCategories(cats);
       setProperties(props);
 
-      // Fetch sessions & counts from Supabase Backend API
+      // Fetch sessions, counts, and properties from Supabase Backend API
       let loadedSessions = [];
       let loadedCounts = [];
+      let loadedProperties = props;
 
       try {
-        const [sessRes, cntsRes] = await Promise.all([
+        const [sessRes, cntsRes, propsRes] = await Promise.all([
           fetch('/api/inventory-sessions'),
           fetch('/api/physical-counts'),
+          fetch('/api/properties'),
         ]);
 
-        const [sessData, cntsData] = await Promise.all([
+        const [sessData, cntsData, propsData] = await Promise.all([
           sessRes.json(),
           cntsRes.json(),
+          propsRes.json(),
         ]);
 
         if (sessRes.ok && sessData.success && Array.isArray(sessData.sessions)) {
@@ -190,6 +193,21 @@ export default function PhysicalInventoryPage() {
           StorageManager.savePhysicalCounts?.(cntsData.counts);
         } else {
           loadedCounts = StorageManager.getPhysicalCounts();
+        }
+
+        if (propsRes.ok && propsData.success && Array.isArray(propsData.properties) && propsData.properties.length > 0) {
+          // Map snake_case fields to camelCase if needed
+          const apiProps = propsData.properties.map((p) => ({
+            ...p,
+            propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
+            article: p.article || p.name || 'Equipment Item',
+            unitValue: p.unitValue || p.unit_value || p.cost || 0,
+            quantityPerCard: p.quantityPerCard || p.quantity_per_card || p.quantity || 1,
+            accountablePersonName: p.accountablePersonName || p.accountable_person_name || p.accountableOfficer || '',
+            officeName: p.officeName || p.office_name || p.office || '',
+          }));
+          loadedProperties = apiProps;
+          setProperties(apiProps);
         }
       } catch (apiErr) {
         console.warn('API fetch notice, using local cache:', apiErr);
@@ -523,41 +541,54 @@ export default function PhysicalInventoryPage() {
     if (code.startsWith('{') && code.endsWith('}')) {
       try {
         const parsed = JSON.parse(code);
-        code = parsed.propertyNumber || parsed.property_number || parsed.id || code;
+        code = parsed.propertyNumber || parsed.property_number || parsed.propertyNo || parsed.id || code;
       } catch (e) {}
     }
 
-    const clean = code.toLowerCase();
+    const clean = code.toLowerCase().trim();
+    const cleanAlpha = clean.replace(/[^a-z0-9]/g, '');
+
+    const matchesCode = (val) => {
+      if (!val) return false;
+      const str = String(val).toLowerCase().trim();
+      return str === clean || str.replace(/[^a-z0-9]/g, '') === cleanAlpha;
+    };
 
     // 1. Check in session active counts
     const activeMatch = allCounts.find(
       (c) =>
         (c.sessionId === activeSessionId || !activeSessionId) &&
-        (c.propertyNumber.toLowerCase() === clean || (c.propertyId && c.propertyId.toLowerCase() === clean))
+        (matchesCode(c.propertyNumber) ||
+         matchesCode(c.scannedCode) ||
+         matchesCode(c.propertyId))
     );
     if (activeMatch) return activeMatch;
 
     // 2. Check in properties registry
     const propMatch = properties.find(
-      (p) => p.propertyNumber.toLowerCase() === clean || p.id.toLowerCase() === clean
+      (p) =>
+        matchesCode(p.propertyNumber) ||
+        matchesCode(p.property_number) ||
+        matchesCode(p.propertyNo) ||
+        matchesCode(p.id)
     );
     if (propMatch) {
       return {
         id: 'temp-' + propMatch.id,
         sessionId: activeSessionId,
         propertyId: propMatch.id,
-        propertyNumber: propMatch.propertyNumber,
-        article: propMatch.article,
-        description: propMatch.description,
+        propertyNumber: propMatch.propertyNumber || propMatch.property_number || propMatch.propertyNo || code,
+        article: propMatch.article || propMatch.name || 'Equipment Item',
+        description: propMatch.description || '',
         unit: propMatch.unit || 'unit',
-        unitValue: propMatch.unitValue || 0,
-        quantityPerCard: propMatch.quantityPerCard || 1,
-        physicalCount: propMatch.quantityPerCard || 1,
+        unitValue: propMatch.unitValue || propMatch.unit_value || propMatch.cost || 0,
+        quantityPerCard: propMatch.quantityPerCard || propMatch.quantity_per_card || propMatch.quantity || 1,
+        physicalCount: propMatch.quantityPerCard || propMatch.quantity_per_card || propMatch.quantity || 1,
         difference: 0,
         status: 'OK',
         remarks: 'In good working condition',
-        accountableOfficerName: propMatch.accountablePersonName,
-        officeName: propMatch.officeName,
+        accountableOfficerName: propMatch.accountablePersonName || propMatch.accountable_person_name || propMatch.accountableOfficer || '',
+        officeName: propMatch.officeName || propMatch.office_name || propMatch.office || '',
       };
     }
 

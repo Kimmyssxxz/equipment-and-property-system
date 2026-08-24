@@ -130,14 +130,20 @@ export async function POST(request) {
     }
 
     let targetProp = null;
-    if (propertyId) {
-      const { data } = await supabase.from('properties').select('*').eq('id', propertyId).maybeSingle();
+    const cleanPropId = propertyId && typeof propertyId === 'string' && propertyId.startsWith('temp-')
+      ? propertyId.replace('temp-', '')
+      : propertyId;
+
+    if (cleanPropId) {
+      const { data } = await supabase.from('properties').select('*').eq('id', cleanPropId).maybeSingle();
       targetProp = data;
-    } else if (propNumber) {
+    }
+    
+    if (!targetProp && propNumber) {
       const { data } = await supabase
         .from('properties')
         .select('*')
-        .or(`propertyNumber.ilike.${propNumber},id.eq.${propNumber}`)
+        .or(`propertyNumber.ilike.${propNumber},property_number.ilike.${propNumber},id.eq.${propNumber}`)
         .maybeSingle();
       targetProp = data;
     }
