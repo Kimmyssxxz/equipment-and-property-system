@@ -85,6 +85,7 @@ function AssignmentsContent() {
   const [errorMsg, setErrorMsg] = useState('');
   const [selectedAssignmentForPrint, setSelectedAssignmentForPrint] = useState(null);
   const [selectedAssignmentForDetails, setSelectedAssignmentForDetails] = useState(null);
+  const [selectedAssignmentForTag, setSelectedAssignmentForTag] = useState(null);
   const [isBatchStickerModalOpen, setIsBatchStickerModalOpen] = useState(false);
   const [batchStickerOfficeFilter, setBatchStickerOfficeFilter] = useState('ALL');
   const [batchStickerEmployeeFilter, setBatchStickerEmployeeFilter] = useState('ALL');

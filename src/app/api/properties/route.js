@@ -29,10 +29,22 @@ export async function GET() {
       );
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('properties')
       .select('*, property_categories(id, code, name)')
       .order('createdAt', { ascending: false });
+
+    if (error) {
+      // Fallback query without relational join if foreign key constraint is missing
+      const fallback = await supabase
+        .from('properties')
+        .select('*')
+        .order('createdAt', { ascending: false });
+      if (!fallback.error) {
+        data = fallback.data;
+        error = null;
+      }
+    }
 
     if (error) {
       if (
@@ -298,6 +310,40 @@ export async function DELETE(request) {
       { success: true, message: 'Property deleted successfully.' },
       { status: 200 }
     );
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+// PATCH: Partial update for property fields (e.g. officeId, location)
+export async function PATCH(request) {
+  try {
+    const body = await request.json();
+    const { id, ...fieldsToUpdate } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Property ID is required for patch.' }, { status: 400 });
+    }
+
+    const supabase = getClient();
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database client not initialized.' }, { status: 500 });
+    }
+
+    fieldsToUpdate.updatedAt = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('properties')
+      .update(fieldsToUpdate)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, property: data }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
