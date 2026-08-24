@@ -1069,7 +1069,27 @@ export default function PhysicalInventoryPage() {
               </div>
 
               {/* Compact Grid of Session Blocks */}
-              {filteredSessions.length === 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div key={idx} className="bg-white rounded-2xl border border-slate-200/90 p-4 space-y-3 animate-pulse">
+                      <div className="flex items-center justify-between">
+                        <div className="h-4 w-24 bg-slate-200/80 rounded-lg"></div>
+                        <div className="h-4 w-16 bg-slate-200/80 rounded-full"></div>
+                      </div>
+                      <div className="h-5 w-48 bg-slate-200/80 rounded-lg"></div>
+                      <div className="h-3 w-32 bg-slate-100 rounded-md"></div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full"></div>
+                      <div className="grid grid-cols-4 gap-1.5 pt-1">
+                        <div className="h-10 bg-slate-100 rounded-xl"></div>
+                        <div className="h-10 bg-slate-100 rounded-xl"></div>
+                        <div className="h-10 bg-slate-100 rounded-xl"></div>
+                        <div className="h-10 bg-slate-100 rounded-xl"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredSessions.length === 0 ? (
                 <div className="bg-white p-10 rounded-2xl border border-slate-200 text-center space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
                     <ClipboardList className="w-6 h-6" />
@@ -1288,6 +1308,15 @@ export default function PhysicalInventoryPage() {
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
+                    type="button"
+                    onClick={() => openScanner(currentActiveSession?.id)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4 text-emerald-700" />
+                    <span>Camera Scanner</span>
+                  </button>
+
+                  <button
                     onClick={(e) => openEditSessionModal(currentActiveSession, e)}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-100 hover:text-emerald-800 text-slate-600 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer border border-slate-200"
                     title="Edit Session Details"
@@ -1324,13 +1353,22 @@ export default function PhysicalInventoryPage() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        I-scan ang QR code o Barcode sticker gamit ang barcode gun para agarang mai-record sa inventory.
+                        I-scan ang QR code o Barcode sticker gamit ang barcode gun o live camera scanner para agarang mai-record sa inventory.
                       </p>
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openScanner(currentActiveSession?.id)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer shrink-0"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Buksan ang Camera Scanner</span>
+                  </button>
                 </div>
 
-                {/* Fast Input Form (Supports USB/Bluetooth Barcode Reader Gun) */}
+                {/* Fast Input Form (Supports USB/Bluetooth Barcode Reader Gun & Camera Trigger) */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -1350,6 +1388,14 @@ export default function PhysicalInventoryPage() {
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => openScanner(currentActiveSession?.id)}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs shrink-0"
+                  >
+                    <Camera className="w-4 h-4 text-emerald-700" />
+                    <span>Live Camera Scan</span>
+                  </button>
                   <button
                     type="submit"
                     disabled={!inlineScanCode.trim()}
