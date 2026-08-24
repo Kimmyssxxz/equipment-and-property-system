@@ -93,6 +93,12 @@ export default function PropertiesPage() {
   });
 
   const [notification, setNotification] = useState(null);
+  const [statusModal, setStatusModal] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
 
   // Live Database Fetch
   const loadData = async () => {
@@ -329,6 +335,13 @@ export default function PropertiesPage() {
       await loadData();
       setIsAddModalOpen(false);
 
+      setStatusModal({
+        isOpen: true,
+        type: 'success',
+        title: isEditing ? 'Property Record Updated!' : 'Property Registered Successfully!',
+        message: `Property "${payload.propertyNumber} (${payload.article})" was saved successfully to the system registry.`,
+      });
+
       setNotification({
         title: isEditing ? 'Property Record Updated' : 'New Property Registered',
         message: `Property "${payload.propertyNumber} (${payload.article})" was saved successfully.`,
@@ -336,6 +349,12 @@ export default function PropertiesPage() {
       setTimeout(() => setNotification(null), 5000);
     } catch (err) {
       setFormError(err.message || 'An error occurred while saving the property.');
+      setStatusModal({
+        isOpen: true,
+        type: 'failed',
+        title: 'Failed to Save Property!',
+        message: err.message || 'An error occurred while attempting to save the property record.',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -355,13 +374,26 @@ export default function PropertiesPage() {
         }
 
         await loadData();
+
+        setStatusModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Property Successfully Removed!',
+          message: `Property record "${p.propertyNumber} (${p.article})" was deleted from system database.`,
+        });
+
         setNotification({
           title: 'Property Removed',
           message: `Property record "${p.propertyNumber}" was deleted.`,
         });
         setTimeout(() => setNotification(null), 5000);
       } catch (err) {
-        alert(err.message || 'Failed to delete property.');
+        setStatusModal({
+          isOpen: true,
+          type: 'failed',
+          title: 'Delete Operation Failed!',
+          message: err.message || 'An error occurred while attempting to delete the property.',
+        });
       }
     }
   };
@@ -1315,6 +1347,66 @@ CREATE POLICY "Allow full access to properties" ON "properties" FOR ALL USING (t
                 className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTIE SUCCESS MODAL */}
+      {statusModal.isOpen && statusModal.type === 'success' && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
+              <iframe
+                src="https://lottie.host/embed/b19a9453-e129-45d0-80ee-bfd378a5c97d/ivigsxDbxZ.lottie"
+                className="w-full h-full border-none pointer-events-none"
+                title="Success Animation"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-black text-slate-900">{statusModal.title || 'Action Successful!'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {statusModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal({ isOpen: false, type: 'success', title: '', message: '' })}
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-200 transition-all cursor-pointer"
+              >
+                Continue / Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTIE FAILED MODAL */}
+      {statusModal.isOpen && statusModal.type === 'failed' && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-scaleUp">
+            <div className="relative w-44 h-44 mx-auto flex items-center justify-center overflow-hidden">
+              <iframe
+                src="https://lottie.host/embed/4f79ee55-567f-4f30-9426-da61049a7625/VkYoDvJKgF.lottie"
+                className="w-full h-full border-none pointer-events-none"
+                title="Failed Animation"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-black text-rose-600">{statusModal.title || 'Operation Failed'}</h3>
+              <p className="text-xs font-semibold text-slate-600 px-2 leading-relaxed">
+                {statusModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setStatusModal({ isOpen: false, type: 'failed', title: '', message: '' })}
+                className="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-lg shadow-rose-200 transition-all cursor-pointer"
+              >
+                Close & Try Again
               </button>
             </div>
           </div>
