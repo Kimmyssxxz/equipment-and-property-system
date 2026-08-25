@@ -245,7 +245,7 @@ export async function PUT(request) {
   }
 }
 
-// DELETE: Delete an employee from the Database
+// DELETE: Delete an employee from the Database (auto-unassigns assigned properties)
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -263,36 +263,23 @@ export async function DELETE(request) {
       );
     }
 
-    // Check if any properties reference this employee as accountable custodian
-    const { count: propCount, error: propErr } = await supabase
-      .from('properties')
-      .select('*', { count: 'exact', head: true })
-      .eq('accountablePersonId', id);
+    // 1. Unassign properties where this employee is accountable person
+    try {
+      await supabase
+        .from('properties')
+        .update({ accountablePersonId: null })
+        .eq('accountablePersonId', id);
+    } catch (e) {}
 
-    if (!propErr && propCount && propCount > 0) {
-      return NextResponse.json(
-        {
-          error: `Cannot delete employee because ${propCount} property item(s) are currently under their accountable custody. Please reassign those properties first.`,
-        },
-        { status: 400 }
-      );
-    }
+    // 2. Unassign property assignments for this employee (point to sentinel unassigned)
+    try {
+      await supabase
+        .from('property_assignments')
+        .update({ employeeId: 'emp_unassigned' })
+        .eq('employeeId', id);
+    } catch (e) {}
 
-    // Check if any property assignments are assigned to this employee
-    const { count: asgnCount, error: asgnErr } = await supabase
-      .from('property_assignments')
-      .select('*', { count: 'exact', head: true })
-      .eq('employeeId', id);
-
-    if (!asgnErr && asgnCount && asgnCount > 0) {
-      return NextResponse.json(
-        {
-          error: `Cannot delete employee because active property assignments exist under their name. Please reassign those items first.`,
-        },
-        { status: 400 }
-      );
-    }
-
+    // 3. Delete employee record cleanly
     const { error: deleteError } = await supabase
       .from('employees')
       .delete()

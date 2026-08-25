@@ -240,7 +240,7 @@ export async function PUT(request) {
   }
 }
 
-// DELETE: Delete an office from the Database
+// DELETE: Delete an office from the Database (auto-unassigns linked items/staff)
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -258,36 +258,31 @@ export async function DELETE(request) {
       );
     }
 
-    // Check if any employees reference this office
-    const { count: empCount, error: empCountErr } = await supabase
-      .from('employees')
-      .select('*', { count: 'exact', head: true })
-      .eq('officeId', id);
+    // 1. Unassign properties assigned to this office location
+    try {
+      await supabase
+        .from('properties')
+        .update({ officeId: null })
+        .eq('officeId', id);
+    } catch (e) {}
 
-    if (!empCountErr && empCount && empCount > 0) {
-      return NextResponse.json(
-        {
-          error: `Cannot delete office because ${empCount} personnel/employee(s) are currently assigned to this office. Please reassign those employees first.`,
-        },
-        { status: 400 }
-      );
-    }
+    // 2. Unassign property assignments for this office
+    try {
+      await supabase
+        .from('property_assignments')
+        .update({ officeId: null })
+        .eq('officeId', id);
+    } catch (e) {}
 
-    // Check if any properties reference this office
-    const { count: propCount, error: propCountErr } = await supabase
-      .from('properties')
-      .select('*', { count: 'exact', head: true })
-      .eq('officeId', id);
+    // 3. Unassign employees belonging to this office
+    try {
+      await supabase
+        .from('employees')
+        .update({ officeId: null })
+        .eq('officeId', id);
+    } catch (e) {}
 
-    if (!propCountErr && propCount && propCount > 0) {
-      return NextResponse.json(
-        {
-          error: `Cannot delete office because ${propCount} property item(s) are assigned to this location. Please reassign those properties first.`,
-        },
-        { status: 400 }
-      );
-    }
-
+    // 4. Delete office record cleanly
     const { error: deleteError } = await supabase
       .from('offices')
       .delete()

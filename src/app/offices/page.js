@@ -320,20 +320,14 @@ export default function OfficesPage() {
     }
   };
 
-  // Delete Office from Database
+  // Delete Office from Database (Auto-unassigns linked staff/properties)
   const handleDeleteOffice = async (off) => {
     const stats = getOfficeStats(off.id);
-    if (stats.personnelCount > 0 || stats.propertiesCount > 0) {
-      setStatusModal({
-        isOpen: true,
-        type: 'failed',
-        title: 'Cannot Delete Office!',
-        message: `Cannot delete office "${off.name}" because it currently has ${stats.personnelCount} staff member(s) and ${stats.propertiesCount} assigned property item(s). Please reassign them first.`,
-      });
-      return;
-    }
+    const confirmMessage = (stats.personnelCount > 0 || stats.propertiesCount > 0)
+      ? `Are you sure you want to delete Deploying Area "${off.name}" (${off.code})?\n\nThis area currently has ${stats.personnelCount} personnel and ${stats.propertiesCount} assigned property item(s). Deleting will automatically unassign those records.`
+      : `Are you sure you want to delete Deploying Area "${off.name}" (${off.code})?`;
 
-    if (confirm(`Are you sure you want to delete office "${off.name}" (${off.code})?`)) {
+    if (confirm(confirmMessage)) {
       try {
         const res = await fetch(`/api/offices?id=${encodeURIComponent(off.id)}`, {
           method: 'DELETE',
@@ -787,16 +781,8 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
 
                               <button
                                 onClick={() => handleDeleteOffice(off)}
-                                title={
-                                  stats.propertiesCount > 0 || stats.personnelCount > 0
-                                    ? 'Cannot delete office with assigned items or personnel'
-                                    : 'Delete Office'
-                                }
-                                className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
-                                  stats.propertiesCount > 0 || stats.personnelCount > 0
-                                    ? 'bg-slate-50 text-slate-300 border-slate-100 hover:text-slate-400'
-                                    : 'bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border-slate-200'
-                                }`}
+                                title="Delete Deploying Area"
+                                className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>

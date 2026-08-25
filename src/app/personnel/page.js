@@ -392,20 +392,14 @@ export default function PersonnelPage() {
     }
   };
 
-  // Delete Employee
+  // Delete Employee (Auto-unassigns assigned properties)
   const handleDeleteEmployee = async (emp) => {
     const stats = getEmployeeStats(emp.id);
-    if (stats.propertiesCount > 0) {
-      setStatusModal({
-        isOpen: true,
-        type: 'failed',
-        title: 'Cannot Remove Personnel!',
-        message: `Cannot delete "${emp.name}" because they currently have ${stats.propertiesCount} accountable property item(s) assigned. Please reassign those properties first.`,
-      });
-      return;
-    }
+    const confirmMsg = stats.propertiesCount > 0
+      ? `Are you sure you want to remove "${emp.name}" (${emp.employeeId})?\n\nThis personnel currently has ${stats.propertiesCount} property item(s) under custody. Deleting will automatically unassign those properties.`
+      : `Are you sure you want to remove "${emp.name}" (${emp.employeeId})?`;
 
-    if (confirm(`Are you sure you want to remove "${emp.name}" (${emp.employeeId})?`)) {
+    if (confirm(confirmMsg)) {
       try {
         const res = await fetch(`/api/personnel?id=${encodeURIComponent(emp.id)}`, {
           method: 'DELETE',
