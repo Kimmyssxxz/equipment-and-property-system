@@ -680,25 +680,25 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                 </div>
               </div>
 
-              <form onSubmit={handleIssueAssignment} className="space-y-4">
+              <form onSubmit={handleAssign} className="space-y-4">
                 {/* 1. Select Property Equipment */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                     <span>1. Select Property Unit (Equipment / Semi-Expendable) *</span>
                     <span className="text-[10.5px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                      {unassignedProperties.length} Available
+                      {properties.length} Available
                     </span>
                   </label>
                   <select
                     value={selectedPropertyId}
                     onChange={(e) => setSelectedPropertyId(e.target.value)}
-                    disabled={isSubmitting || unassignedProperties.length === 0}
+                    disabled={isSubmitting || properties.length === 0}
                     className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                   >
-                    {unassignedProperties.length === 0 ? (
+                    {properties.length === 0 ? (
                       <option value="">-- No Properties Found --</option>
                     ) : (
-                      unassignedProperties.map((p) => (
+                      properties.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.propertyNumber} — {p.article} ({p.serialNumber || 'No S/N'})
                         </option>
@@ -715,7 +715,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     </label>
                     <select
                       value={targetEmployeeId}
-                      onChange={(e) => handleEmployeeSelect(e.target.value)}
+                      onChange={(e) => handleEmployeeChange(e.target.value)}
                       disabled={isSubmitting || employees.length === 0}
                       className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                     >
