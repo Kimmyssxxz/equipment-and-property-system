@@ -309,9 +309,12 @@ function AssignmentsContent() {
 
       const data = await parseJsonSafely(res);
 
-      if (!res.ok && !data.success) {
-        // Fallback to local storage execution if database table is missing or endpoint is down
-        console.warn('API returned error, performing local sync fallback:', data.error);
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to save property assignment in database.');
+      }
+
+      // Sync local storage cache
+      try {
         StorageManager.reassignProperty({
           propertyId: selectedPropertyId,
           newEmployeeId: targetEmployeeId,
@@ -319,20 +322,13 @@ function AssignmentsContent() {
           assignmentDate,
           remarks: payload.remarks,
         });
-      } else {
-        // Also sync local storage cache
-        try {
-          StorageManager.reassignProperty({
-            propertyId: selectedPropertyId,
-            newEmployeeId: targetEmployeeId,
-            newOfficeId: targetOfficeId,
-            assignmentDate,
-            remarks: payload.remarks,
-          });
-        } catch (localErr) {
-          // ignore
-        }
+      } catch (localErr) {
+        // ignore
       }
+
+      // Reset filters so the new assignment is immediately visible in table
+      setOfficeFilter('ALL');
+      setEmployeeFilter('ALL');
 
       // Reload fresh data from database
       await loadData();
@@ -340,15 +336,17 @@ function AssignmentsContent() {
 
       const targetEmp = employees.find((e) => e.id === targetEmployeeId);
       const targetOff = offices.find((o) => o.id === targetOfficeId);
+      const custodianName = targetEmp ? targetEmp.name : 'Unassigned / Common Area (No Head Officer)';
+      const officeName = targetOff ? targetOff.name : 'Deploying Area';
 
       setNotification({
         title: 'Accountability Successfully Assigned!',
-        message: `Property "${selectedProperty?.propertyNumber} - ${selectedProperty?.article}" is now accountable to ${targetEmp?.name} (${targetOff?.name || 'Department'}).`,
+        message: `Property "${selectedProperty?.propertyNumber} - ${selectedProperty?.article}" is now assigned to ${custodianName} (${officeName}).`,
         createdItem: data.assignment || {
           propertyNumber: selectedProperty?.propertyNumber,
           article: selectedProperty?.article,
-          employeeName: targetEmp?.name,
-          officeName: targetOff?.name,
+          employeeName: custodianName,
+          officeName: officeName,
           assignmentDate,
           remarks: payload.remarks,
           transferredBy,
@@ -359,7 +357,7 @@ function AssignmentsContent() {
         isOpen: true,
         type: 'success',
         title: 'Accountability Successfully Assigned!',
-        message: `Property "${selectedProperty?.propertyNumber} (${selectedProperty?.article})" has been assigned to ${targetEmp?.name} (${targetOff?.name}).`,
+        message: `Property "${selectedProperty?.propertyNumber} (${selectedProperty?.article})" has been assigned to ${custodianName} (${officeName}).`,
       });
 
       setTimeout(() => setNotification(null), 8000);

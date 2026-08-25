@@ -139,9 +139,9 @@ export async function POST(request) {
     const targetEmployeeId = (newEmployeeId || employeeId || '').trim();
     const targetOfficeId = (newOfficeId || officeId || '').trim();
 
-    if (!targetPropertyId || !targetEmployeeId || !targetOfficeId) {
+    if (!targetPropertyId || !targetOfficeId) {
       return NextResponse.json(
-        { error: 'Property ID, Accountable Personnel (Employee ID), and Office ID are required.' },
+        { error: 'Property Unit and Deploying Area (Office ID) are required.' },
         { status: 400 }
       );
     }
@@ -196,10 +196,13 @@ export async function POST(request) {
       ? new Date(assignmentDate).toISOString()
       : new Date().toISOString();
 
-    const newRecord = {
+    const isUnassigned = !targetEmployeeId || targetEmployeeId === 'UNASSIGNED';
+    const empIdForDb = isUnassigned ? null : targetEmployeeId;
+
+    let newRecord = {
       id: newAsgnId,
       propertyId: targetPropertyId,
-      employeeId: targetEmployeeId,
+      employeeId: empIdForDb,
       officeId: targetOfficeId,
       previousEmployeeId: prevEmpId,
       previousOfficeId: prevOffId,
@@ -210,11 +213,25 @@ export async function POST(request) {
       createdAt: new Date().toISOString(),
     };
 
-    const { data: insertedAsgn, error: insertError } = await supabase
+    let { data: insertedAsgn, error: insertError } = await supabase
       .from('property_assignments')
       .insert([newRecord])
       .select('*')
       .single();
+
+    // If null employeeId violated not-null or foreign key constraint, try with string fallback or handle cleanly
+    if (insertError && isUnassigned) {
+      newRecord.employeeId = 'UNASSIGNED';
+      const retryRes = await supabase
+        .from('property_assignments')
+        .insert([newRecord])
+        .select('*')
+        .single();
+      if (!retryRes.error) {
+        insertedAsgn = retryRes.data;
+        insertError = null;
+      }
+    }
 
     if (insertError) {
       if (
@@ -230,14 +247,14 @@ export async function POST(request) {
           { status: 400 }
         );
       }
-      return NextResponse.json({ error: insertError.message }, { status: 400 });
+      return NextResponse.json({ error: insertError.message || 'Failed to insert assignment record.' }, { status: 400 });
     }
 
     // 4. Update the active custodian pointer in properties table
     const { data: updatedProp, error: propUpdateError } = await supabase
       .from('properties')
       .update({
-        accountablePersonId: targetEmployeeId,
+        accountablePersonId: empIdForDb,
         officeId: targetOfficeId,
         updatedAt: new Date().toISOString(),
       })
