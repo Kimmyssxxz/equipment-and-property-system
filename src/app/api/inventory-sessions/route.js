@@ -116,6 +116,7 @@ export async function POST(request) {
       asOfDate,
       countingDate,
       inventoryPerson,
+      officeId,
       categoryFilter,
       remarks,
     } = body;
@@ -199,7 +200,7 @@ export async function POST(request) {
 
     // 2. Fetch properties to populate physical counts
     let propQuery = supabase.from('properties').select('*');
-    if (officeId) {
+    if (officeId && officeId !== 'ALL') {
       propQuery = propQuery.eq('officeId', officeId);
     }
     if (categoryFilter && categoryFilter !== 'ALL') {
