@@ -1342,7 +1342,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   <div className="col-span-7 space-y-1.5 text-left">
                     <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-900 space-y-0.5 shadow-2xs">
                       <span className="text-[8.5px] font-black text-slate-950 uppercase tracking-wider block">PROPERTY DESCRIPTION</span>
-                      <p className="font-black text-slate-950 text-[13px] leading-snug line-clamp-2" title={getPropertyDescription(selectedAssignmentForTag.propertyId, selectedAssignmentForTag.propertyNumber, selectedAssignmentForTag.description, selectedAssignmentForTag.article)}>
+                      <p className="font-black text-slate-950 text-[12.5px] leading-snug break-words" title={getPropertyDescription(selectedAssignmentForTag.propertyId, selectedAssignmentForTag.propertyNumber, selectedAssignmentForTag.description, selectedAssignmentForTag.article)}>
                         {getPropertyDescription(selectedAssignmentForTag.propertyId, selectedAssignmentForTag.propertyNumber, selectedAssignmentForTag.description, selectedAssignmentForTag.article)}
                       </p>
                     </div>
@@ -1351,7 +1351,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     {getPropertySerialNumber(selectedAssignmentForTag.propertyId, selectedAssignmentForTag.propertyNumber, selectedAssignmentForTag.serialNumber) ? (
                       <div className="bg-slate-950 text-white px-2 py-0.5 rounded-lg border border-slate-900 flex items-center justify-between shadow-2xs">
                         <span className="text-[8px] font-black text-emerald-400 uppercase tracking-wider shrink-0">SERIAL NUMBER:</span>
-                        <span className="font-mono font-black text-slate-100 text-[11px] truncate pl-1">
+                        <span className="font-mono font-black text-slate-100 text-[10.5px] break-all pl-1">
                           {getPropertySerialNumber(selectedAssignmentForTag.propertyId, selectedAssignmentForTag.propertyNumber, selectedAssignmentForTag.serialNumber)}
                         </span>
                       </div>
@@ -1360,11 +1360,11 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     <div className="space-y-1 text-[11.5px] px-0.5">
                       <div>
                         <span className="text-[8.5px] font-black text-slate-950 uppercase tracking-wider block">ACCOUNTABLE CUSTODIAN</span>
-                        <span className="font-black text-slate-950 text-[12px] block truncate">{selectedAssignmentForTag.employeeName}</span>
+                        <span className="font-black text-slate-950 text-[11.5px] block break-words leading-tight">{selectedAssignmentForTag.employeeName}</span>
                       </div>
                       <div>
                         <span className="text-[8.5px] font-black text-slate-950 uppercase tracking-wider block">RECEIVING OFFICE</span>
-                        <span className="font-extrabold text-slate-950 text-[11px] block truncate">{selectedAssignmentForTag.officeName}</span>
+                        <span className="font-extrabold text-slate-950 text-[11px] block break-words leading-tight">{selectedAssignmentForTag.officeName}</span>
                       </div>
                     </div>
                   </div>
@@ -1593,16 +1593,15 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                           <div className="col-span-7 flex flex-col justify-between h-full py-0.5 space-y-1 text-left">
                             <div className="bg-slate-100/90 p-1.5 rounded-lg border border-slate-900 space-y-0.5 shadow-2xs">
                               <span className="text-[8.5px] font-black text-slate-950 uppercase tracking-wider block">PROPERTY DESCRIPTION</span>
-                              <p className="font-black text-slate-950 text-[12.5px] leading-tight line-clamp-2" title={getPropertyDescription(item.propertyId, item.propertyNumber, item.description, item.article)}>
+                              <p className="font-black text-slate-950 text-[12px] leading-tight break-words" title={getPropertyDescription(item.propertyId, item.propertyNumber, item.description, item.article)}>
                                 {getPropertyDescription(item.propertyId, item.propertyNumber, item.description, item.article)}
                               </p>
                             </div>
 
-
                             {getPropertySerialNumber(item.propertyId, item.propertyNumber, item.serialNumber) ? (
                               <div className="bg-slate-950 text-white px-1.5 py-0.5 rounded border border-slate-900 flex items-center justify-between shadow-2xs">
                                 <span className="text-[7.5px] font-black text-emerald-400 uppercase tracking-wider shrink-0">SERIAL NUMBER:</span>
-                                <span className="font-mono font-black text-slate-100 text-[9.5px] truncate text-right pl-1" title={getPropertySerialNumber(item.propertyId, item.propertyNumber, item.serialNumber)}>
+                                <span className="font-mono font-black text-slate-100 text-[9.5px] break-all text-right pl-1" title={getPropertySerialNumber(item.propertyId, item.propertyNumber, item.serialNumber)}>
                                   {getPropertySerialNumber(item.propertyId, item.propertyNumber, item.serialNumber)}
                                 </span>
                               </div>
@@ -1611,13 +1610,13 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                             <div className="space-y-0.5 text-[10.5px] px-0.5">
                               <div>
                                 <span className="text-[8px] font-black text-slate-950 uppercase tracking-wider block">ACCOUNTABLE CUSTODIAN</span>
-                                <p className="font-black text-slate-950 text-[11.5px] truncate" title={item.employeeName}>
+                                <p className="font-black text-slate-950 text-[11px] break-words leading-tight" title={item.employeeName}>
                                   {item.employeeName || 'Unassigned'}
                                 </p>
                               </div>
                               <div>
                                 <span className="text-[8px] font-black text-slate-950 uppercase tracking-wider block">RECEIVING OFFICE</span>
-                                <p className="font-extrabold text-slate-950 text-[10.5px] truncate" title={item.officeName}>
+                                <p className="font-extrabold text-slate-950 text-[10.5px] break-words leading-tight" title={item.officeName}>
                                   {item.officeName || 'Supply Office'}
                                 </p>
                               </div>
