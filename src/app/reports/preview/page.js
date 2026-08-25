@@ -534,7 +534,7 @@ function ReportPreviewContent() {
 
           const remarksText = [
             officeName ? officeName.toUpperCase() : 'UNASSIGNED OFFICE',
-            poNum ? (poNum.startsWith('PO') ? poNum : `PO #${poNum}`) : 'PO N/A',
+            poNum ? poNum : 'PO N/A',
             acqDate ? formatDatedOn(acqDate) : 'dated on N/A',
           ].join('<br/>');
 
@@ -1053,7 +1053,7 @@ function ReportPreviewContent() {
                           <td className="border border-black p-2 text-right font-mono font-bold">{isShortage || isOverage ? `₱${(unitVal * diffQty).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}</td>
                           <td className="border border-black p-2 text-[11px] leading-tight font-sans space-y-1">
                             {officeName ? <div className="font-bold text-black uppercase">{officeName}</div> : <div className="font-bold text-slate-400 uppercase">UNASSIGNED OFFICE</div>}
-                            {poNum ? <div className="text-slate-800 font-semibold">{poNum.startsWith('PO') ? poNum : `PO #${poNum}`}</div> : <div className="text-slate-500 font-medium">PO N/A</div>}
+                            {poNum ? <div className="text-slate-800 font-semibold">{poNum}</div> : <div className="text-slate-500 font-medium">PO N/A</div>}
                             {acqDate ? <div className="text-slate-700 font-normal">{formatDatedOn(acqDate)}</div> : <div className="text-slate-400 italic">dated on N/A</div>}
                           </td>
                         </tr>
