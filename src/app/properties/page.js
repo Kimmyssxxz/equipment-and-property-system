@@ -225,8 +225,9 @@ export default function PropertiesPage() {
 
   // Helper Lookups
   const getEmployeeName = (id) => {
+    if (!id || id === 'UNASSIGNED') return 'Unassigned / Common Area (No Head Officer)';
     const found = employees.find((e) => e.id === id || e.employeeId === id);
-    return found ? `${found.name} (${found.position})` : 'Unassigned';
+    return found ? `${found.name} (${found.position})` : 'Unassigned / Common Area';
   };
   const getOfficeName = (id) => {
     const found = offices.find((o) => o.id === id || o.code === id);

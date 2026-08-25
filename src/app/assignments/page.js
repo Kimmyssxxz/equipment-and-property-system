@@ -282,8 +282,8 @@ function AssignmentsContent() {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!selectedPropertyId || !targetEmployeeId || !targetOfficeId) {
-      setErrorMsg('Please select a property, accountable officer, and receiving office.');
+    if (!selectedPropertyId || !targetOfficeId) {
+      setErrorMsg('Please select a property unit and receiving deploying area.');
       return;
     }
 
@@ -716,18 +716,15 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     <select
                       value={targetEmployeeId}
                       onChange={(e) => handleEmployeeChange(e.target.value)}
-                      disabled={isSubmitting || employees.length === 0}
+                      disabled={isSubmitting}
                       className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                     >
-                      {employees.length === 0 ? (
-                        <option value="">No personnel registered</option>
-                      ) : (
-                        employees.map((emp) => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.name} — {emp.position} ({emp.employeeId})
-                          </option>
-                        ))
-                      )}
+                      <option value="UNASSIGNED">-- Unassigned / Common Area (No Head Officer) --</option>
+                      {employees.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.name} — {emp.position} ({emp.employeeId})
+                        </option>
+                      ))}
                     </select>
                   </div>
 
