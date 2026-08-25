@@ -95,8 +95,12 @@ export async function GET() {
         poNumber: prop.poNumber || '',
 
         employeeId: item.employeeId,
-        employeeName: emp.name || item.employeeName || 'Assigned Officer',
-        employeePosition: emp.position || '',
+        employeeName: (item.employeeId === 'emp_unassigned' || item.employeeId === 'UNASSIGNED' || !item.employeeId)
+          ? 'Unassigned / Common Area'
+          : (emp.name || item.employeeName || 'Assigned Officer'),
+        employeePosition: (item.employeeId === 'emp_unassigned' || item.employeeId === 'UNASSIGNED' || !item.employeeId)
+          ? 'Common Area Custodian'
+          : (emp.position || ''),
         employeeCode: emp.employeeId || '',
         officeId: item.officeId,
         officeName: off.name || item.officeName || 'Assigned Office',
@@ -197,7 +201,30 @@ export async function POST(request) {
       : new Date().toISOString();
 
     const isUnassigned = !targetEmployeeId || targetEmployeeId === 'UNASSIGNED';
-    const empIdForDb = isUnassigned ? null : targetEmployeeId;
+    let empIdForDb = targetEmployeeId;
+
+    if (isUnassigned) {
+      empIdForDb = 'emp_unassigned';
+      // Upsert sentinel unassigned employee record in DB to satisfy Foreign Key & NOT NULL constraints
+      try {
+        await supabase.from('employees').upsert(
+          [
+            {
+              id: 'emp_unassigned',
+              employeeId: 'EMP-UNASSIGNED',
+              name: 'Unassigned / Common Area',
+              position: 'Common Area Custodian',
+              officeId: targetOfficeId,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+          { onConflict: 'id' }
+        );
+      } catch (e) {
+        console.warn('Sentinel employee upsert notice:', e.message);
+      }
+    }
 
     let newRecord = {
       id: newAsgnId,
@@ -213,25 +240,11 @@ export async function POST(request) {
       createdAt: new Date().toISOString(),
     };
 
-    let { data: insertedAsgn, error: insertError } = await supabase
+    const { data: insertedAsgn, error: insertError } = await supabase
       .from('property_assignments')
       .insert([newRecord])
       .select('*')
       .single();
-
-    // If null employeeId violated not-null or foreign key constraint, try with string fallback or handle cleanly
-    if (insertError && isUnassigned) {
-      newRecord.employeeId = 'UNASSIGNED';
-      const retryRes = await supabase
-        .from('property_assignments')
-        .insert([newRecord])
-        .select('*')
-        .single();
-      if (!retryRes.error) {
-        insertedAsgn = retryRes.data;
-        insertError = null;
-      }
-    }
 
     if (insertError) {
       if (
