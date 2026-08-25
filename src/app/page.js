@@ -200,19 +200,19 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                {/* Card 4: Operating Offices */}
+                {/* Card 4: Operating Deploying Areas */}
                 <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Offices
+                      Deploying Area
                     </span>
                     <Building2 className="w-4 h-4 text-emerald-600" />
                   </div>
                   <p className="text-2xl font-black text-slate-900 mt-1.5">
-                    {totalOffices} <span className="text-xs font-normal text-slate-500">Divisions</span>
+                    {totalOffices} <span className="text-xs font-normal text-slate-500">Areas</span>
                   </p>
                   <span className="text-[10px] text-slate-500 font-medium">
-                    Operating Departments
+                    Operating Deploying Areas
                   </span>
                 </div>
 

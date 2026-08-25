@@ -243,7 +243,7 @@ function SidebarContent({ totalItems = 0 }) {
     { name: 'Properties', href: '/properties', icon: Package, badge: counts.properties },
     { name: 'Categories', href: '/categories', icon: Tag, badge: counts.categories },
     { name: 'Personnel', href: '/personnel', icon: Users, badge: counts.personnel },
-    { name: 'Offices', href: '/offices', icon: Building2, badge: counts.offices },
+    { name: 'Deploying Area', href: '/offices', icon: Building2, badge: counts.offices },
     { name: 'Assignments', href: '/assignments', icon: ClipboardCheck },
     {
       name: 'Physical Inventory',

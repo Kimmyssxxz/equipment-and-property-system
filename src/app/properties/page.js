@@ -690,17 +690,17 @@ CREATE POLICY "Allow full access to properties" ON "properties" FOR ALL USING (t
                 </select>
               </div>
 
-              {/* Office Filter */}
+              {/* Deploying Area Filter */}
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                  Office
+                  Deploying Area
                 </label>
                 <select
                   value={officeFilter}
                   onChange={(e) => setOfficeFilter(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                 >
-                  <option value="ALL">All Offices</option>
+                  <option value="ALL">All Deploying Areas</option>
                   {offices.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.name} ({o.code})
@@ -1352,7 +1352,7 @@ CREATE POLICY "Allow full access to properties" ON "properties" FOR ALL USING (t
                     <p className="font-bold text-slate-900 text-sm">{getEmployeeName(selectedPropertyForDetails.accountablePersonId)}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500">Assigned Office / Operating Unit</span>
+                    <span className="text-[10px] text-slate-500">Assigned Deploying Area</span>
                     <p className="font-bold text-slate-900 text-sm">{getOfficeName(selectedPropertyForDetails.officeId)}</p>
                   </div>
                 </div>

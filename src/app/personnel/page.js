@@ -653,7 +653,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                 onChange={(e) => setOfficeFilter(e.target.value)}
                 className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
               >
-                <option value="ALL">All Offices / Departments</option>
+                <option value="ALL">All Deploying Areas</option>
                 {offices.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name} ({o.code})
@@ -1041,13 +1041,13 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Assigned Office / Operating Unit *
+                    Assigned Deploying Area *
                   </label>
                   {offices.length === 0 ? (
                     <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                      No registered offices found in database. Please{' '}
+                      No registered deploying areas found in database. Please{' '}
                       <Link href="/offices" className="underline font-bold text-amber-900">
-                        create an office first
+                        create a deploying area first
                       </Link>
                       .
                     </div>
@@ -1058,7 +1058,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                       onChange={(e) => setFormData({ ...formData, officeId: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
-                      <option value="">-- Select Office / Department --</option>
+                      <option value="">-- Select Deploying Area --</option>
                       {offices.map((off) => (
                         <option key={off.id} value={off.id}>
                           {off.name} ({off.code})

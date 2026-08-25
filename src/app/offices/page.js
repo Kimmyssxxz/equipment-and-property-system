@@ -410,7 +410,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
         {/* Floating Main Content Container */}
         <main className="flex-1 min-w-0 bg-white/90 backdrop-blur-xl border border-white/80 rounded-2xl sm:rounded-[32px] shadow-2xl shadow-slate-900/10 p-4 sm:p-6 lg:p-8 flex flex-col space-y-5 sm:space-y-6 overflow-hidden">
           {/* Top Navbar */}
-          <Navbar pageTitle="Offices & Department Entities" icon={Building2} />
+          <Navbar pageTitle="Deploying Area Directory" icon={Building2} />
 
           {/* Toast Notification */}
           {notification && (
@@ -460,17 +460,17 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
 
           {/* KPI Statistics Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {/* Card 1: Total Offices */}
+            {/* Card 1: Total Deploying Areas */}
             <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Offices
+                  Total Deploying Areas
                 </span>
                 <Building2 className="w-4 h-4 text-emerald-600" />
               </div>
               <p className="text-2xl font-black text-slate-900 mt-1.5">
                 {offices.length}{' '}
-                <span className="text-xs font-normal text-slate-500">Depts</span>
+                <span className="text-xs font-normal text-slate-500">Areas</span>
               </p>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -480,7 +480,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
               </div>
             </div>
 
-            {/* Card 2: Active Divisions */}
+            {/* Card 2: Active Status */}
             <div className="p-4.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-emerald-300 transition-all">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -536,7 +536,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-extrabold text-slate-900 leading-tight">
-                  Offices & Departments Directory
+                  Deploying Area Directory
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
                   <Database className="w-3 h-3 text-emerald-700" />
@@ -544,7 +544,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Manage organizational divisions, building locations, department heads, and allocated equipment
+                Manage organizational deploying areas, building locations, area heads, and allocated equipment
               </p>
             </div>
 
@@ -553,7 +553,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 onClick={loadData}
                 disabled={loading}
                 className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                title="Refresh offices from database"
+                title="Refresh deploying areas from database"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
                 <span className="hidden sm:inline">Refresh</span>
@@ -564,7 +564,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Register New Office</span>
+                <span>+ Register New Deploying Area</span>
               </button>
             </div>
           </div>
@@ -577,7 +577,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search office name, code, head, floor, email..."
+                placeholder="Search area name, code, head, floor, email..."
                 className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
@@ -589,8 +589,8 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
               >
                 <option value="ALL">All Statuses</option>
-                <option value="ACTIVE">Active Offices</option>
-                <option value="INACTIVE">Inactive Offices</option>
+                <option value="ACTIVE">Active Deploying Areas</option>
+                <option value="INACTIVE">Inactive Deploying Areas</option>
               </select>
 
               <select
@@ -598,10 +598,10 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
               >
-                <option value="name-asc">Office Name (A - Z)</option>
-                <option value="name-desc">Office Name (Z - A)</option>
-                <option value="code-asc">Office Code (A - Z)</option>
-                <option value="head-asc">Department Head (A - Z)</option>
+                <option value="name-asc">Deploying Area Name (A - Z)</option>
+                <option value="name-desc">Deploying Area Name (Z - A)</option>
+                <option value="code-asc">Deploying Area Code (A - Z)</option>
+                <option value="head-asc">Head of Area (A - Z)</option>
               </select>
             </div>
           </div>
@@ -611,10 +611,10 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900">
-                  Offices & Operating Divisions
+                  Deploying Area Directory
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Showing {totalItems > 0 ? startIndex + 1 : 0} to {endIndex} of {totalItems} registered offices
+                  Showing {totalItems > 0 ? startIndex + 1 : 0} to {endIndex} of {totalItems} registered deploying areas
                 </p>
               </div>
 
@@ -638,8 +638,8 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="py-3.5 px-4">Office Name & Code</th>
-                    <th className="py-3.5 px-4">Head of Office</th>
+                    <th className="py-3.5 px-4">Deploying Area Name & Code</th>
+                    <th className="py-3.5 px-4">Head of Area</th>
                     <th className="py-3.5 px-4">Location / Floor</th>
                     <th className="py-3.5 px-4">Assigned Assets</th>
                     <th className="py-3.5 px-4">Total Value</th>
@@ -684,12 +684,12 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                           </div>
                           <div>
                             <h4 className="text-sm font-extrabold text-slate-900">
-                              {search ? 'No offices found' : 'No Offices in Database Yet'}
+                              {search ? 'No deploying areas found' : 'No Deploying Areas in Database Yet'}
                             </h4>
                             <p className="text-xs text-slate-500 mt-1">
                               {search
-                                ? `No offices matched your search term "${search}".`
-                                : 'Your office directory is clean and ready. Register your first department or operating division to get started.'}
+                                ? `No deploying areas matched your search term "${search}".`
+                                : 'Your deploying area directory is clean and ready. Register your first deploying area or division to get started.'}
                             </p>
                           </div>
                           {!search && (
@@ -698,7 +698,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                               className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer mt-2"
                             >
                               <Plus className="w-4 h-4" />
-                              <span>Register First Office</span>
+                              <span>Register First Deploying Area</span>
                             </button>
                           )}
                         </div>
@@ -876,7 +876,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
         </main>
       </div>
 
-      {/* ================= MODAL: ADD / EDIT OFFICE ================= */}
+      {/* ================= MODAL: ADD / EDIT DEPLOYING AREA ================= */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
@@ -888,10 +888,10 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-white">
-                    {editingOffice ? 'Edit Office Details' : 'Register New Office / Department'}
+                    {editingOffice ? 'Edit Deploying Area Details' : 'Register New Deploying Area'}
                   </h3>
                   <p className="text-xs text-emerald-100">
-                    {editingOffice ? `Code: ${editingOffice.code}` : 'Define organizational department and custodian'}
+                    {editingOffice ? `Code: ${editingOffice.code}` : 'Define organizational area location and head custodian'}
                   </p>
                 </div>
               </div>
@@ -915,14 +915,14 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Office Code *
+                    Deploying Area Code *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    placeholder="e.g. SUPPLY-01, FIN-01, HR-01"
+                    placeholder="e.g. AREA-01, LAB-01, SUPPLY-01"
                     className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-emerald-800 uppercase focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
                   />
                 </div>
@@ -943,14 +943,14 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Office / Department Name *
+                    Deploying Area Name *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Supply & Property Management Office"
+                    placeholder="e.g. Forensics Chemistry Laboratory"
                     className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
                   />
                 </div>
@@ -958,7 +958,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                 <div className="sm:col-span-2">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
-                      Head of Office / Department Head *
+                      Head of Deploying Area *
                     </label>
                     {employees.length > 0 && (
                       <button
@@ -1000,7 +1000,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                       }}
                       className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                     >
-                      <option value="">-- Select Personnel as Department Head --</option>
+                      <option value="">-- Select Personnel as Area Head --</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.name}>
                           {emp.name} — {emp.position} ({emp.employeeId})
@@ -1071,7 +1071,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Department Scope / Description
+                    Deploying Area Scope / Description
                   </label>
                   <input
                     type="text"
@@ -1098,7 +1098,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                   className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-200 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSaving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{isSaving ? 'Saving...' : editingOffice ? 'Update Office' : 'Save Office'}</span>
+                  <span>{isSaving ? 'Saving...' : editingOffice ? 'Update Deploying Area' : 'Save Deploying Area'}</span>
                 </button>
               </div>
             </form>
@@ -1170,7 +1170,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
               {/* Office Properties Table */}
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Properties Installed / Assigned in this Office
+                  Properties Installed / Assigned in this Deploying Area
                 </h4>
                 <div className="border border-slate-200 rounded-2xl overflow-hidden">
                   <table className="w-full text-left text-xs">
@@ -1187,7 +1187,7 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                       {(getOfficeStats(selectedOfficeForDetails.id)?.properties || []).length === 0 ? (
                         <tr>
                           <td colSpan="5" className="py-8 text-center text-slate-400">
-                            No property equipment assigned to this office yet.
+                            No property equipment assigned to this deploying area yet.
                           </td>
                         </tr>
                       ) : (

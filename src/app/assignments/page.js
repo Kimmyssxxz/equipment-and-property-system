@@ -654,7 +654,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Offices / Stations</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deploying Areas</span>
                 <p className="text-lg font-black text-slate-900">{offices.length}</p>
               </div>
             </div>
@@ -663,46 +663,44 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
           {/* Section 1: Property Assignment Form & Auto-Loaded Specs Card */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: Interactive Form */}
-            <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
-              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-extrabold text-slate-900">
-                    Assign Property Accountability
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Select an asset and assign custodianship to an employee. Historical custody is automatically preserved.
-                  </p>
-                </div>
-                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
-                  <UserCheck className="w-5 h-5" />
+            <div className="lg:col-span-7 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <ClipboardCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                      Issue / Reassign Property Custodianship
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Assign accountable officer and receiving deploying area location
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {errorMsg && (
-                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleAssign} className="space-y-4">
-                {/* 1. Select Property */}
+              <form onSubmit={handleIssueAssignment} className="space-y-4">
+                {/* 1. Select Property Equipment */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    1. Select Property / Equipment to Assign *
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>1. Select Property Unit (Equipment / Semi-Expendable) *</span>
+                    <span className="text-[10.5px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                      {unassignedProperties.length} Available
+                    </span>
                   </label>
                   <select
                     value={selectedPropertyId}
                     onChange={(e) => setSelectedPropertyId(e.target.value)}
-                    disabled={isSubmitting || properties.length === 0}
-                    className="w-full px-3.5 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all cursor-pointer shadow-2xs"
+                    disabled={isSubmitting || unassignedProperties.length === 0}
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                   >
-                    {properties.length === 0 ? (
-                      <option value="">No properties registered in database</option>
+                    {unassignedProperties.length === 0 ? (
+                      <option value="">-- No Properties Found --</option>
                     ) : (
-                      properties.map((p) => (
+                      unassignedProperties.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.propertyNumber} — {p.article} (₱{(p.unitValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })})
+                          {p.propertyNumber} — {p.article} ({p.serialNumber || 'No S/N'})
                         </option>
                       ))
                     )}
@@ -710,14 +708,14 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* 2. Select New Accountable Personnel */}
+                  {/* 2. Select Personnel */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
                       2. New Accountable Officer (Custodian) *
                     </label>
                     <select
                       value={targetEmployeeId}
-                      onChange={(e) => handleEmployeeChange(e.target.value)}
+                      onChange={(e) => handleEmployeeSelect(e.target.value)}
                       disabled={isSubmitting || employees.length === 0}
                       className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                     >
@@ -726,7 +724,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                       ) : (
                         employees.map((emp) => (
                           <option key={emp.id} value={emp.id}>
-                            {emp.name} ({emp.position})
+                            {emp.name} — {emp.position} ({emp.employeeId})
                           </option>
                         ))
                       )}
@@ -736,7 +734,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   {/* 3. Select Office */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      3. Receiving Office / Department *
+                      3. Receiving Deploying Area *
                     </label>
                     <select
                       value={targetOfficeId}
@@ -745,7 +743,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                       className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                     >
                       {offices.length === 0 ? (
-                        <option value="">No offices registered</option>
+                        <option value="">No deploying areas registered</option>
                       ) : (
                         offices.map((off) => (
                           <option key={off.id} value={off.id}>
@@ -938,7 +936,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   />
                 </div>
 
-                {/* Office Filter */}
+                {/* Deploying Area Filter */}
                 <select
                   value={officeFilter}
                   onChange={(e) => {
@@ -947,7 +945,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   }}
                   className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                 >
-                  <option value="ALL">All Offices ({offices.length})</option>
+                  <option value="ALL">All Deploying Areas ({offices.length})</option>
                   {offices.map((off) => (
                     <option key={off.id} value={off.id}>
                       {off.name}
@@ -995,7 +993,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     <th className="py-3.5 px-4">Property No. & Article</th>
                     <th className="py-3.5 px-4">Previous Custodian</th>
                     <th className="py-3.5 px-4">New Accountable Custodian</th>
-                    <th className="py-3.5 px-4">Receiving Office</th>
+                    <th className="py-3.5 px-4">Deploying Area</th>
                     <th className="py-3.5 px-4">Transfer Remarks</th>
                     <th className="py-3.5 px-4">Authorized By</th>
                     <th className="py-3.5 px-4 text-center">Actions</th>
