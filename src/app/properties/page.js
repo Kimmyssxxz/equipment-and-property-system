@@ -92,6 +92,44 @@ export default function PropertiesPage() {
     status: 'ACTIVE',
   });
 
+  const [poPrefix, setPoPrefix] = useState('PPSC');
+  const [poRawNumber, setPoRawNumber] = useState('');
+
+  const parsePoFields = (poStr) => {
+    if (!poStr || !poStr.trim()) return { prefix: 'PPSC', raw: '' };
+    const str = poStr.trim();
+    if (/^PPSC\s*(PO\s*No\.?|#)?\s*/i.test(str)) {
+      return { prefix: 'PPSC', raw: str.replace(/^PPSC\s*(PO\s*No\.?|#)?\s*/i, '') };
+    }
+    if (/^NFSTI\s*(PO\s*No\.?|#)?\s*/i.test(str)) {
+      return { prefix: 'NFSTI', raw: str.replace(/^NFSTI\s*(PO\s*No\.?|#)?\s*/i, '') };
+    }
+    if (/^RIS\s*(No\.?|#)?\s*/i.test(str)) {
+      return { prefix: 'RIS', raw: str.replace(/^RIS\s*(No\.?|#)?\s*/i, '') };
+    }
+    if (/^ICS\s*(No\.?|#)?\s*/i.test(str)) {
+      return { prefix: 'ICS', raw: str.replace(/^ICS\s*(No\.?|#)?\s*/i, '') };
+    }
+    if (/^PAR\s*(No\.?|#)?\s*/i.test(str)) {
+      return { prefix: 'PAR', raw: str.replace(/^PAR\s*(No\.?|#)?\s*/i, '') };
+    }
+    if (/^PO\s*#?\s*/i.test(str)) {
+      return { prefix: 'PPSC', raw: str.replace(/^PO\s*#?\s*/i, '') };
+    }
+    return { prefix: 'CUSTOM', raw: str };
+  };
+
+  const buildPoNumber = (prefix, raw) => {
+    if (!raw || !raw.trim()) return '';
+    const clean = raw.trim();
+    if (prefix === 'PPSC') return `PPSC PO No. ${clean}`;
+    if (prefix === 'NFSTI') return `NFSTI PO No. ${clean}`;
+    if (prefix === 'RIS') return `RIS No. ${clean}`;
+    if (prefix === 'ICS') return `ICS No. ${clean}`;
+    if (prefix === 'PAR') return `PAR No. ${clean}`;
+    return clean;
+  };
+
   const [notification, setNotification] = useState(null);
   const [statusModal, setStatusModal] = useState({
     isOpen: false,
@@ -242,6 +280,8 @@ export default function PropertiesPage() {
   const openCreateModal = () => {
     setEditingProperty(null);
     setFormError('');
+    setPoPrefix('PPSC');
+    setPoRawNumber('');
     const today = new Date().toISOString().slice(0, 10);
     const generatedPropNo = `PROP-${today.replace(/-/g, '')}-${String(properties.length + 1).padStart(4, '0')}`;
     setFormData({
@@ -266,6 +306,9 @@ export default function PropertiesPage() {
   const openEditModal = (p) => {
     setEditingProperty(p);
     setFormError('');
+    const parsed = parsePoFields(p.poNumber || '');
+    setPoPrefix(parsed.prefix);
+    setPoRawNumber(parsed.raw);
     setFormData({
       propertyNumber: p.propertyNumber,
       article: p.article,
@@ -299,6 +342,8 @@ export default function PropertiesPage() {
       return;
     }
 
+    const finalPoNumber = buildPoNumber(poPrefix, poRawNumber);
+
     setIsSaving(true);
     try {
       const isEditing = Boolean(editingProperty);
@@ -314,7 +359,7 @@ export default function PropertiesPage() {
         unitValue: parseFloat(formData.unitValue) || 0.0,
         quantityPerCard: parseInt(formData.quantityPerCard, 10) || 1,
         acquisitionDate: formData.acquisitionDate || new Date().toISOString(),
-        poNumber: formData.poNumber ? formData.poNumber.trim() : '',
+        poNumber: finalPoNumber,
         poDate: formData.poDate || null,
         serialNumber: formData.serialNumber ? formData.serialNumber.trim() : '',
         remarks: formData.remarks ? formData.remarks.trim() : '',
@@ -1197,18 +1242,37 @@ CREATE POLICY "Allow full access to properties" ON "properties" FOR ALL USING (t
                   />
                 </div>
 
-                {/* PO Number */}
+                {/* PO / Reference Number */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Purchase Order (PO) Number
+                    Purchase Order (PO) / Reference Number
                   </label>
-                  <input
-                    type="text"
-                    value={formData.poNumber}
-                    onChange={(e) => setFormData({ ...formData, poNumber: e.target.value })}
-                    placeholder="e.g. PO-2024-0012"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={poPrefix}
+                      onChange={(e) => setPoPrefix(e.target.value)}
+                      className="w-28 px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shrink-0 shadow-2xs"
+                    >
+                      <option value="PPSC">PPSC</option>
+                      <option value="NFSTI">NFSTI</option>
+                      <option value="RIS">RIS</option>
+                      <option value="ICS">ICS</option>
+                      <option value="PAR">PAR</option>
+                      <option value="CUSTOM">Custom</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={poRawNumber}
+                      onChange={(e) => setPoRawNumber(e.target.value)}
+                      placeholder="e.g. 2021-03-002"
+                      className="flex-1 px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                  {poRawNumber.trim() && (
+                    <p className="text-[11px] font-medium text-emerald-700 mt-1 pl-1">
+                      Report format: <span className="font-bold font-mono text-emerald-900">{buildPoNumber(poPrefix, poRawNumber)}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Status */}
