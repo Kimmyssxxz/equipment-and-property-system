@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS "offices" (
   "id" TEXT PRIMARY KEY DEFAULT ('off_' || substr(md5(random()::text), 1, 12)),
   "code" TEXT UNIQUE NOT NULL,
   "name" TEXT NOT NULL,
-  "head" TEXT NOT NULL,
+  "head" TEXT DEFAULT '',
   "email" TEXT,
   "phone" TEXT,
   "floor" TEXT,

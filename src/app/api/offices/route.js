@@ -65,9 +65,9 @@ export async function POST(request) {
     const body = await request.json();
     const { code, name, head, email, phone, floor, notes, status } = body;
 
-    if (!code || !name || !head) {
+    if (!code || !name) {
       return NextResponse.json(
-        { error: 'Office Code, Office Name, and Head of Office are required.' },
+        { error: 'Deploying Area Code and Deploying Area Name are required.' },
         { status: 400 }
       );
     }
@@ -82,7 +82,7 @@ export async function POST(request) {
 
     const trimmedCode = code.trim().toUpperCase();
     const trimmedName = name.trim();
-    const trimmedHead = head.trim();
+    const trimmedHead = head ? head.trim() : '';
     const trimmedEmail = email ? email.trim() : null;
     const trimmedPhone = phone ? phone.trim() : null;
     const trimmedFloor = floor ? floor.trim() : null;
@@ -165,9 +165,9 @@ export async function PUT(request) {
     const body = await request.json();
     const { id, code, name, head, email, phone, floor, notes, status } = body;
 
-    if (!id || !code || !name || !head) {
+    if (!id || !code || !name) {
       return NextResponse.json(
-        { error: 'Office ID, Code, Name, and Head of Office are required for updating.' },
+        { error: 'Deploying Area ID, Code, and Name are required for updating.' },
         { status: 400 }
       );
     }
@@ -182,7 +182,7 @@ export async function PUT(request) {
 
     const trimmedCode = code.trim().toUpperCase();
     const trimmedName = name.trim();
-    const trimmedHead = head.trim();
+    const trimmedHead = head ? head.trim() : '';
     const trimmedEmail = email ? email.trim() : null;
     const trimmedPhone = phone ? phone.trim() : null;
     const trimmedFloor = floor ? floor.trim() : null;
