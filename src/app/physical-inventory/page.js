@@ -458,37 +458,34 @@ export default function PhysicalInventoryPage() {
     }
 
     try {
-      let createdSession = null;
+      const res = await fetch('/api/inventory-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionFormData),
+      });
 
-      // 1. Post to Backend API
-      try {
-        const res = await fetch('/api/inventory-sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sessionFormData),
-        });
-        const data = await res.json();
-        if (res.ok && data.success && data.session) {
-          createdSession = data.session;
-        }
-      } catch (apiErr) {
-        console.warn('Fallback creating session locally:', apiErr);
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to create inventory session in database.');
       }
 
-      // 2. Local Storage Manager fallback
+      const createdSession = data.session || (data.tableMissing ? sessionFormData : null);
+
       if (!createdSession) {
-        const result = StorageManager.createInventorySession(sessionFormData);
-        createdSession = result.session;
+        throw new Error('Could not create inventory session. Please try again.');
       }
 
       await loadData();
       setIsNewSessionModalOpen(false);
-      setActiveSessionId(createdSession.id);
+      if (createdSession.id) {
+        setActiveSessionId(createdSession.id);
+      }
       setStatusTab('SCANNED');
 
       setNotification({
         title: 'Inventory Session Saved to Database!',
-        message: `Session "${createdSession.sessionCode}" is ready. Scan stickers to record items into this session.`,
+        message: `Session "${createdSession.sessionCode || sessionFormData.sessionCode}" is ready. Scan stickers to record items into this session.`,
       });
       setTimeout(() => setNotification(null), 5000);
     } catch (err) {
@@ -518,15 +515,17 @@ export default function PhysicalInventoryPage() {
       return;
     }
     try {
-      try {
-        await fetch('/api/inventory-sessions', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editSessionFormData),
-        });
-      } catch (e) {}
+      const res = await fetch('/api/inventory-sessions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editSessionFormData),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to update session in database.');
+      }
 
-      StorageManager.updateInventorySession(editSessionFormData.id, editSessionFormData);
+      StorageManager.updateInventorySession?.(editSessionFormData.id, editSessionFormData);
       await loadData();
       setIsEditSessionModalOpen(false);
       setNotification({
@@ -587,7 +586,7 @@ export default function PhysicalInventoryPage() {
 
       // 2. Fallback to StorageManager if API was offline
       if (!scanResult) {
-        scanResult = StorageManager.scanPropertyIntoSession({
+        scanResult = StorageManager.scanPropertyIntoSession?.({
           sessionId: targetSessionId,
           scannedCode: code.trim(),
           physicalCount: customCount,
@@ -596,13 +595,17 @@ export default function PhysicalInventoryPage() {
         });
       } else {
         // Sync local storage
-        StorageManager.scanPropertyIntoSession({
+        StorageManager.scanPropertyIntoSession?.({
           sessionId: targetSessionId,
           scannedCode: code.trim(),
           physicalCount: customCount,
           remarks: customRemarks,
           countedBy: 'Admin',
         });
+      }
+
+      if (!scanResult || !scanResult.count) {
+        throw new Error('Property scan count could not be updated.');
       }
 
       playScanBeep();
@@ -646,7 +649,7 @@ export default function PhysicalInventoryPage() {
         });
       } catch (e) {}
 
-      StorageManager.recordPhysicalCount({
+      StorageManager.recordPhysicalCount?.({
         countId: item.id,
         physicalCount: item.quantityPerCard || 1,
         remarks: item.remarks || 'Verified in good physical condition',
@@ -706,7 +709,7 @@ export default function PhysicalInventoryPage() {
           await fetch(`/api/physical-counts?countId=${itemToDelete.id}`, { method: 'DELETE' });
         } catch (e) {}
 
-        StorageManager.resetPhysicalCount({ countId: itemToDelete.id });
+        StorageManager.resetPhysicalCount?.({ countId: itemToDelete.id });
         await loadData();
 
         setStatusModal({
