@@ -1034,13 +1034,19 @@ CREATE POLICY "Allow full access to offices" ON "offices" FOR ALL USING (true) W
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Location / Floor / Wing
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.floor}
                     onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
-                    placeholder="e.g. Ground Floor, Main Wing"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
-                  />
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                  >
+                    <option value="">-- Select Floor Level --</option>
+                    <option value="G/F">G/F</option>
+                    <option value="2/F">2/F</option>
+                    <option value="3/F">3/F</option>
+                    <option value="4/F">4/F</option>
+                    <option value="5/F">5/F</option>
+                    <option value="6/F">6/F</option>
+                  </select>
                 </div>
 
                 <div>
