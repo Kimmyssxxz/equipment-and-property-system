@@ -100,7 +100,7 @@ export default function AdminLoginPage() {
       }
 
       setTimeout(() => {
-        router.push('/');
+        router.push('/dashboard');
         router.refresh();
       }, 600);
     } catch (err) {

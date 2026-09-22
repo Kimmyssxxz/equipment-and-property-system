@@ -39,17 +39,18 @@ export async function middleware(request) {
   }
 
   // Application Page Routes Protection
+  const isPublicPage = pathname === '/' || pathname === '/landing';
   const isAuthPage = pathname === '/auth/admin/login' || pathname === '/login';
 
-  if (!isAuthenticated && !isAuthPage) {
+  if (!isAuthenticated && !isAuthPage && !isPublicPage) {
     const loginUrl = new URL('/auth/admin/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated user away from login pages to dashboard /
+  // Redirect authenticated user away from login pages to internal dashboard /dashboard
   if (isAuthenticated && isAuthPage) {
-    const homeUrl = new URL('/', request.url);
-    return NextResponse.redirect(homeUrl);
+    const dashboardUrl = new URL('/dashboard', request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return await updateSession(request);

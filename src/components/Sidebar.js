@@ -239,7 +239,7 @@ function SidebarContent({ totalItems = 0 }) {
   ];
 
   const navItems = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Properties', href: '/properties', icon: Package, badge: counts.properties },
     { name: 'Categories', href: '/categories', icon: Tag, badge: counts.categories },
     { name: 'Personnel', href: '/personnel', icon: Users, badge: counts.personnel },
@@ -278,7 +278,7 @@ function SidebarContent({ totalItems = 0 }) {
             !isExpanded ? 'justify-center flex-col gap-2' : 'justify-between'
           }`}
         >
-          <Link href="/" className="flex items-center gap-3 min-w-0 group cursor-pointer">
+          <Link href="/dashboard" className="flex items-center gap-3 min-w-0 group cursor-pointer">
             <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-slate-100 shrink-0 p-0.5 overflow-hidden group-hover:scale-105 transition-transform">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -326,7 +326,7 @@ function SidebarContent({ totalItems = 0 }) {
             const Icon = item.icon;
             const isReports = item.name === 'Reports';
             const isParentActive = pathname.startsWith('/reports') && isReports;
-            const isGenericActive = !isReports && (pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)));
+            const isGenericActive = !isReports && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)));
             const isActive = isReports ? isParentActive : isGenericActive;
 
             if (isReports) {
@@ -507,7 +507,7 @@ function SidebarContent({ totalItems = 0 }) {
           <aside className="relative z-10 w-80 max-w-[85vw] bg-white border-r border-slate-200 h-full p-5 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-300">
             {/* Drawer Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-3">
-              <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-3">
+              <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-slate-100 shrink-0 p-0.5 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-full h-full object-contain" />
@@ -538,7 +538,7 @@ function SidebarContent({ totalItems = 0 }) {
                 const Icon = item.icon;
                 const isReports = item.name === 'Reports';
                 const isParentActive = pathname.startsWith('/reports') && isReports;
-                const isGenericActive = !isReports && (pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)));
+                const isGenericActive = !isReports && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)));
                 const isActive = isReports ? isParentActive : isGenericActive;
 
                 if (isReports) {
