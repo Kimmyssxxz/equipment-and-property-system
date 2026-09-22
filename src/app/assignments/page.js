@@ -1371,25 +1371,29 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                 </div>
 
                 {/* Footer Bar */}
-                <div className="bg-slate-100/90 border-t-2 border-slate-900 px-3 py-1.5 space-y-1.5 font-sans">
-                  <div className="flex items-center justify-between text-[10px]">
+                <div className="bg-slate-100/90 border-t-2 border-slate-900 px-3 py-1.5 space-y-1 font-sans">
+                  {/* Line 1: Acquisition date (left) & Date of Inventory (right) */}
+                  <div className="flex items-center justify-between text-[10px] gap-2">
                     <div>
-                      <span className="text-[9px] text-slate-950 font-black uppercase">ACQUISITION DATE: </span>
+                      <span className="text-[9px] text-slate-950 font-black uppercase">Acquisition date: </span>
                       <span className="font-mono font-black text-slate-950 text-[11.5px]">
                         {getPropertyAcquisitionDate(selectedAssignmentForTag.propertyId, selectedAssignmentForTag.propertyNumber, selectedAssignmentForTag.acquisitionDate || selectedAssignmentForTag.assignmentDate)}
                       </span>
                     </div>
+                    <div className="flex items-center shrink-0">
+                      <span className="text-[8.5px] text-slate-950 font-black uppercase tracking-wider">Date of Inventory: </span>
+                      <span className="font-mono font-black text-slate-950 text-[11px] tracking-widest pl-1">_________________</span>
+                    </div>
+                  </div>
+
+                  {/* Line 2: Value */}
+                  <div className="border-t border-slate-900/80 pt-1 flex items-center justify-between text-[10px]">
                     <div>
-                      <span className="text-[9px] text-slate-950 font-black uppercase">UNIT VALUE: </span>
+                      <span className="text-[9px] text-slate-950 font-black uppercase">Value: </span>
                       <span className="font-mono font-black text-slate-950 text-[11.5px]">
                         ₱{(selectedAssignmentForTag.unitValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="border-t-2 border-slate-900 pt-1 pb-0.5 flex items-center justify-between text-[9.5px]">
-                    <span className="text-[8.5px] text-slate-950 font-black uppercase tracking-wider shrink-0">DATE OF INVENTORY:</span>
-                    <span className="font-mono font-black text-slate-950 text-[11px] tracking-widest pl-1">___________________________</span>
                   </div>
                 </div>
 
@@ -1626,24 +1630,28 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
 
                         {/* Footer Bar */}
                         <div className="bg-slate-100/90 border-t-2 border-slate-900 px-2.5 py-1 space-y-1 font-sans shrink-0">
-                          <div className="flex items-center justify-between text-[9.5px]">
+                          {/* Line 1: Acquisition date (left) & Date of Inventory (right) */}
+                          <div className="flex items-center justify-between text-[9.5px] gap-1">
                             <div>
-                              <span className="text-[8.5px] text-slate-950 font-black uppercase">ACQUISITION DATE: </span>
+                              <span className="text-[8.5px] text-slate-950 font-black uppercase">Acquisition date: </span>
                               <span className="font-mono font-black text-slate-950 text-[10.5px]">
                                 {getPropertyAcquisitionDate(item.propertyId, item.propertyNumber, item.acquisitionDate || item.assignmentDate)}
                               </span>
                             </div>
+                            <div className="flex items-center shrink-0">
+                              <span className="text-[8px] text-slate-950 font-black uppercase tracking-wider">Date of Inventory: </span>
+                              <span className="font-mono font-black text-slate-950 text-[10px] tracking-widest pl-1">_______________</span>
+                            </div>
+                          </div>
+
+                          {/* Line 2: Value */}
+                          <div className="border-t border-slate-900/80 pt-0.5 flex items-center justify-between text-[9.5px]">
                             <div>
-                              <span className="text-[8.5px] text-slate-950 font-black uppercase">VALUE: </span>
+                              <span className="text-[8.5px] text-slate-950 font-black uppercase">Value: </span>
                               <span className="font-mono font-black text-slate-950 text-[11px]">
                                 ₱{(item.unitValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </span>
                             </div>
-                          </div>
-
-                          <div className="border-t-2 border-slate-900 pt-1 pb-0.5 flex items-center justify-between text-[9px]">
-                            <span className="text-[8px] text-slate-950 font-black uppercase tracking-wider shrink-0">DATE OF INVENTORY:</span>
-                            <span className="font-mono font-black text-slate-950 text-[10px] tracking-widest pl-1">______________________</span>
                           </div>
                         </div>
 
