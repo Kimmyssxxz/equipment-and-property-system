@@ -1040,6 +1040,11 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                         <td className="py-3.5 px-4">
                           <div className="font-mono font-bold text-emerald-800">{h.propertyNumber}</div>
                           <div className="font-semibold text-slate-900">{h.article}</div>
+                          {h.description && (
+                            <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200/80 rounded px-1.5 py-0.5 mt-1 max-w-xs truncate" title={`Technical Specs: ${h.description}`}>
+                              <span className="font-bold text-slate-700">Specs:</span> {h.description}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-slate-500">
                           <div className="font-semibold text-slate-800">{h.previousEmployeeName || 'None (Initial Registration)'}</div>

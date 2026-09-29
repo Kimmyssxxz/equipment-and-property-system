@@ -1010,8 +1010,20 @@ CREATE POLICY "Allow full access to properties" ON "properties" FOR ALL USING (t
                                   SERIAL NUMBER: {p.serialNumber}
                                 </span>
                               )}
-
                             </div>
+                            {p.description && (
+                              <div className="mt-1.5 pl-5.5">
+                                <div className="inline-flex items-start gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-lg text-[11px] text-slate-700 max-w-xl">
+                                  <FileText className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                  <div className="leading-snug">
+                                    <span className="font-black text-slate-800 uppercase text-[9.5px] tracking-wider mr-1">
+                                      Tech Specs / Description:
+                                    </span>
+                                    <span className="text-slate-600 font-medium">{p.description}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </td>
 
                           {/* Category */}
