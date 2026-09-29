@@ -701,6 +701,80 @@ CREATE POLICY "Allow full access to properties" ON "properties" FOR ALL USING (t
             </div>
           </div>
 
+          {/* Horizontal Category Tabs */}
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+            <div className="flex items-center justify-between mb-2.5 px-1">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  Category Tabs
+                </span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  ({categories.length} {categories.length === 1 ? 'category' : 'categories'})
+                </span>
+              </div>
+              {categoryFilter !== 'ALL' && (
+                <button
+                  onClick={() => setCategoryFilter('ALL')}
+                  className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  Show All Categories
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+              <button
+                onClick={() => setCategoryFilter('ALL')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
+                  categoryFilter === 'ALL'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 border border-emerald-600'
+                    : 'bg-slate-100/90 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 border border-slate-200/80'
+                }`}
+              >
+                <Layers className={`w-3.5 h-3.5 ${categoryFilter === 'ALL' ? 'text-white' : 'text-emerald-600'}`} />
+                <span>All Categories</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    categoryFilter === 'ALL'
+                      ? 'bg-emerald-800/60 text-emerald-50'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {properties.length}
+                </span>
+              </button>
+
+              {categories.map((c) => {
+                const isSelected = categoryFilter === c.id;
+                const count = properties.filter((p) => p.categoryId === c.id).length;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setCategoryFilter(c.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 border border-emerald-600'
+                        : 'bg-slate-100/90 hover:bg-slate-200/90 text-slate-700 hover:text-slate-900 border border-slate-200/80'
+                    }`}
+                  >
+                    <Tag className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-emerald-600'}`} />
+                    <span>{c.name} {c.code ? `(${c.code})` : ''}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        isSelected
+                          ? 'bg-emerald-800/60 text-emerald-50'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Search and Advanced Filters */}
           <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
             {/* Search Bar */}
