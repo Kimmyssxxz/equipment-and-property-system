@@ -39,7 +39,7 @@ export async function middleware(request) {
   }
 
   // Application Page Routes Protection
-  const isPublicPage = pathname === '/' || pathname === '/landing';
+  const isPublicPage = pathname === '/' || pathname === '/landing' || pathname === '/supply-portal';
   const isAuthPage = pathname === '/auth/admin/login' || pathname === '/login';
 
   if (!isAuthenticated && !isAuthPage && !isPublicPage) {
