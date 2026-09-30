@@ -246,7 +246,7 @@ export default function LandingPage() {
               Admin Equipment Property Portal Login
             </Link>
             <Link
-              href="/dashboard"
+              href="/supply-portal"
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer whitespace-nowrap"
             >
               <span>Admin Supply Portal Login</span>
@@ -302,7 +302,7 @@ export default function LandingPage() {
                 Admin Equipment Property Portal Login
               </Link>
               <Link
-                href="/dashboard"
+                href="/supply-portal"
                 className="w-full text-center py-2.5 rounded-xl bg-emerald-600 text-xs font-extrabold text-white"
               >
                 Admin Supply Portal Login
