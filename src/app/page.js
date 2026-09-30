@@ -201,31 +201,25 @@ export default function LandingPage() {
 
       {/* ================= 1. HEADER / NAVIGATION ================= */}
       <header className="relative z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl sticky top-0 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-[1540px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Logo & Title */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 p-1.5 flex items-center justify-center border border-emerald-200 shadow-xs group-hover:scale-105 transition-transform overflow-hidden">
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 p-1.5 flex items-center justify-center border border-emerald-200 shadow-xs group-hover:scale-105 transition-transform overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-base tracking-tight text-slate-900 group-hover:text-emerald-700 transition-colors">
-                  NFSTI <span className="text-emerald-600">EQUIPMENT</span>
-                </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Vercel Deployed
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 block tracking-wider uppercase">
+            <div className="min-w-0">
+              <span className="font-black text-base tracking-tight text-slate-900 group-hover:text-emerald-700 transition-colors block leading-tight truncate">
+                NFSTI <span className="text-emerald-600">EQUIPMENT</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 block tracking-wider uppercase truncate">
                 Property & Inventory System
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-bold text-slate-600">
+          <nav className="hidden xl:flex items-center gap-7 text-xs font-bold text-slate-600 shrink-0">
             <a href="#features" className="hover:text-emerald-700 transition-colors">
               Features
             </a>
@@ -244,26 +238,26 @@ export default function LandingPage() {
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2.5 shrink-0">
             <Link
               href="/auth/admin/login"
-              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-extrabold text-xs transition-colors cursor-pointer shadow-2xs"
+              className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-extrabold text-xs transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
             >
               Admin Equipment Property Portal Login
             </Link>
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 px-4.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer whitespace-nowrap"
             >
               <span>Admin Supply Portal Login</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </Link>
           </div>
 
           {/* Mobile hamburger toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl bg-white border border-slate-200 text-slate-700 shadow-2xs"
+            className="xl:hidden p-2 rounded-xl bg-white border border-slate-200 text-slate-700 shadow-2xs cursor-pointer"
           >
             <ChevronDown className={`w-5 h-5 transition-transform ${mobileMenuOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -271,7 +265,7 @@ export default function LandingPage() {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white p-4 space-y-3 animate-in fade-in">
+          <div className="xl:hidden border-t border-slate-200 bg-white p-4 space-y-3 animate-in fade-in">
             <a
               href="#features"
               onClick={() => setMobileMenuOpen(false)}
