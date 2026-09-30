@@ -204,16 +204,25 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Logo & Title */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 p-1.5 flex items-center justify-center border border-emerald-200 shadow-xs group-hover:scale-105 transition-transform overflow-hidden">
+            <div className="flex items-center gap-1.5 p-1 bg-white rounded-2xl border border-slate-200/90 shadow-2xs group-hover:scale-[1.02] transition-transform">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-full h-full object-contain" />
+              <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas Logo" className="h-8 w-auto object-contain" />
+              <span className="w-px h-5 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/DILG.png" alt="DILG Logo" className="h-7 w-auto object-contain" />
+              <span className="w-px h-5 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/PPSC.webp" alt="PPSC Logo" className="h-7 w-auto object-contain" />
+              <span className="w-px h-5 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nfsti logo.png" alt="NFSTI Logo" className="h-7 w-auto object-contain" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <div className="flex items-center gap-2">
                 <span className="font-black text-base tracking-tight text-slate-900 group-hover:text-emerald-700 transition-colors">
                   NFSTI <span className="text-emerald-600">EQUIPMENT</span>
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Vercel Deployed
                 </span>
@@ -333,12 +342,25 @@ export default function LandingPage() {
       {/* ================= 2. HERO SECTION ================= */}
       <section className="relative z-10 pt-12 lg:pt-20 pb-16 lg:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center max-w-4xl mx-auto space-y-6">
-          {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-xs font-extrabold tracking-wide shadow-2xs">
-            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE</span>
-            <span className="text-slate-400">•</span>
-            <span className="text-emerald-950">OFFICIAL PROPERTY SYSTEM</span>
+          {/* Official Agency Logos Banner */}
+          <div className="inline-flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 px-4 py-2 rounded-2xl bg-white border border-slate-200/90 text-slate-900 shadow-2xs">
+            <div className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas" className="h-7 sm:h-8 w-auto object-contain" />
+              <span className="w-px h-5 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/DILG.png" alt="DILG" className="h-6 sm:h-7 w-auto object-contain" />
+              <span className="w-px h-5 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/PPSC.webp" alt="PPSC" className="h-6 sm:h-7 w-auto object-contain" />
+              <span className="w-px h-5 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nfsti logo.png" alt="NFSTI Logo" className="h-6 sm:h-7 w-auto object-contain" />
+            </div>
+            <span className="w-px h-5 bg-slate-200 hidden sm:block" />
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wide">
+              NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
+            </span>
           </div>
 
           {/* Main Hero Headline */}
@@ -871,13 +893,22 @@ export default function LandingPage() {
       <footer className="relative z-10 border-t border-slate-200 bg-white py-12 px-4 sm:px-6 lg:px-8 text-xs text-slate-600">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 p-1 border border-emerald-200 overflow-hidden shadow-2xs">
+            <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-slate-200 shadow-2xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-full h-full object-contain" />
+              <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas Logo" className="h-7 w-auto object-contain" />
+              <span className="w-px h-4 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/DILG.png" alt="DILG Logo" className="h-6 w-auto object-contain" />
+              <span className="w-px h-4 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/PPSC.webp" alt="PPSC Logo" className="h-6 w-auto object-contain" />
+              <span className="w-px h-4 bg-slate-200" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nfsti logo.png" alt="NFSTI Logo" className="h-6 w-auto object-contain" />
             </div>
             <div>
               <p className="font-extrabold text-slate-900 text-xs">NFSTI Equipment & Property System</p>
-              <p className="text-[10px] text-slate-400">National Forensic Science Training Institute © FY 2026</p>
+              <p className="text-[10px] text-slate-400">DILG • PPSC • National Forensic Science Training Institute © FY 2026</p>
             </div>
           </div>
 

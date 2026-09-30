@@ -131,6 +131,21 @@ export default function Navbar({ pageTitle = 'Dashboard', icon: PageIcon }) {
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Official Agency Logo Strip */}
+        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas" className="h-6 w-auto object-contain" />
+          <span className="w-px h-3.5 bg-slate-200" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/DILG.png" alt="DILG" className="h-5 w-auto object-contain" />
+          <span className="w-px h-3.5 bg-slate-200" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/PPSC.webp" alt="PPSC" className="h-5 w-auto object-contain" />
+          <span className="w-px h-3.5 bg-slate-200" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/nfsti logo.png" alt="NFSTI" className="h-5 w-auto object-contain" />
+        </div>
+
         {/* Date Display */}
         <div className="hidden md:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600">
           <Calendar className="w-3.5 h-3.5 text-emerald-600" />
