@@ -204,25 +204,16 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Logo & Title */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex items-center gap-1.5 p-1 bg-white rounded-2xl border border-slate-200/90 shadow-2xs group-hover:scale-[1.02] transition-transform">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 p-1.5 flex items-center justify-center border border-emerald-200 shadow-xs group-hover:scale-105 transition-transform overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas Logo" className="h-8 w-auto object-contain" />
-              <span className="w-px h-5 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/DILG.png" alt="DILG Logo" className="h-7 w-auto object-contain" />
-              <span className="w-px h-5 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/PPSC.webp" alt="PPSC Logo" className="h-7 w-auto object-contain" />
-              <span className="w-px h-5 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/nfsti logo.png" alt="NFSTI Logo" className="h-7 w-auto object-contain" />
+              <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-full h-full object-contain" />
             </div>
-            <div className="hidden sm:block">
+            <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-base tracking-tight text-slate-900 group-hover:text-emerald-700 transition-colors">
                   NFSTI <span className="text-emerald-600">EQUIPMENT</span>
                 </span>
-                <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Vercel Deployed
                 </span>

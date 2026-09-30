@@ -278,43 +278,22 @@ function SidebarContent({ totalItems = 0 }) {
             !isExpanded ? 'justify-center flex-col gap-2' : 'justify-between'
           }`}
         >
-          <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0 group cursor-pointer">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs group-hover:scale-[1.02] transition-transform">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/Logo-Bagong-Pilipinas.png"
-                alt="Bagong Pilipinas Logo"
-                className="h-7 w-auto object-contain"
-              />
-              <span className="w-px h-4 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/DILG.png"
-                alt="DILG Logo"
-                className="h-6 w-auto object-contain"
-              />
-              <span className="w-px h-4 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/PPSC.webp"
-                alt="PPSC Logo"
-                className="h-6 w-auto object-contain"
-              />
-              <span className="w-px h-4 bg-slate-200" />
+          <Link href="/dashboard" className="flex items-center gap-3 min-w-0 group cursor-pointer">
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-slate-100 shrink-0 p-0.5 overflow-hidden group-hover:scale-105 transition-transform">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/nfsti logo.png"
                 alt="NFSTI Logo"
-                className="h-6 w-auto object-contain"
+                className="w-full h-full object-contain"
               />
             </div>
             {isExpanded && (
               <div className="min-w-0 animate-in fade-in duration-200">
-                <span className="font-black text-sm text-slate-900 tracking-tight block leading-tight truncate">
+                <span className="font-black text-base text-slate-900 tracking-tight block leading-tight truncate">
                   NFSTI <span className="text-emerald-600">Equipment</span>
                 </span>
-                <span className="block text-[8.5px] text-emerald-800 font-extrabold tracking-wider uppercase truncate">
-                  DILG • PPSC • NFSTI
+                <span className="block text-[9px] text-emerald-800 font-extrabold tracking-wider uppercase truncate">
+                  Inventory System
                 </span>
               </div>
             )}
