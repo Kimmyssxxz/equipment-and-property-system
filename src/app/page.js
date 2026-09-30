@@ -334,24 +334,18 @@ export default function LandingPage() {
       <section className="relative z-10 pt-12 lg:pt-20 pb-16 lg:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center max-w-4xl mx-auto space-y-6">
           {/* Official Agency Logos Banner */}
-          <div className="inline-flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 px-4 py-2 rounded-2xl bg-white border border-slate-200/90 text-slate-900 shadow-2xs">
-            <div className="flex items-center gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas" className="h-7 sm:h-8 w-auto object-contain" />
-              <span className="w-px h-5 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/DILG.png" alt="DILG" className="h-6 sm:h-7 w-auto object-contain" />
-              <span className="w-px h-5 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/PPSC.webp" alt="PPSC" className="h-6 sm:h-7 w-auto object-contain" />
-              <span className="w-px h-5 bg-slate-200" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/nfsti logo.png" alt="NFSTI Logo" className="h-6 sm:h-7 w-auto object-contain" />
-            </div>
-            <span className="w-px h-5 bg-slate-200 hidden sm:block" />
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wide">
-              NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
-            </span>
+          <div className="inline-flex items-center justify-center gap-3 sm:gap-4 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:border-emerald-300 transition-all">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo-Bagong-Pilipinas.png" alt="Bagong Pilipinas" className="h-10 sm:h-13 w-auto object-contain hover:scale-105 transition-transform" />
+            <span className="w-px h-7 bg-slate-200" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/DILG.png" alt="DILG" className="h-9 sm:h-11 w-auto object-contain hover:scale-105 transition-transform" />
+            <span className="w-px h-7 bg-slate-200" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/PPSC.webp" alt="PPSC" className="h-9 sm:h-11 w-auto object-contain hover:scale-105 transition-transform" />
+            <span className="w-px h-7 bg-slate-200" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/nfsti logo.png" alt="NFSTI Logo" className="h-9 sm:h-11 w-auto object-contain hover:scale-105 transition-transform" />
           </div>
 
           {/* Main Hero Headline */}
