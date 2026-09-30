@@ -245,31 +245,19 @@ export default function LandingPage() {
 
           {/* Right Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            {isAuthenticated ? (
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer"
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/auth/admin/login"
-                  className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer shadow-2xs"
-                >
-                  Admin Portal Login
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 px-4.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer"
-                >
-                  <span>Launch System</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </>
-            )}
+            <Link
+              href="/auth/admin/login"
+              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-extrabold text-xs transition-colors cursor-pointer shadow-2xs"
+            >
+              ADMIN EQUIPMENT PROPERTY PORTAL LOGIN
+            </Link>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 px-4.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <span>ADMIN SUPPLY PORTAL LOGIN</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
           {/* Mobile hamburger toggle */}
@@ -315,15 +303,15 @@ export default function LandingPage() {
             <div className="pt-2 flex flex-col gap-2">
               <Link
                 href="/auth/admin/login"
-                className="w-full text-center py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800"
+                className="w-full text-center py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-extrabold text-slate-800"
               >
-                Admin Login
+                ADMIN EQUIPMENT PROPERTY PORTAL LOGIN
               </Link>
               <Link
                 href="/dashboard"
                 className="w-full text-center py-2.5 rounded-xl bg-emerald-600 text-xs font-extrabold text-white"
               >
-                Launch Dashboard
+                ADMIN SUPPLY PORTAL LOGIN
               </Link>
             </div>
           </div>
@@ -332,7 +320,7 @@ export default function LandingPage() {
 
       {/* ================= 2. HERO SECTION ================= */}
       <section className="relative z-10 pt-12 lg:pt-20 pb-16 lg:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-4xl mx-auto space-y-6">
+        <div className="text-center max-w-5xl mx-auto space-y-6">
           {/* Official Agency Logos Banner */}
           <div className="inline-flex items-center justify-center gap-3 sm:gap-4 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:border-emerald-300 transition-all">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -349,10 +337,10 @@ export default function LandingPage() {
           </div>
 
           {/* Main Hero Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
-            Next-Gen Government <br className="hidden sm:inline" />
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-[1.15] uppercase">
+            NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-emerald-700 via-teal-600 to-emerald-800 bg-clip-text text-transparent">
-              Equipment Accountability & Inventory System
+              EQUIPMENT AND ACCOUNTABILITY AND INVENTORY SYSTEM
             </span>
           </h1>
 
