@@ -32,14 +32,7 @@ import {
 } from 'lucide-react';
 import { StorageManager } from '@/lib/storage';
 
-function GithubIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-      <path d="M9 18c-4.51 2-5-2-7-2" />
-    </svg>
-  );
-}
+
 
 export default function LandingPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -109,10 +102,10 @@ export default function LandingPage() {
     },
     {
       icon: Database,
-      title: 'Supabase Cloud & PostgreSQL Security',
+      title: 'Encrypted Cloud Database & Security',
       description:
-        'Enterprise-grade database powered by Supabase PostgreSQL, Prisma ORM, server-side authentication, and encrypted audit trail logging.',
-      tag: 'Vercel Hosted',
+        'Enterprise-grade relational database security, server-side authentication, role-based access control, and encrypted audit trail logging.',
+      tag: 'Cloud Security',
       bgColor: 'bg-cyan-50',
       borderColor: 'border-cyan-200',
       accentColor: 'text-cyan-700',
@@ -121,7 +114,7 @@ export default function LandingPage() {
 
   const techStack = [
     { name: 'Next.js 15', category: 'App Router & SSR Framework', desc: 'React 19, Server Components & Dynamic API Routes', badge: 'v15.2' },
-    { name: 'Supabase', category: 'Cloud Database & SSR Auth', desc: 'PostgreSQL DB, Row Level Security & Session Auth', badge: 'Supabase SSR' },
+    { name: 'PostgreSQL Database', category: 'Cloud Database Architecture', desc: 'Relational DB, Row Level Security & Session Auth', badge: 'Relational DB' },
     { name: 'Prisma ORM', category: 'Database Modeling', desc: 'Type-safe SQL queries, migrations & schema management', badge: 'v6.19' },
     { name: 'Tailwind CSS v4', category: 'Modern Styling System', desc: 'Responsive glassmorphic UI, custom gradients & animations', badge: 'v4.0' },
     { name: 'ApexCharts', category: 'Data Visualization', desc: 'Interactive property valuation & status distribution charts', badge: 'v6.10' },
@@ -177,16 +170,16 @@ export default function LandingPage() {
       a: 'Each property card generates a unique serial QR code. Inventory officers open the mobile physical inventory page on any smartphone or tablet camera to scan equipment labels. The system instantly matches the scanned QR code against the database record and logs status as Verified, Shortage, or Overage.',
     },
     {
-      q: 'How is authentication and deployment configured on Vercel and Supabase?',
-      a: 'The application is deployed on Vercel with Next.js 15 App Router. The database backend relies on Supabase PostgreSQL with Prisma ORM for schema management. Authentication uses Supabase SSR cookies with local storage fallback to ensure seamless multi-device sessions.',
+      q: 'How is authentication and database access configured?',
+      a: 'The application uses Next.js 15 App Router with server-side API routes and PostgreSQL database integration. Authentication uses secure cookies with local storage fallback to ensure seamless multi-device sessions.',
     },
     {
       q: 'Can custom reports be exported for official documentation?',
       a: 'Absolutely. The Reports module allows supply officers to filter and export official RPCPPE, RPCSP, RSPI, and RPCI documents. Reports can be previewed directly in the browser or saved/printed as official government documentation.',
     },
     {
-      q: 'Is this system hosted on GitHub and open for further customization?',
-      a: 'Yes, the codebase is fully maintained in GitHub and configured for continuous deployment on Vercel. Developers can clone the repository, run `npm install`, setup Supabase environment variables, and run `npm run dev` to start building.',
+      q: 'Is this system customizable for other government institutes?',
+      a: 'Yes, the modular architecture allows easy adaptation of property threshold rules, office classifications, report forms, and inventory scanning workflows.',
     },
   ];
 
@@ -366,15 +359,15 @@ export default function LandingPage() {
           <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-semibold">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-emerald-600" />
-              <span>Hosted on <strong className="text-slate-900">Vercel</strong></span>
+              <span>Institutional <strong className="text-slate-900">Cloud Network</strong></span>
             </div>
             <div className="flex items-center gap-2">
-              <GithubIcon className="w-4 h-4 text-slate-700" />
-              <span>Repository on <strong className="text-slate-900">GitHub</strong></span>
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>COA & GAM <strong className="text-slate-900">Compliant</strong></span>
             </div>
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4 text-emerald-600" />
-              <span>Powered by <strong className="text-slate-900">Supabase & Prisma</strong></span>
+              <span>PostgreSQL <strong className="text-slate-900">Encrypted DB</strong></span>
             </div>
           </div>
         </div>
@@ -733,7 +726,7 @@ export default function LandingPage() {
             Built with Modern High-Performance Tech Stack
           </h2>
           <p className="text-sm text-slate-600 font-medium">
-            Powered by Next.js 15 App Router, Supabase PostgreSQL database, and Tailwind CSS v4.
+            Powered by Next.js 15 App Router, PostgreSQL database, and Tailwind CSS v4.
           </p>
         </div>
 
@@ -889,7 +882,7 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-300 font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Vercel Hosted & Operational</span>
+            <span>Institutional System Operational</span>
           </div>
         </div>
       </footer>
