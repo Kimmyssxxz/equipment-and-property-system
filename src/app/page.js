@@ -249,13 +249,13 @@ export default function LandingPage() {
               href="/auth/admin/login"
               className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-extrabold text-xs transition-colors cursor-pointer shadow-2xs"
             >
-              ADMIN EQUIPMENT PROPERTY PORTAL LOGIN
+              Admin Equipment Property Portal Login
             </Link>
             <Link
               href="/dashboard"
               className="flex items-center gap-2 px-4.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-200 transition-all hover:scale-[1.02] cursor-pointer"
             >
-              <span>ADMIN SUPPLY PORTAL LOGIN</span>
+              <span>Admin Supply Portal Login</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -305,13 +305,13 @@ export default function LandingPage() {
                 href="/auth/admin/login"
                 className="w-full text-center py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-extrabold text-slate-800"
               >
-                ADMIN EQUIPMENT PROPERTY PORTAL LOGIN
+                Admin Equipment Property Portal Login
               </Link>
               <Link
                 href="/dashboard"
                 className="w-full text-center py-2.5 rounded-xl bg-emerald-600 text-xs font-extrabold text-white"
               >
-                ADMIN SUPPLY PORTAL LOGIN
+                Admin Supply Portal Login
               </Link>
             </div>
           </div>
@@ -337,10 +337,10 @@ export default function LandingPage() {
           </div>
 
           {/* Main Hero Headline */}
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-[1.15] uppercase">
-            NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE <br className="hidden sm:inline" />
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.15]">
+            National Forensic Science Training Institute <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-emerald-700 via-teal-600 to-emerald-800 bg-clip-text text-transparent">
-              EQUIPMENT AND ACCOUNTABILITY AND INVENTORY SYSTEM
+              Equipment and Accountability and Inventory System
             </span>
           </h1>
 
