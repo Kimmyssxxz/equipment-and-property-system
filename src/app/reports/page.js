@@ -79,6 +79,19 @@ const REPORT_TYPES = {
     badgeColor: 'bg-purple-100 text-purple-950 border-purple-300',
     tagColor: 'text-purple-800 bg-purple-50 border-purple-200',
   },
+  iirup: {
+    id: 'iirup',
+    code: 'IIRUP',
+    shortName: 'IIRUP',
+    name: 'INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY (IIRUP)',
+    reportType: 'INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY (IIRUP)',
+    ppeTitle: 'INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY',
+    categoryLabel: 'Unserviceable Property Inspection & Disposal',
+    description: 'Official report for inventory, inspection, valuation, and disposal of unserviceable equipment and properties.',
+    icon: Trash2,
+    badgeColor: 'bg-amber-100 text-amber-950 border-amber-300',
+    tagColor: 'text-amber-800 bg-amber-50 border-amber-200',
+  },
 };
 
 function ReportsContent() {
@@ -88,7 +101,9 @@ function ReportsContent() {
   
   // Normalization for backward compatibility
   let selectedTypeId = 'rpcppe';
-  if (rawTypeParam.toLowerCase().includes('rspi') || rawTypeParam.toLowerCase().includes('registry') || rawTypeParam.toLowerCase().includes('issued') || rawTypeParam.toLowerCase().includes('rpci') || rawTypeParam.toLowerCase().includes('inventory')) {
+  if (rawTypeParam.toLowerCase().includes('iirup') || rawTypeParam.toLowerCase().includes('unserviceable') || rawTypeParam.toLowerCase().includes('inspection')) {
+    selectedTypeId = 'iirup';
+  } else if (rawTypeParam.toLowerCase().includes('rspi') || rawTypeParam.toLowerCase().includes('registry') || rawTypeParam.toLowerCase().includes('issued')) {
     selectedTypeId = 'rspi';
   } else if (rawTypeParam.toLowerCase().includes('rpcsp') || rawTypeParam.toLowerCase().includes('semi')) {
     selectedTypeId = 'rpcsp';
@@ -366,6 +381,17 @@ function ReportsContent() {
         items = items.filter((item) => parseVal(item.unitValue) >= 50000);
       } else if (selectedTypeId === 'rpcsp' || selectedTypeId === 'rspi') {
         items = items.filter((item) => parseVal(item.unitValue) < 50000);
+      } else if (selectedTypeId === 'iirup') {
+        const unserv = items.filter((item) => {
+          const st = (item.status || '').toUpperCase();
+          const rem = (item.remarks || '').toUpperCase();
+          return st === 'UNSERVICEABLE' || st === 'CONDEMNED' || rem.includes('UNSERVICEABLE') || rem.includes('CONDEMNED') || rem.includes('DAMAGED');
+        });
+        if (unserv.length > 0) {
+          items = unserv;
+        } else {
+          items = items.map((i) => ({ ...i, remarks: i.remarks || 'unserviceable' }));
+        }
       }
 
       const reportNumber = `REP-2026-${String(reports.length + 1).padStart(4, '0')}`;

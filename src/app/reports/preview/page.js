@@ -313,9 +313,10 @@ function ReportPreviewContent() {
   }
 
   const typeParam = (searchParams.get('type') || '').toLowerCase();
-  const isRSPI = typeParam === 'rspi' || (report.reportType || report.title || '').toUpperCase().includes('REGISTRY') || (report.reportType || report.title || '').toUpperCase().includes('RSPI') || (report.reportType || '').toUpperCase().includes('ISSUED');
-  const isRPCSP = !isRSPI && (typeParam === 'rpcsp' || (report.reportType || report.title || '').toUpperCase().includes('SEMI-EXPANDABLE') || (report.reportType || '').toUpperCase().includes('RPCSP'));
-  const isRPCI = !isRSPI && !isRPCSP && ((report.reportType || report.title || '').toUpperCase().includes('INVENTORY') || (report.reportType || '').toUpperCase().includes('RPCI'));
+  const isIIRUP = typeParam === 'iirup' || (report.reportType || report.title || '').toUpperCase().includes('IIRUP') || (report.reportType || report.title || '').toUpperCase().includes('UNSERVICEABLE');
+  const isRSPI = !isIIRUP && (typeParam === 'rspi' || (report.reportType || report.title || '').toUpperCase().includes('REGISTRY') || (report.reportType || report.title || '').toUpperCase().includes('RSPI') || (report.reportType || '').toUpperCase().includes('ISSUED'));
+  const isRPCSP = !isIIRUP && !isRSPI && (typeParam === 'rpcsp' || (report.reportType || report.title || '').toUpperCase().includes('SEMI-EXPANDABLE') || (report.reportType || '').toUpperCase().includes('RPCSP'));
+  const isRPCI = !isIIRUP && !isRSPI && !isRPCSP && ((report.reportType || report.title || '').toUpperCase().includes('INVENTORY') || (report.reportType || '').toUpperCase().includes('RPCI'));
 
   const resolvedAccountablePersonName =
     report.accountablePersonName ||
@@ -333,7 +334,11 @@ function ReportPreviewContent() {
   let reportSubHeaderLabel = '(Type of Property, Plant and Equipment)';
   let defaultTypeLabel = 'PROPERTY, PLANT AND EQUIPMENT (RPCPPE)';
 
-  if (isRSPI) {
+  if (isIIRUP) {
+    reportMainHeader = 'INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY';
+    reportSubHeaderLabel = '(Unserviceable Property)';
+    defaultTypeLabel = 'UNSERVICEABLE PROPERTY (IIRUP)';
+  } else if (isRSPI) {
     reportMainHeader = 'REGISTRY OF SEMI-EXPANDABLE PROPERTY ISSUED';
     reportSubHeaderLabel = '(Semi-expendable Property)';
     defaultTypeLabel = 'OFFICE EQUIPMENT';
@@ -410,6 +415,188 @@ function ReportPreviewContent() {
     const officeAddress = settings?.officeAddress || 'Camp Vicente Lim, Mayapa Calamba City Laguna';
     const asOfFormatted = formatLongDate(asOfDateQuery || report.asOfDate) || report.asOfDate;
     const assumedFormatted = formatLongDate(assumedDateQuery || report.assumedDate || report.signatories?.assumedDate) || formatLongDate(new Date());
+
+    if (isIIRUP) {
+      const groupedItems = items.reduce((acc, item) => {
+        const cat = item.categoryName || item.category || item.categoryCode || 'OFFICE EQUIPMENT';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(item);
+        return acc;
+      }, {});
+
+      let rowsHtml = '';
+      let grandTotalCost = 0;
+
+      if (Object.keys(groupedItems).length === 0) {
+        rowsHtml = `<tr><td colspan="18" style="text-align:center; padding: 25px;">No unserviceable property items recorded.</td></tr>`;
+      } else {
+        Object.entries(groupedItems).forEach(([catName, catItems]) => {
+          rowsHtml += `
+            <tr style="background-color:#f9fafb; font-weight:bold;">
+              <td></td>
+              <td colspan="17" style="font-weight:bold; text-transform:uppercase;">${catName}</td>
+            </tr>
+          `;
+          catItems.forEach((item) => {
+            const qty = parseInt(item.quantityPerCard, 10) || 1;
+            const uVal = parseFloat(item.unitValue) || 0;
+            const totalCost = uVal * qty;
+            grandTotalCost += totalCost;
+
+            const acqDate = item.acquisitionDate || item.date || report.asOfDate || '';
+            const dateStr = acqDate ? String(acqDate).split('T')[0] : '';
+            const propNo = item.propertyNumber || item.semiExpendablePropertyNo || '';
+            const itemDesc = item.description ? `${item.article || ''}, ${item.description}` : (item.article || 'Equipment');
+
+            rowsHtml += `
+              <tr>
+                <td style="text-align:center;">${dateStr}</td>
+                <td>${itemDesc}</td>
+                <td style="text-align:center; font-weight:bold;">${propNo}</td>
+                <td style="text-align:center; font-weight:bold;">${qty}</td>
+                <td style="text-align:right;">₱${uVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="text-align:right; font-weight:bold;">₱${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td>${item.remarks || 'unserviceable'}</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:center;">-</td>
+              </tr>
+            `;
+          });
+        });
+
+        rowsHtml += `
+          <tr style="font-weight:bold; background-color:#f3f4f6;">
+            <td colspan="5" style="text-align:right;">TOTAL COST:</td>
+            <td style="text-align:right; font-weight:bold;">₱${grandTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td colspan="12"></td>
+          </tr>
+        `;
+      }
+
+      const htmlDocument = `
+        <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>IIRUP Document</title>
+        <style>
+          @page WordSection1 { size: 13.0in 8.5in; mso-page-orientation: landscape; margin: 0.5in; }
+          div.WordSection1 { page: WordSection1; }
+          body { font-family: Arial, sans-serif; font-size: 8.5pt; }
+          table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+          th, td { border: 1pt solid #000; padding: 4px; font-size: 8pt; }
+          th { background-color: #f3f4f6; font-weight: bold; text-align: center; }
+        </style>
+        </head>
+        <body>
+        <div class="WordSection1">
+          <table style="border:none; width:100%; margin-bottom:10px;">
+            <tr style="border:none;">
+              <td style="border:none; width:50%; font-weight:bold;">Entity Name: <u>${settings?.orgName || 'PHILIPPINE PUBLIC SAFETY COLLEGE'}</u></td>
+              <td style="border:none; width:50%; text-align:right; font-weight:bold;">Fund Cluster: ____________________</td>
+            </tr>
+            <tr style="border:none;">
+              <td style="border:none; font-weight:bold;">Name of Accountable Officer: <u>${resolvedAccountablePersonName}</u></td>
+              <td style="border:none; text-align:right; font-weight:bold;">Official Designation: <u>${resolvedAccountablePosition}</u></td>
+            </tr>
+            <tr style="border:none;">
+              <td colspan="2" style="border:none; font-weight:bold;">Station: <u>${settings?.stationName || 'National Forensic Science Training Institute'}</u></td>
+            </tr>
+          </table>
+
+          <h2 style="text-align:center; font-size:12pt; font-weight:bold; text-transform:uppercase; margin: 10px 0 3px 0;">INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY</h2>
+          <p style="text-align:center; font-size:9pt; margin-bottom:15px;">As of ${asOfFormatted}</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th colspan="10">INVENTORY</th>
+                <th colspan="5">INSPECTION and DISPOSAL</th>
+                <th colspan="3">RECORDS OF SALE</th>
+              </tr>
+              <tr>
+                <th rowspan="2">Date Acquired</th>
+                <th rowspan="2">Particulars/Articles</th>
+                <th rowspan="2">Property No.</th>
+                <th rowspan="2">Qty</th>
+                <th rowspan="2">Unit Cost</th>
+                <th rowspan="2">Total Cost</th>
+                <th rowspan="2">Accumulated Depreciation</th>
+                <th rowspan="2">Accumulated Impairment Losses</th>
+                <th rowspan="2">Carrying Amount</th>
+                <th rowspan="2">Remarks</th>
+                <th colspan="5">DISPOSAL</th>
+                <th rowspan="2">Appraised Value</th>
+                <th rowspan="2">OR No.</th>
+                <th rowspan="2">Amount</th>
+              </tr>
+              <tr>
+                <th>Sale</th>
+                <th>Transfer</th>
+                <th>Destruction</th>
+                <th>Others (Specify)</th>
+                <th>Total</th>
+              </tr>
+              <tr style="font-size:7.5pt; text-align:center;">
+                <th>(1)</th><th>(2)</th><th>(3)</th><th>(4)</th><th>(5)</th><th>(6)</th><th>(7)</th><th>(8)</th><th>(9)</th><th>(10)</th>
+                <th>(11)</th><th>(12)</th><th>(13)</th><th>(14)</th><th>(15)</th><th>(16)</th><th>(17)</th><th>(18)</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+          <br/><br/>
+
+          <table style="border:none; width:100%; margin-top:20px;">
+            <tr style="border:none; vertical-align:top;">
+              <td style="border:none; width:33%;">
+                <p><b>Prepared by :</b></p><br/>
+                <p><u><b>${sigs.preparedByName || 'JENELYN N. EDEN'}</b></u></p>
+                <p>${sigs.preparedByTitle || 'Supply Section Representative'}</p><br/>
+                <p><b>Member :</b></p>
+                <p><b>${sigs.member1Name || 'JOANNA ROSE B. RIÑA'}</b></p><br/>
+                <p><b>Member :</b></p>
+                <p><b>${sigs.member2Name || 'PEMS DAISY G. LARANANG, (Ret)'}</b></p>
+              </td>
+              <td style="border:none; width:33%;">
+                <p><b>Certified Correct by :</b></p><br/>
+                <p><u><b>${sigs.certifiedCorrectByName || 'ELMER G. DOLOTALLAS'}</b></u></p>
+                <p>${sigs.certifiedCorrectByTitle || 'Supply Accountable Officer / Chairperson'}</p><br/>
+                <p><b>Team Leader :</b></p>
+                <p><u><b>${sigs.teamLeaderName || 'GLORIA C. PERIDO'}</b></u></p>
+                <p>${sigs.teamLeaderTitle || 'SDO'}</p>
+              </td>
+              <td style="border:none; width:34%;">
+                <p><b>Approved by :</b></p><br/>
+                <p><u><b>${sigs.approvedByName || 'ATTY ERCY NANETTE P MADRIAGA'}</b></u></p>
+                <p>${sigs.approvedByTitle || 'Police Colonel / Director, NFSTI'}</p><br/>
+                <p><b>Verified by :</b></p>
+                <p><u><b>${sigs.verifiedByName || 'YVES ARDEN M. CABANLONG'}</b></u></p>
+                <p>${sigs.verifiedByTitle || 'State Auditor IV / Audit Team Leader, RO-IVA'}</p>
+              </td>
+            </tr>
+          </table>
+        </div>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff' + htmlDocument], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${report.reportNumber || 'IIRUP-Report'}_${new Date().toISOString().slice(0, 10)}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return;
+    }
 
     if (isRSPI) {
       const rowsHtml = items.length > 0
@@ -832,7 +1019,262 @@ function ReportPreviewContent() {
 
       {/* ================= OFFICIAL PRINTABLE LONG SIZE BOND PAPER LANDSCAPE REPORT SHEET ================= */}
       <div className="report-sheet max-w-[1400px] w-full mx-auto bg-white border border-slate-300 shadow-2xl p-8 sm:p-10 text-black font-serif print:shadow-none print:border-none print:m-0 print:p-0 print:max-w-none">
-        {isRSPI ? (
+        {isIIRUP ? (
+          <>
+            {/* IIRUP Document Header matching Photo */}
+            <div className="mb-6 space-y-2 font-sans text-xs">
+              <div className="flex flex-wrap justify-between items-start font-bold uppercase tracking-tight text-black border-b border-black pb-3">
+                <div className="space-y-1">
+                  <p>
+                    Entity Name: <span className="font-extrabold underline">{settings?.orgName || 'PHILIPPINE PUBLIC SAFETY COLLEGE'}</span>
+                  </p>
+                  <p>
+                    Name of Accountable Officer: <span className="font-extrabold underline">{resolvedAccountablePersonName}</span>
+                  </p>
+                  <p>
+                    Official Designation: <span className="font-semibold underline">{resolvedAccountablePosition}</span>
+                  </p>
+                  <p>
+                    Station: <span className="font-extrabold underline">{settings?.stationName || 'National Forensic Science Training Institute'}</span>
+                  </p>
+                </div>
+                <div className="text-right space-y-1">
+                  <p>
+                    Fund Cluster: <span className="font-normal underline min-w-[140px] inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center pt-3 pb-1">
+                <h2 className="text-lg font-black uppercase tracking-wider font-sans">
+                  INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY
+                </h2>
+                <p className="text-xs font-bold italic mt-0.5">
+                  As of {formatLongDate(asOfDateQuery || report.asOfDate) || report.asOfDate || 'December 31, 2025'}
+                </p>
+              </div>
+            </div>
+
+            {/* 18-Column Official IIRUP Table */}
+            <div className="overflow-x-auto my-3">
+              <table className="w-full text-[10.5px] font-sans border-collapse border border-black">
+                <thead>
+                  <tr className="bg-slate-100 text-black text-center font-bold uppercase text-[10px]">
+                    <th className="border border-black p-1.5" colSpan="10">INVENTORY</th>
+                    <th className="border border-black p-1.5" colSpan="5">INSPECTION and DISPOSAL</th>
+                    <th className="border border-black p-1.5" colSpan="3">RECORDS OF SALE</th>
+                  </tr>
+                  <tr className="bg-slate-100 text-black text-center font-bold uppercase text-[9px]">
+                    <th className="border border-black p-1 w-[7%]" rowSpan="2">Date Acquired</th>
+                    <th className="border border-black p-1 w-[18%]" rowSpan="2">Particulars/Articles</th>
+                    <th className="border border-black p-1 w-[10%]" rowSpan="2">Property No.</th>
+                    <th className="border border-black p-1 w-[3%]" rowSpan="2">Qty</th>
+                    <th className="border border-black p-1 w-[6%]" rowSpan="2">Unit Cost</th>
+                    <th className="border border-black p-1 w-[7%]" rowSpan="2">Total Cost</th>
+                    <th className="border border-black p-1 w-[5%]" rowSpan="2">Accumulated Depreciation</th>
+                    <th className="border border-black p-1 w-[5%]" rowSpan="2">Accumulated Impairment Losses</th>
+                    <th className="border border-black p-1 w-[5%]" rowSpan="2">Carrying Amount</th>
+                    <th className="border border-black p-1 w-[6%]" rowSpan="2">Remarks</th>
+                    <th className="border border-black p-1" colSpan="5">DISPOSAL</th>
+                    <th className="border border-black p-1 w-[5%]" rowSpan="2">Appraised Value</th>
+                    <th className="border border-black p-1 w-[5%]" rowSpan="2">OR No.</th>
+                    <th className="border border-black p-1 w-[5%]" rowSpan="2">Amount</th>
+                  </tr>
+                  <tr className="bg-slate-100 text-black text-center font-bold uppercase text-[8.5px]">
+                    <th className="border border-black p-0.5 w-[3%]">Sale</th>
+                    <th className="border border-black p-0.5 w-[3%]">Transfer</th>
+                    <th className="border border-black p-0.5 w-[3%]">Destruction</th>
+                    <th className="border border-black p-0.5 w-[3%]">Others (Specify)</th>
+                    <th className="border border-black p-0.5 w-[3%]">Total</th>
+                  </tr>
+                  <tr className="bg-slate-100 text-black text-center font-bold text-[8px]">
+                    <th className="border border-black p-0.5">(1)</th>
+                    <th className="border border-black p-0.5">(2)</th>
+                    <th className="border border-black p-0.5">(3)</th>
+                    <th className="border border-black p-0.5">(4)</th>
+                    <th className="border border-black p-0.5">(5)</th>
+                    <th className="border border-black p-0.5">(6)</th>
+                    <th className="border border-black p-0.5">(7)</th>
+                    <th className="border border-black p-0.5">(8)</th>
+                    <th className="border border-black p-0.5">(9)</th>
+                    <th className="border border-black p-0.5">(10)</th>
+                    <th className="border border-black p-0.5">(11)</th>
+                    <th className="border border-black p-0.5">(12)</th>
+                    <th className="border border-black p-0.5">(13)</th>
+                    <th className="border border-black p-0.5">(14)</th>
+                    <th className="border border-black p-0.5">(15)</th>
+                    <th className="border border-black p-0.5">(16)</th>
+                    <th className="border border-black p-0.5">(17)</th>
+                    <th className="border border-black p-0.5">(18)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan="18" className="border border-black py-8 text-center text-slate-400">
+                        No unserviceable property items recorded for this report.
+                      </td>
+                    </tr>
+                  ) : (
+                    (() => {
+                      const grouped = items.reduce((acc, item) => {
+                        const cat = item.categoryName || item.category || item.categoryCode || 'OFFICE EQUIPMENT';
+                        if (!acc[cat]) acc[cat] = [];
+                        acc[cat].push(item);
+                        return acc;
+                      }, {});
+
+                      let grandTotalCost = 0;
+
+                      return (
+                        <>
+                          {Object.entries(grouped).map(([catName, catItems], catIdx) => (
+                            <React.Fragment key={catIdx}>
+                              <tr className="bg-slate-50 font-bold uppercase text-[10px]">
+                                <td className="border border-black p-1"></td>
+                                <td className="border border-black p-1 font-black text-black" colSpan="17">
+                                  {catName}
+                                </td>
+                              </tr>
+                              {catItems.map((item, idx) => {
+                                const uVal = parseFloat(item.unitValue) || 0;
+                                const qty = parseInt(item.quantityPerCard, 10) || 1;
+                                const totalCost = uVal * qty;
+                                grandTotalCost += totalCost;
+
+                                const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+                                const acqDate = prop?.acquisitionDate || item.acquisitionDate || item.date || report.asOfDate || '';
+                                const dateStr = acqDate ? String(acqDate).split('T')[0] : '';
+                                const propNo = item.propertyNumber || prop?.propertyNumber || item.semiExpendablePropertyNo || '';
+                                const brandText = prop?.brand || item.brand ? `Brand: ${prop?.brand || item.brand}, ` : '';
+                                const itemDesc = item.description ? `${brandText}${item.article || ''}, ${item.description}` : `${brandText}${item.article || 'Equipment'}`;
+
+                                return (
+                                  <tr key={idx} className="align-top text-[10px]">
+                                    <td className="border border-black p-1 text-center font-mono">{dateStr}</td>
+                                    <td className="border border-black p-1 whitespace-pre-line font-medium">{itemDesc}</td>
+                                    <td className="border border-black p-1 text-center font-mono font-bold">{propNo}</td>
+                                    <td className="border border-black p-1 text-center font-bold">{qty}</td>
+                                    <td className="border border-black p-1 text-right font-mono font-semibold">
+                                      ₱{uVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                    <td className="border border-black p-1 text-right font-mono font-bold">
+                                      ₱{totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                    <td className="border border-black p-1 text-center text-slate-400 font-mono">-</td>
+                                    <td className="border border-black p-1 text-center text-slate-400 font-mono">-</td>
+                                    <td className="border border-black p-1 text-center text-slate-400 font-mono">-</td>
+                                    <td className="border border-black p-1 text-[9.5px] text-slate-800">{item.remarks || 'unserviceable'}</td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                    <td className="border border-black p-1 text-center text-slate-400"></td>
+                                  </tr>
+                                );
+                              })}
+                            </React.Fragment>
+                          ))}
+                          <tr className="bg-slate-100 font-bold border-t-2 border-black">
+                            <td colSpan="5" className="border border-black p-1.5 text-right uppercase text-[10px]">
+                              TOTAL COST:
+                            </td>
+                            <td className="border border-black p-1.5 text-right font-mono font-black text-black">
+                              ₱{grandTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td colSpan="12" className="border border-black p-1.5"></td>
+                          </tr>
+                        </>
+                      );
+                    })()
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Signatories Footer matching IIRUP Photo */}
+            <div className="mt-8 pt-4 font-sans text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-left">
+                {/* Column 1 */}
+                <div className="space-y-6">
+                  <div>
+                    <p className="font-bold text-xs mb-6">Prepared by :</p>
+                    <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-xs">
+                      {sigs.preparedByName || 'JENELYN N. EDEN'}
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-sans mt-0.5">
+                      {sigs.preparedByTitle || 'Supply Section Representative'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 pt-1">
+                    {sigs.member1Name && (
+                      <div>
+                        <p className="font-bold text-[10.5px]">Member :</p>
+                        <p className="font-bold text-xs uppercase mt-0.5">{sigs.member1Name}</p>
+                      </div>
+                    )}
+                    {sigs.member2Name && (
+                      <div>
+                        <p className="font-bold text-[10.5px]">Member :</p>
+                        <p className="font-bold text-xs uppercase mt-0.5">{sigs.member2Name}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Column 2 */}
+                <div className="space-y-6">
+                  <div>
+                    <p className="font-bold text-xs mb-6">Certified Correct by :</p>
+                    <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-xs">
+                      {sigs.certifiedCorrectByName || report.accountablePersonName || 'ELMER G. DOLOTALLAS'}
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-sans mt-0.5">
+                      {sigs.certifiedCorrectByTitle || 'Supply Accountable Officer / Chairperson'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="font-bold text-xs mb-6">Team Leader :</p>
+                    <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-xs">
+                      {sigs.teamLeaderName || 'GLORIA C. PERIDO'}
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-sans mt-0.5">
+                      {sigs.teamLeaderTitle || 'SDO'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Column 3 */}
+                <div className="space-y-6">
+                  <div>
+                    <p className="font-bold text-xs mb-6">Approved by :</p>
+                    <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-xs">
+                      {sigs.approvedByName || 'ATTY ERCY NANETTE P MADRIAGA'}
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-sans mt-0.5">
+                      {sigs.approvedByTitle || 'Police Colonel / Director, NFSTI'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="font-bold text-xs mb-6">Verified by :</p>
+                    <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-xs">
+                      {sigs.verifiedByName || 'YVES ARDEN M. CABANLONG'}
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-sans mt-0.5">
+                      {sigs.verifiedByTitle || 'State Auditor IV / Audit Team Leader, RO-IVA'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : isRSPI ? (
           <>
             {/* RSPI Header from Official Photo */}
             <div className="mb-6 space-y-3 font-sans">
