@@ -416,13 +416,29 @@ function ReportPreviewContent() {
         ? items.map((item, index) => {
             const uVal = parseFloat(item.unitValue) || 0;
             const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
-            const offId = prop?.officeId || item.officeId || report.officeId;
-            const office = offices.find((o) => o.id === offId);
-            const recipientLoc = office?.name || item.officeName || item.issuedTo || report.officeName || 'Assigned Office';
+            const actualOffId = item.officeId || prop?.officeId;
+            const actualEmpId = item.accountablePersonId || item.employeeId || prop?.accountablePersonId;
+            const office = offices.find((o) => o.id === actualOffId);
+            const employee = employees.find((e) => e.id === actualEmpId);
+
+            const isIssued = Boolean(actualOffId || actualEmpId || item.issuedTo || (item.officeName && item.officeName !== 'Unassigned Office'));
+
+            let recipientLoc = 'Unissued (In Storage)';
+            if (office?.name && employee?.name) {
+              recipientLoc = `${office.name} — ${employee.name}`;
+            } else if (office?.name) {
+              recipientLoc = office.name;
+            } else if (employee?.name) {
+              recipientLoc = employee.name;
+            } else if (item.officeName && item.officeName !== 'Unassigned Office') {
+              recipientLoc = item.officeName;
+            } else if (item.issuedTo) {
+              recipientLoc = item.issuedTo;
+            }
 
             const acqDate = prop?.acquisitionDate || item.acquisitionDate || item.date || report.asOfDate || '';
             const dateStr = acqDate ? String(acqDate).split('T')[0] : '';
-            const icsNo = item.icsNumber || item.icsNo || prop?.poNumber || (`ICS-2025-${String(index + 247).padStart(4, '0')}`);
+            const icsNo = isIssued ? (item.icsNumber || item.icsNo || prop?.poNumber || (`ICS-2025-${String(index + 247).padStart(4, '0')}`)) : 'Unissued';
             const propNo = item.propertyNumber || prop?.propertyNumber || `SE-OE-07-2021-${String(index + 1).padStart(4, '0')}`;
             const brandText = prop?.brand || item.brand ? `Brand: ${prop?.brand || item.brand}, ` : '';
             const itemDesc = item.description ? `${brandText}${item.article || ''}, ${item.description}` : `${brandText}${item.article || 'Equipment'}`;
@@ -435,11 +451,12 @@ function ReportPreviewContent() {
                 <td style="text-align:center; font-weight:bold;">${propNo}</td>
                 <td>${itemDesc}</td>
                 <td style="text-align:center; font-weight:bold;">${usefulLife}</td>
-                <td style="text-align:center; font-weight:bold;">${item.quantityPerCard || 1}</td>
+                <td style="text-align:center; font-weight:bold;">${isIssued ? (item.quantityPerCard || 1) : 0}</td>
                 <td>${recipientLoc}</td>
-                <td></td><td></td><td></td><td></td><td></td><td></td>
+                <td></td><td></td><td></td><td></td><td></td>
+                <td style="text-align:center; font-weight:bold;">${!isIssued ? (item.quantityPerCard || 1) : 0}</td>
                 <td style="text-align:right; font-weight:bold;">₱${uVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td>${item.remarks || ''}</td>
+                <td>${item.remarks || (!isIssued ? 'Unissued in storage' : '')}</td>
               </tr>
             `;
           }).join('')
@@ -878,13 +895,29 @@ function ReportPreviewContent() {
                     items.map((item, index) => {
                       const unitVal = item.unitValue || 0;
                       const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
-                      const offId = prop?.officeId || item.officeId || report.officeId;
-                      const office = offices.find((o) => o.id === offId);
-                      const recipientLoc = office?.name || item.officeName || item.issuedTo || report.officeName || 'Assigned Office';
+                      const actualOffId = item.officeId || prop?.officeId;
+                      const actualEmpId = item.accountablePersonId || item.employeeId || prop?.accountablePersonId;
+                      const office = offices.find((o) => o.id === actualOffId);
+                      const employee = employees.find((e) => e.id === actualEmpId);
+
+                      const isIssued = Boolean(actualOffId || actualEmpId || item.issuedTo || (item.officeName && item.officeName !== 'Unassigned Office'));
+
+                      let recipientLoc = 'Unissued (In Storage)';
+                      if (office?.name && employee?.name) {
+                        recipientLoc = `${office.name} — ${employee.name}`;
+                      } else if (office?.name) {
+                        recipientLoc = office.name;
+                      } else if (employee?.name) {
+                        recipientLoc = employee.name;
+                      } else if (item.officeName && item.officeName !== 'Unassigned Office') {
+                        recipientLoc = item.officeName;
+                      } else if (item.issuedTo) {
+                        recipientLoc = item.issuedTo;
+                      }
 
                       const acqDate = prop?.acquisitionDate || item.acquisitionDate || item.date || report.asOfDate || '';
                       const dateStr = acqDate ? String(acqDate).split('T')[0] : '';
-                      const icsNo = item.icsNumber || item.icsNo || prop?.poNumber || (`ICS-2025-${String(index + 247).padStart(4, '0')}`);
+                      const icsNo = isIssued ? (item.icsNumber || item.icsNo || prop?.poNumber || (`ICS-2025-${String(index + 247).padStart(4, '0')}`)) : 'Unissued';
                       const propNo = item.propertyNumber || prop?.propertyNumber || `SE-OE-07-2021-${String(index + 1).padStart(4, '0')}`;
                       
                       const brandText = prop?.brand || item.brand ? `Brand: ${prop?.brand || item.brand}, ` : '';
@@ -898,16 +931,16 @@ function ReportPreviewContent() {
                           <td className="border border-black p-1.5 text-center font-mono font-bold">{propNo}</td>
                           <td className="border border-black p-1.5 whitespace-pre-line">{itemDesc}</td>
                           <td className="border border-black p-1.5 text-center font-bold">{usefulLife}</td>
-                          <td className="border border-black p-1 text-center font-bold">{item.quantityPerCard || 1}</td>
+                          <td className="border border-black p-1 text-center font-bold">{isIssued ? (item.quantityPerCard || 1) : 0}</td>
                           <td className="border border-black p-1.5 font-medium">{recipientLoc}</td>
                           <td className="border border-black p-1 text-center text-slate-400"></td>
                           <td className="border border-black p-1.5 text-slate-400"></td>
                           <td className="border border-black p-1 text-center text-slate-400"></td>
                           <td className="border border-black p-1.5 text-slate-400"></td>
                           <td className="border border-black p-1 text-center text-slate-400"></td>
-                          <td className="border border-black p-1 text-center text-slate-400"></td>
+                          <td className="border border-black p-1 text-center font-bold">{!isIssued ? (item.quantityPerCard || 1) : 0}</td>
                           <td className="border border-black p-1.5 text-right font-mono font-bold">₱{unitVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          <td className="border border-black p-1.5 text-[10px] text-slate-700">{item.remarks || ''}</td>
+                          <td className="border border-black p-1.5 text-[10px] text-slate-700">{item.remarks || (!isIssued ? 'Unissued in storage' : '')}</td>
                         </tr>
                       );
                     })
@@ -1021,9 +1054,9 @@ function ReportPreviewContent() {
                       const diffQty = Math.abs(item.difference || 0);
 
                       const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
-                      const offId = prop?.officeId || item.officeId || report.officeId;
-                      const office = offices.find((o) => o.id === offId);
-                      const officeName = office?.name || prop?.officeName || item.officeName || '';
+                      const actualOffId = item.officeId || prop?.officeId;
+                      const office = offices.find((o) => o.id === actualOffId);
+                      const officeName = office?.name || (item.officeName && item.officeName !== 'Unassigned Office' ? item.officeName : prop?.officeName) || '';
                       const poNum = prop?.poNumber || item.poNumber || prop?.poNo || item.poNo || '';
                       const acqDate = prop?.acquisitionDate || item.acquisitionDate || prop?.assignmentDate || item.assignmentDate || '';
 

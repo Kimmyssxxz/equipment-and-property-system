@@ -280,6 +280,10 @@ function ReportsContent() {
                 serialNumber: prop.serialNumber || '',
                 poNumber: prop.poNumber || '',
                 brand: prop.brand || '',
+                officeId: prop.officeId || c.officeId || null,
+                officeName: prop.officeName || c.officeName || null,
+                accountablePersonId: prop.accountablePersonId || c.accountablePersonId || null,
+                accountablePersonName: prop.accountablePersonName || c.accountablePersonName || null,
                 acquisitionDate: prop.acquisitionDate || prop.assignmentDate || '',
               };
             });
@@ -308,6 +312,10 @@ function ReportsContent() {
                 serialNumber: p.serialNumber || '',
                 poNumber: p.poNumber || '',
                 brand: p.brand || '',
+                officeId: p.officeId || null,
+                officeName: p.officeName || null,
+                accountablePersonId: p.accountablePersonId || null,
+                accountablePersonName: p.accountablePersonName || null,
                 acquisitionDate: p.acquisitionDate || p.assignmentDate || '',
               });
             });
@@ -343,6 +351,10 @@ function ReportsContent() {
           serialNumber: p.serialNumber || '',
           poNumber: p.poNumber || '',
           brand: p.brand || '',
+          officeId: p.officeId || null,
+          officeName: p.officeName || null,
+          accountablePersonId: p.accountablePersonId || null,
+          accountablePersonName: p.accountablePersonName || null,
           acquisitionDate: p.acquisitionDate || p.assignmentDate || '',
         }));
       }
