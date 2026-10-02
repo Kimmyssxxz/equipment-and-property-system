@@ -381,17 +381,6 @@ function ReportsContent() {
         items = items.filter((item) => parseVal(item.unitValue) >= 50000);
       } else if (selectedTypeId === 'rpcsp' || selectedTypeId === 'rspi') {
         items = items.filter((item) => parseVal(item.unitValue) < 50000);
-      } else if (selectedTypeId === 'iirup') {
-        const unserv = items.filter((item) => {
-          const st = (item.status || '').toUpperCase();
-          const rem = (item.remarks || '').toUpperCase();
-          return st === 'UNSERVICEABLE' || st === 'CONDEMNED' || rem.includes('UNSERVICEABLE') || rem.includes('CONDEMNED') || rem.includes('DAMAGED');
-        });
-        if (unserv.length > 0) {
-          items = unserv;
-        } else {
-          items = items.map((i) => ({ ...i, remarks: i.remarks || 'unserviceable' }));
-        }
       }
 
       const reportNumber = `REP-2026-${String(reports.length + 1).padStart(4, '0')}`;

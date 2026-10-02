@@ -496,22 +496,15 @@ function ReportPreviewContent() {
         </head>
         <body>
         <div class="WordSection1">
-          <table style="border:none; width:100%; margin-bottom:10px;">
-            <tr style="border:none;">
-              <td style="border:none; width:50%; font-weight:bold;">Entity Name: <u>${settings?.orgName || 'PHILIPPINE PUBLIC SAFETY COLLEGE'}</u></td>
-              <td style="border:none; width:50%; text-align:right; font-weight:bold;">Fund Cluster: ____________________</td>
-            </tr>
-            <tr style="border:none;">
-              <td style="border:none; font-weight:bold;">Name of Accountable Officer: <u>${resolvedAccountablePersonName}</u></td>
-              <td style="border:none; text-align:right; font-weight:bold;">Official Designation: <u>${resolvedAccountablePosition}</u></td>
-            </tr>
-            <tr style="border:none;">
-              <td colspan="2" style="border:none; font-weight:bold;">Station: <u>${settings?.stationName || 'National Forensic Science Training Institute'}</u></td>
-            </tr>
-          </table>
-
-          <h2 style="text-align:center; font-size:12pt; font-weight:bold; text-transform:uppercase; margin: 10px 0 3px 0;">INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY</h2>
-          <p style="text-align:center; font-size:9pt; margin-bottom:15px;">As of ${asOfFormatted}</p>
+          <div style="text-align:center; margin-bottom:15px;">
+            <h2 style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY</h2>
+            <p style="font-size:10pt; font-weight:bold; text-transform:uppercase; text-decoration:underline; margin:3px 0;">${ppeTypeName || 'OFFICE EQUIPMENT'}</p>
+            <p style="font-size:9pt; font-style:italic; margin-top:2px; margin-bottom:10px;">(Type of Property, Plant and Equipment)</p>
+            <p style="font-size:9pt; margin-top:5px;">
+              <b>As of:</b> <u>${asOfFormatted}</u> &nbsp;&nbsp;&nbsp;&nbsp;
+              For which <u><b>${resolvedAccountablePersonName}</b></u> (<i>${resolvedAccountablePosition}</i>) is accountable, having assumed such accountability on <u>${assumedFormatted}</u>
+            </p>
+          </div>
 
           <table>
             <thead>
@@ -1021,36 +1014,37 @@ function ReportPreviewContent() {
       <div className="report-sheet max-w-[1400px] w-full mx-auto bg-white border border-slate-300 shadow-2xl p-8 sm:p-10 text-black font-serif print:shadow-none print:border-none print:m-0 print:p-0 print:max-w-none">
         {isIIRUP ? (
           <>
-            {/* IIRUP Document Header matching Photo */}
-            <div className="mb-6 space-y-2 font-sans text-xs">
-              <div className="flex flex-wrap justify-between items-start font-bold uppercase tracking-tight text-black border-b border-black pb-3">
-                <div className="space-y-1">
-                  <p>
-                    Entity Name: <span className="font-extrabold underline">{settings?.orgName || 'PHILIPPINE PUBLIC SAFETY COLLEGE'}</span>
-                  </p>
-                  <p>
-                    Name of Accountable Officer: <span className="font-extrabold underline">{resolvedAccountablePersonName}</span>
-                  </p>
-                  <p>
-                    Official Designation: <span className="font-semibold underline">{resolvedAccountablePosition}</span>
-                  </p>
-                  <p>
-                    Station: <span className="font-extrabold underline">{settings?.stationName || 'National Forensic Science Training Institute'}</span>
-                  </p>
-                </div>
-                <div className="text-right space-y-1">
-                  <p>
-                    Fund Cluster: <span className="font-normal underline min-w-[140px] inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                  </p>
-                </div>
+            {/* Document Header matching requested RPCPPE format layout */}
+            <div className="text-center space-y-1 mb-5 border-b border-black pb-3 font-sans">
+              <div className="pt-2">
+                <h3 className="text-base sm:text-lg font-black tracking-wide uppercase font-sans">
+                  INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY
+                </h3>
+                <p className="text-xs font-black uppercase font-sans text-slate-900 mt-0.5 underline underline-offset-4">
+                  {ppeTypeName || 'OFFICE EQUIPMENT'}
+                </p>
+                <p className="text-[11px] italic text-slate-700 mt-0.5">
+                  (Type of Property, Plant and Equipment)
+                </p>
               </div>
 
-              <div className="text-center pt-3 pb-1">
-                <h2 className="text-lg font-black uppercase tracking-wider font-sans">
-                  INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY
-                </h2>
-                <p className="text-xs font-bold italic mt-0.5">
-                  As of {formatLongDate(asOfDateQuery || report.asOfDate) || report.asOfDate || 'December 31, 2025'}
+              <div className="pt-2 text-xs font-sans flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+                <p>
+                  <strong>As of:</strong>{' '}
+                  <span className="font-bold border-b border-black px-4">{formatLongDate(asOfDateQuery || report.asOfDate) || report.asOfDate}</span>
+                </p>
+                <p>
+                  For which{' '}
+                  <span className="font-extrabold border-b border-black px-6 uppercase text-xs">
+                    {resolvedAccountablePersonName}
+                  </span>{' '}
+                  <span className="text-[10px] italic text-slate-600">({resolvedAccountablePosition})</span>
+                </p>
+                <p>
+                  is accountable, having assumed such accountability on{' '}
+                  <span className="font-bold border-b border-black px-4">
+                    {formatLongDate(assumedDateQuery || report.assumedDate || report.signatories?.assumedDate) || formatLongDate(new Date())}
+                  </span>
                 </p>
               </div>
             </div>
