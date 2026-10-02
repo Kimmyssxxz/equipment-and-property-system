@@ -659,7 +659,7 @@ function ReportsContent() {
                 {/* 5. Category Filter */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 whitespace-nowrap">
-                    {selectedTypeId !== 'rspi' ? '5.' : '4.'} Category Filter (Optional)
+                    {selectedTypeId !== 'rspi' ? '5.' : '4.'} Category Filter
                   </label>
                   <select
                     value={selectedCategoryFilter}
