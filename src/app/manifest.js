@@ -9,13 +9,13 @@ export default function manifest() {
     theme_color: '#059669',
     icons: [
       {
-        src: '/icon.png',
+        src: '/nfsti logo.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/icon.png',
+        src: '/nfsti logo.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any maskable',
