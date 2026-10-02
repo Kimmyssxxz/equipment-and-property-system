@@ -77,6 +77,8 @@ function AssignmentsContent() {
   const [historySearch, setHistorySearch] = useState('');
   const [officeFilter, setOfficeFilter] = useState('ALL');
   const [employeeFilter, setEmployeeFilter] = useState('ALL');
+  const [historyTypeFilter, setHistoryTypeFilter] = useState('ALL');
+  const [assignmentPropFilter, setAssignmentPropFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -515,6 +517,59 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
     setTimeout(() => setCopiedSql(false), 3000);
   };
 
+  const parseVal = (val) => {
+    if (val === null || val === undefined) return 0;
+    if (typeof val === 'number') return val;
+    const cleaned = String(val).replace(/[^0-9.-]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const isSemiExpendableProp = (p) => {
+    if (!p) return false;
+    if (
+      p.type === 'SEMI_EXPANDABLE' ||
+      p.type === 'SEMI_EXPENDABLE' ||
+      p.classification === 'SEMI_EXPANDABLE' ||
+      p.classification === 'SEMI_EXPENDABLE'
+    ) {
+      return true;
+    }
+    if (
+      p.propertyNumber?.startsWith('SE-') ||
+      p.propertyNumber?.startsWith('RPCSP') ||
+      p.categoryCode === 'SE' ||
+      p.categoryCode === 'RPCSP'
+    ) {
+      return true;
+    }
+    const val = parseVal(p.unitValue);
+    return val > 0 && val < 50000;
+  };
+
+  // Group properties into PPE (≥ ₱50k) and Semi-Expendable (< ₱50k)
+  const ppeProperties = properties.filter((p) => !isSemiExpendableProp(p));
+  const semiExpendableProperties = properties.filter((p) => isSemiExpendableProp(p));
+
+  // Filtered properties for selection dropdown based on active tab
+  const filteredAssignmentProperties = properties.filter((p) => {
+    if (assignmentPropFilter === 'PPE') return !isSemiExpendableProp(p);
+    if (assignmentPropFilter === 'SEMI_EXPANDABLE') return isSemiExpendableProp(p);
+    return true;
+  });
+
+  const handlePropFilterChange = (filterType) => {
+    setAssignmentPropFilter(filterType);
+    const newFiltered = properties.filter((p) => {
+      if (filterType === 'PPE') return !isSemiExpendableProp(p);
+      if (filterType === 'SEMI_EXPANDABLE') return isSemiExpendableProp(p);
+      return true;
+    });
+    if (newFiltered.length > 0 && !newFiltered.some((p) => p.id === selectedPropertyId)) {
+      setSelectedPropertyId(newFiltered[0].id);
+    }
+  };
+
   // Filtered History
   const filteredHistory = history
     .filter((h) => {
@@ -536,8 +591,12 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
 
       const matchesOffice = officeFilter === 'ALL' || h.officeId === officeFilter;
       const matchesEmployee = employeeFilter === 'ALL' || h.employeeId === employeeFilter;
+      const matchesType =
+        historyTypeFilter === 'ALL' ||
+        (historyTypeFilter === 'SEMI_EXPANDABLE' && isSemiExpendableProp(h)) ||
+        (historyTypeFilter === 'PPE' && !isSemiExpendableProp(h));
 
-      return matchesSearch && matchesOffice && matchesEmployee;
+      return matchesSearch && matchesOffice && matchesEmployee && matchesType;
     })
     .sort((a, b) => new Date(b.assignmentDate || b.createdAt || 0) - new Date(a.assignmentDate || a.createdAt || 0));
 
@@ -679,26 +738,86 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
               </div>
 
               <form onSubmit={handleAssign} className="space-y-4">
-                {/* 1. Select Property Equipment */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                    <span>1. Select Property Unit (Equipment / Semi-Expendable) *</span>
-                    <span className="text-[10.5px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                      {properties.length} Available
-                    </span>
-                  </label>
+                {/* 1. Select Property Equipment / Semi-Expendable Separated */}
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <span>1. Select Property Unit *</span>
+                    </label>
+
+                    {/* Quick Classification Filter Buttons */}
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handlePropFilterChange('ALL')}
+                        className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer ${
+                          assignmentPropFilter === 'ALL'
+                            ? 'bg-white text-slate-900 shadow-2xs border border-slate-200 font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        All ({properties.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePropFilterChange('PPE')}
+                        className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                          assignmentPropFilter === 'PPE'
+                            ? 'bg-emerald-600 text-white shadow-2xs font-extrabold'
+                            : 'text-emerald-800 hover:bg-emerald-50'
+                        }`}
+                      >
+                        <Building2 className="w-3 h-3" />
+                        <span>Equipment / PPE ({ppeProperties.length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePropFilterChange('SEMI_EXPANDABLE')}
+                        className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                          assignmentPropFilter === 'SEMI_EXPANDABLE'
+                            ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
+                            : 'text-blue-800 hover:bg-blue-50'
+                        }`}
+                      >
+                        <Package className="w-3 h-3" />
+                        <span>Semi-Expendable ({semiExpendableProperties.length})</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <select
                     value={selectedPropertyId}
                     onChange={(e) => setSelectedPropertyId(e.target.value)}
-                    disabled={isSubmitting || properties.length === 0}
+                    disabled={isSubmitting || filteredAssignmentProperties.length === 0}
                     className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                   >
-                    {properties.length === 0 ? (
-                      <option value="">-- No Properties Found --</option>
+                    {filteredAssignmentProperties.length === 0 ? (
+                      <option value="">-- No Properties Match Filter --</option>
+                    ) : assignmentPropFilter === 'ALL' ? (
+                      <>
+                        {semiExpendableProperties.length > 0 && (
+                          <optgroup label="📦 SEMI-EXPANDABLE PROPERTY (RPCSP - Unit Value < ₱50,000)">
+                            {semiExpendableProperties.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                📦 {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {ppeProperties.length > 0 && (
+                          <optgroup label="🏢 PROPERTY, PLANT & EQUIPMENT (RPCPPE - Unit Value ≥ ₱50,000)">
+                            {ppeProperties.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                🏢 {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </>
                     ) : (
-                      properties.map((p) => (
+                      filteredAssignmentProperties.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.propertyNumber} — {p.article} ({p.serialNumber || 'No S/N'})
+                          {isSemiExpendableProp(p) ? '📦' : '🏢'} {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
                         </option>
                       ))
                     )}
@@ -830,6 +949,35 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
 
                 {selectedProperty ? (
                   <div className="space-y-3 mt-3 text-xs">
+                    {/* Classification Type Banner */}
+                    {isSemiExpendableProp(selectedProperty) ? (
+                      <div className="p-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-blue-600 shrink-0" />
+                          <div>
+                            <span className="text-[9.5px] font-black uppercase text-blue-700 tracking-wider block">ASSET CLASSIFICATION</span>
+                            <span className="text-xs font-black text-blue-950">📦 Semi-Expendable Property (RPCSP)</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-300">
+                          &lt; ₱50,000
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <span className="text-[9.5px] font-black uppercase text-emerald-700 tracking-wider block">ASSET CLASSIFICATION</span>
+                            <span className="text-xs font-black text-emerald-950">🏢 Property, Plant & Equipment (RPCPPE)</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                          ≥ ₱50,000
+                        </span>
+                      </div>
+                    )}
+
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase">Property Number</span>
                       <p className="font-mono text-sm font-black text-emerald-800">{selectedProperty.propertyNumber}</p>
@@ -948,6 +1096,20 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   ))}
                 </select>
 
+                {/* Asset Classification Filter */}
+                <select
+                  value={historyTypeFilter}
+                  onChange={(e) => {
+                    setHistoryTypeFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                >
+                  <option value="ALL">All Asset Types</option>
+                  <option value="PPE">🏢 Equipment / PPE (≥ ₱50k)</option>
+                  <option value="SEMI_EXPANDABLE">📦 Semi-Expendable (&lt; ₱50k)</option>
+                </select>
+
                 {/* Personnel Filter */}
                 <select
                   value={employeeFilter}
@@ -1038,7 +1200,18 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                           {h.assignmentDate}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-mono font-bold text-emerald-800">{h.propertyNumber}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono font-bold text-emerald-800">{h.propertyNumber}</span>
+                            {isSemiExpendableProp(h) ? (
+                              <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-blue-100 text-blue-900 border border-blue-200">
+                                📦 Semi-Expendable
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-200">
+                                🏢 Equipment/PPE
+                              </span>
+                            )}
+                          </div>
                           <div className="font-semibold text-slate-900">{h.article}</div>
                           {h.description && (
                             <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200/80 rounded px-1.5 py-0.5 mt-1 max-w-xs truncate" title={`Technical Specs: ${h.description}`}>
