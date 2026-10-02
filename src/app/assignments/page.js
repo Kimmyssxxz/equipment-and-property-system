@@ -796,19 +796,19 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     ) : assignmentPropFilter === 'ALL' ? (
                       <>
                         {semiExpendableProperties.length > 0 && (
-                          <optgroup label="📦 SEMI-EXPANDABLE PROPERTY (RPCSP - Unit Value < ₱50,000)">
+                          <optgroup label="SEMI-EXPANDABLE PROPERTY (RPCSP - Unit Value < ₱50,000)">
                             {semiExpendableProperties.map((p) => (
                               <option key={p.id} value={p.id}>
-                                📦 {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
+                                [SE] {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
                               </option>
                             ))}
                           </optgroup>
                         )}
                         {ppeProperties.length > 0 && (
-                          <optgroup label="🏢 PROPERTY, PLANT & EQUIPMENT (RPCPPE - Unit Value ≥ ₱50,000)">
+                          <optgroup label="PROPERTY, PLANT & EQUIPMENT (RPCPPE - Unit Value ≥ ₱50,000)">
                             {ppeProperties.map((p) => (
                               <option key={p.id} value={p.id}>
-                                🏢 {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
+                                [PPE] {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
                               </option>
                             ))}
                           </optgroup>
@@ -817,7 +817,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                     ) : (
                       filteredAssignmentProperties.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {isSemiExpendableProp(p) ? '📦' : '🏢'} {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
+                          [{isSemiExpendableProp(p) ? 'SE' : 'PPE'}] {p.propertyNumber} — {p.article} (₱{parseVal(p.unitValue).toLocaleString('en-US')})
                         </option>
                       ))
                     )}
@@ -956,7 +956,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                           <Package className="w-4 h-4 text-blue-600 shrink-0" />
                           <div>
                             <span className="text-[9.5px] font-black uppercase text-blue-700 tracking-wider block">ASSET CLASSIFICATION</span>
-                            <span className="text-xs font-black text-blue-950">📦 Semi-Expendable Property (RPCSP)</span>
+                            <span className="text-xs font-black text-blue-950">Semi-Expendable Property (RPCSP)</span>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-300">
@@ -969,7 +969,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                           <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
                           <div>
                             <span className="text-[9.5px] font-black uppercase text-emerald-700 tracking-wider block">ASSET CLASSIFICATION</span>
-                            <span className="text-xs font-black text-emerald-950">🏢 Property, Plant & Equipment (RPCPPE)</span>
+                            <span className="text-xs font-black text-emerald-950">Property, Plant & Equipment (RPCPPE)</span>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
@@ -1106,8 +1106,8 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                 >
                   <option value="ALL">All Asset Types</option>
-                  <option value="PPE">🏢 Equipment / PPE (≥ ₱50k)</option>
-                  <option value="SEMI_EXPANDABLE">📦 Semi-Expendable (&lt; ₱50k)</option>
+                  <option value="PPE">Equipment / PPE (≥ ₱50k)</option>
+                  <option value="SEMI_EXPANDABLE">Semi-Expendable (&lt; ₱50k)</option>
                 </select>
 
                 {/* Personnel Filter */}
@@ -1204,11 +1204,11 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                             <span className="font-mono font-bold text-emerald-800">{h.propertyNumber}</span>
                             {isSemiExpendableProp(h) ? (
                               <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-blue-100 text-blue-900 border border-blue-200">
-                                📦 Semi-Expendable
+                                Semi-Expendable
                               </span>
                             ) : (
                               <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-200">
-                                🏢 Equipment/PPE
+                                Equipment/PPE
                               </span>
                             )}
                           </div>
