@@ -25,6 +25,7 @@ import {
   X,
   Menu,
   LogOut,
+  Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { StorageManager } from '@/lib/storage';
@@ -165,10 +166,15 @@ function SidebarContent({ totalItems = 0 }) {
           return isNaN(parsed) ? 0 : parsed;
         };
 
-        // Breakdown by Official Report Classification (RPCPPE >= ₱50k, RPCSP < ₱50k, RPCI Inventory)
+        // Breakdown by Official Report Classification (RPCPPE >= ₱50k, RPCSP < ₱50k, IIRUP Unserviceable)
         const ppeProps = liveProps.filter((p) => parseVal(p.unitValue) >= 50000).length;
         const semiExpProps = liveProps.filter((p) => parseVal(p.unitValue) < 50000).length;
         const invReports = reps.filter((r) => r.reportType?.includes('RPCI') || r.reportType?.includes('Inventory')).length || 0;
+        const unserviceableCount = liveProps.filter((p) => {
+          const st = (p.status || '').toUpperCase();
+          const rem = (p.remarks || '').toUpperCase();
+          return st === 'UNSERVICEABLE' || st === 'CONDEMNED' || st === 'DISPOSED' || st === 'FOR_DISPOSAL' || rem.includes('UNSERVICEABLE') || rem.includes('DISPOSAL');
+        }).length;
 
         setCounts({
           properties: liveProps.length,
@@ -181,6 +187,7 @@ function SidebarContent({ totalItems = 0 }) {
           rpcppe: ppeProps,
           rpci: invReports,
           rpcsp: semiExpProps,
+          iirup: unserviceableCount,
         });
 
         if (user) {
@@ -235,6 +242,15 @@ function SidebarContent({ totalItems = 0 }) {
       typeId: 'rpcsp',
       icon: FileSpreadsheet,
       count: counts.rpcsp,
+    },
+    {
+      name: 'IIRUP',
+      fullName: 'INVENTORY AND INSPECTION REPORT OF UNSERVICEABLE PROPERTY (IIRUP)',
+      subLabel: 'Unserviceable Property Inspection',
+      href: '/reports?type=iirup',
+      typeId: 'iirup',
+      icon: Trash2,
+      count: counts.iirup,
     },
   ];
 
