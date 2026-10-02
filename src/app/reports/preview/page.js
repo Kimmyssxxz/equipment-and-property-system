@@ -417,7 +417,25 @@ function ReportPreviewContent() {
     const assumedFormatted = formatLongDate(assumedDateQuery || report.assumedDate || report.signatories?.assumedDate) || formatLongDate(new Date());
 
     if (isIIRUP) {
-      const groupedItems = items.reduce((acc, item) => {
+      const iirupItems = items.filter((item) => {
+        const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+        const pStatus = (item.propertyStatus || prop?.status || item.status || '').toUpperCase();
+        const pRemarks = (item.remarks || prop?.remarks || '').toUpperCase();
+        return (
+          pStatus === 'UNSERVICEABLE' ||
+          pStatus === 'CONDEMNED' ||
+          pStatus === 'DISPOSED' ||
+          pStatus === 'FOR_DISPOSAL' ||
+          pStatus.includes('UNSERVICEABLE') ||
+          pStatus.includes('DISPOSAL') ||
+          pRemarks.includes('UNSERVICEABLE') ||
+          pRemarks.includes('DISPOSAL') ||
+          pRemarks.includes('CONDEMNED') ||
+          pRemarks.includes('DAMAGED')
+        );
+      });
+
+      const groupedItems = iirupItems.reduce((acc, item) => {
         const cat = item.categoryName || item.category || item.categoryCode || 'OFFICE EQUIPMENT';
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(item);
@@ -428,7 +446,7 @@ function ReportPreviewContent() {
       let grandTotalCost = 0;
 
       if (Object.keys(groupedItems).length === 0) {
-        rowsHtml = `<tr><td colspan="18" style="text-align:center; padding: 25px;">No unserviceable property items recorded.</td></tr>`;
+        rowsHtml = `<tr><td colspan="18" style="text-align:center; padding: 25px;">No property items marked as UNSERVICEABLE or FOR DISPOSAL recorded.</td></tr>`;
       } else {
         Object.entries(groupedItems).forEach(([catName, catItems]) => {
           rowsHtml += `
@@ -1103,25 +1121,47 @@ function ReportPreviewContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.length === 0 ? (
-                    <tr>
-                      <td colSpan="18" className="border border-black py-8 text-center text-slate-400">
-                        No unserviceable property items recorded for this report.
-                      </td>
-                    </tr>
-                  ) : (
-                    (() => {
-                      const grouped = items.reduce((acc, item) => {
-                        const cat = item.categoryName || item.category || item.categoryCode || 'OFFICE EQUIPMENT';
-                        if (!acc[cat]) acc[cat] = [];
-                        acc[cat].push(item);
-                        return acc;
-                      }, {});
-
-                      let grandTotalCost = 0;
+                  {(() => {
+                    const iirupItems = items.filter((item) => {
+                      const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+                      const pStatus = (item.propertyStatus || prop?.status || item.status || '').toUpperCase();
+                      const pRemarks = (item.remarks || prop?.remarks || '').toUpperCase();
 
                       return (
-                        <>
+                        pStatus === 'UNSERVICEABLE' ||
+                        pStatus === 'CONDEMNED' ||
+                        pStatus === 'DISPOSED' ||
+                        pStatus === 'FOR_DISPOSAL' ||
+                        pStatus.includes('UNSERVICEABLE') ||
+                        pStatus.includes('DISPOSAL') ||
+                        pRemarks.includes('UNSERVICEABLE') ||
+                        pRemarks.includes('DISPOSAL') ||
+                        pRemarks.includes('CONDEMNED') ||
+                        pRemarks.includes('DAMAGED')
+                      );
+                    });
+
+                    if (iirupItems.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="18" className="border border-black py-8 text-center text-slate-400 font-sans font-medium">
+                            No property items marked as UNSERVICEABLE or FOR DISPOSAL recorded for this report.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    const grouped = iirupItems.reduce((acc, item) => {
+                      const cat = item.categoryName || item.category || item.categoryCode || 'OFFICE EQUIPMENT';
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(item);
+                      return acc;
+                    }, {});
+
+                    let grandTotalCost = 0;
+
+                    return (
+                      <>
                           {Object.entries(grouped).map(([catName, catItems], catIdx) => (
                             <React.Fragment key={catIdx}>
                               <tr className="bg-slate-50 font-bold uppercase text-[10px]">
@@ -1183,8 +1223,7 @@ function ReportPreviewContent() {
                           </tr>
                         </>
                       );
-                    })()
-                  )}
+                    })()}
                 </tbody>
               </table>
             </div>

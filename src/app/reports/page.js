@@ -362,6 +362,7 @@ function ReportsContent() {
           physicalCount: p.quantityPerCard || 1,
           difference: 0,
           status: 'OK',
+          propertyStatus: p.status || 'ACTIVE',
           remarks: p.remarks || '',
           serialNumber: p.serialNumber || '',
           poNumber: p.poNumber || '',
@@ -374,13 +375,33 @@ function ReportsContent() {
         }));
       }
 
-      // Government Accounting Standard Threshold Filtering:
+      // Government Accounting Standard Threshold & Status Filtering:
       // RPCPPE (Capital Assets) >= ₱50,000
       // RSPI / RPCSP (Semi-Expendable Property) < ₱50,000
+      // IIRUP: ONLY Unserviceable or For Disposal / Condemned / Disposed Items
       if (selectedTypeId === 'rpcppe') {
         items = items.filter((item) => parseVal(item.unitValue) >= 50000);
       } else if (selectedTypeId === 'rpcsp' || selectedTypeId === 'rspi') {
         items = items.filter((item) => parseVal(item.unitValue) < 50000);
+      } else if (selectedTypeId === 'iirup') {
+        items = items.filter((item) => {
+          const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+          const pStatus = (item.propertyStatus || prop?.status || item.status || '').toUpperCase();
+          const pRemarks = (item.remarks || prop?.remarks || '').toUpperCase();
+
+          return (
+            pStatus === 'UNSERVICEABLE' ||
+            pStatus === 'CONDEMNED' ||
+            pStatus === 'DISPOSED' ||
+            pStatus === 'FOR_DISPOSAL' ||
+            pStatus.includes('UNSERVICEABLE') ||
+            pStatus.includes('DISPOSAL') ||
+            pRemarks.includes('UNSERVICEABLE') ||
+            pRemarks.includes('DISPOSAL') ||
+            pRemarks.includes('CONDEMNED') ||
+            pRemarks.includes('DAMAGED')
+          );
+        });
       }
 
       const reportNumber = `REP-2026-${String(reports.length + 1).padStart(4, '0')}`;
