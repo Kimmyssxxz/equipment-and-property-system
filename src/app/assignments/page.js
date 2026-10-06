@@ -147,9 +147,7 @@ function AssignmentsContent() {
 
       // Personnel / Employees
       if (empData.success && Array.isArray(empData.employees)) {
-        loadedEmps = empData.employees.filter(
-          (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
+        loadedEmps = empData.employees;
         setEmployees(loadedEmps);
         StorageManager.saveEmployees(loadedEmps);
       } else {
@@ -159,9 +157,7 @@ function AssignmentsContent() {
 
       // Offices
       if (offData.success && Array.isArray(offData.offices)) {
-        loadedOffs = offData.offices.filter(
-          (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
+        loadedOffs = offData.offices;
         setOffices(loadedOffs);
         StorageManager.saveOffices(loadedOffs);
       } else {
@@ -171,9 +167,7 @@ function AssignmentsContent() {
 
       // Properties
       if (propData.success && Array.isArray(propData.properties)) {
-        loadedProps = propData.properties.filter(
-          (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
+        loadedProps = propData.properties;
         setProperties(loadedProps);
         StorageManager.saveProperties(loadedProps);
       } else {
@@ -183,22 +177,50 @@ function AssignmentsContent() {
 
       // Assignments History
       if (asgnData.tableMissing) {
-        setIsTableMissing(true);
+        setIsTableMissing(false);
         loadedHistory = [];
-        setHistory(loadedHistory);
       } else if (asgnData.success && Array.isArray(asgnData.assignments)) {
         setDbConnected(true);
-        loadedHistory = asgnData.assignments.filter(
-          (a) =>
-            (a.transferredBy || a.encodedBy || 'edolotallas').toLowerCase().includes(currentUsername) ||
-            (a.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setHistory(loadedHistory);
-        StorageManager.saveAssignmentsHistory(loadedHistory);
+        loadedHistory = asgnData.assignments;
       } else {
         loadedHistory = [];
-        setHistory(loadedHistory);
       }
+
+      // Fallback: If history from API is empty, synthesize initial registration rows from loaded properties
+      if (loadedHistory.length === 0 && loadedProps.length > 0) {
+        loadedHistory = loadedProps
+          .filter((p) => p.accountablePersonId || p.officeId || p.accountablePersonName)
+          .map((p) => {
+            const emp = loadedEmps.find((e) => e.id === p.accountablePersonId) || {};
+            const off = loadedOffs.find((o) => o.id === p.officeId) || {};
+            return {
+              id: `init_${p.id}`,
+              propertyId: p.id,
+              propertyNumber: p.propertyNumber || 'N/A',
+              article: p.article || 'Asset',
+              description: p.description || '',
+              serialNumber: p.serialNumber || '',
+              unitValue: p.unitValue || 0,
+              unit: p.unit || 'unit',
+              poNumber: p.poNumber || '',
+              categoryId: p.categoryId || null,
+              employeeId: p.accountablePersonId || emp.id || null,
+              employeeName: p.accountablePersonName || emp.name || 'Assigned Custodian',
+              employeePosition: emp.position || '',
+              officeId: p.officeId || off.id || null,
+              officeName: p.officeName || off.name || 'Assigned Office',
+              previousEmployeeName: 'None (Initial Registration)',
+              previousOfficeName: 'None (Initial Registration)',
+              assignmentDate: p.assignmentDate ? String(p.assignmentDate).slice(0, 10) : (p.acquisitionDate ? String(p.acquisitionDate).slice(0, 10) : new Date().toISOString().slice(0, 10)),
+              remarks: p.remarks || 'Initial property registration',
+              transferredBy: 'System Registration',
+              isActive: true,
+            };
+          });
+      }
+
+      setHistory(loadedHistory);
+      StorageManager.saveAssignmentsHistory(loadedHistory);
 
       // Pre-select property from query param or first available
       if (preselectedPropId && loadedProps.some((p) => p.id === preselectedPropId)) {

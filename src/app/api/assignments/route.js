@@ -62,7 +62,7 @@ export async function GET(request) {
     const [propRes, empRes, offRes] = await Promise.all([
       supabase
         .from('properties')
-        .select('id, propertyNumber, article, description, unitValue, poNumber, categoryId, status, unit, serialNumber, remarks'),
+        .select('id, propertyNumber, article, description, unitValue, poNumber, categoryId, status, unit, serialNumber, remarks, accountablePersonId, officeId, assignmentDate, acquisitionDate, createdAt'),
       supabase
         .from('employees')
         .select('id, name, employeeId, position, officeId'),
@@ -71,9 +71,13 @@ export async function GET(request) {
         .select('id, code, name, head'),
     ]);
 
-    const propMap = new Map((propRes.data || []).map((p) => [p.id, p]));
-    const empMap = new Map((empRes.data || []).map((e) => [e.id, e]));
-    const offMap = new Map((offRes.data || []).map((o) => [o.id, o]));
+    const allProps = propRes.data || [];
+    const allEmps = empRes.data || [];
+    const allOffs = offRes.data || [];
+
+    const propMap = new Map(allProps.map((p) => [p.id, p]));
+    const empMap = new Map(allEmps.map((e) => [e.id, e]));
+    const offMap = new Map(allOffs.map((o) => [o.id, o]));
 
     let filteredAssignments = assignments || [];
 
@@ -87,13 +91,13 @@ export async function GET(request) {
         if (targetUsername === 'queenie_ppsc') {
           return propEncoder === 'queenie_ppsc' || transBy.includes('queenie');
         } else if (targetUsername === 'edolotallas') {
-          return propEncoder === 'edolotallas' && !transBy.includes('queenie');
+          return propEncoder === 'edolotallas' || (!transBy.includes('queenie') && propEncoder !== 'queenie_ppsc');
         }
         return propEncoder === targetUsername || transBy.includes(targetUsername);
       });
     }
 
-    // 3. Format fields cleanly
+    // 3. Format fields cleanly for recorded transfers
     const formatted = filteredAssignments.map((item) => {
       const prop = propMap.get(item.propertyId) || {};
       const emp = empMap.get(item.employeeId) || {};
@@ -115,6 +119,7 @@ export async function GET(request) {
         unitValue: prop.unitValue || 0,
         unit: prop.unit || 'unit',
         poNumber: prop.poNumber || '',
+        categoryId: prop.categoryId || null,
 
         employeeId: item.employeeId,
         employeeName: (item.employeeId === 'emp_unassigned' || item.employeeId === 'UNASSIGNED' || !item.employeeId)
@@ -140,7 +145,62 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ success: true, assignments: formatted }, { status: 200 });
+    // 4. Synthesize initial registration records for all assigned properties that don't have an explicit transfer record
+    const recordedPropIds = new Set(formatted.map((a) => a.propertyId));
+    let userScopedProps = allProps;
+    if (targetUsername) {
+      userScopedProps = allProps.filter((p) => {
+        const propEncoder = extractEncoderFromRemarks(p.remarks);
+        if (targetUsername === 'queenie_ppsc') return propEncoder === 'queenie_ppsc';
+        if (targetUsername === 'edolotallas') return propEncoder === 'edolotallas' || propEncoder !== 'queenie_ppsc';
+        return propEncoder === targetUsername;
+      });
+    }
+
+    const initialAssignments = userScopedProps
+      .filter((p) => (p.accountablePersonId || p.officeId) && !recordedPropIds.has(p.id))
+      .map((p) => {
+        const emp = empMap.get(p.accountablePersonId) || {};
+        const off = offMap.get(p.officeId) || {};
+        const cleanDate = p.assignmentDate
+          ? (String(p.assignmentDate).includes('T') ? String(p.assignmentDate).slice(0, 10) : String(p.assignmentDate))
+          : (p.acquisitionDate ? String(p.acquisitionDate).slice(0, 10) : new Date(p.createdAt || Date.now()).toISOString().slice(0, 10));
+
+        return {
+          id: `init_${p.id}`,
+          propertyId: p.id,
+          propertyNumber: p.propertyNumber || 'N/A',
+          article: p.article || 'Asset',
+          description: p.description || '',
+          serialNumber: p.serialNumber || '',
+          unitValue: p.unitValue || 0,
+          unit: p.unit || 'unit',
+          poNumber: p.poNumber || '',
+          categoryId: p.categoryId || null,
+
+          employeeId: p.accountablePersonId || null,
+          employeeName: emp.name || 'Assigned Custodian',
+          employeePosition: emp.position || '',
+          employeeCode: emp.employeeId || '',
+          officeId: p.officeId || null,
+          officeName: off.name || 'Assigned Office',
+          officeCode: off.code || '',
+          previousEmployeeId: null,
+          previousEmployeeName: 'None (Initial Registration)',
+          previousEmployeePosition: '',
+          previousOfficeId: null,
+          previousOfficeName: 'None (Initial Registration)',
+          assignmentDate: cleanDate,
+          remarks: p.remarks || 'Initial property registration and assignment',
+          transferredBy: 'System Registration',
+          isActive: true,
+          createdAt: p.createdAt || new Date().toISOString(),
+        };
+      });
+
+    const combinedAssignments = [...formatted, ...initialAssignments];
+
+    return NextResponse.json({ success: true, assignments: combinedAssignments }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, assignments: [] }, { status: 500 });
   }
