@@ -124,27 +124,29 @@ export async function POST(request) {
           finalPassword = await hashPassword(password.trim());
         }
 
-        const payload = {
+        const fullPayload = {
           id: userId,
           username: cleanUsername,
           fullName: fullName.trim(),
           email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
+          position: position ? position.trim() : (isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin'),
           password: finalPassword,
           role: 'Admin',
         };
 
         let { error: upsertErr } = await supabase
           .from('users')
-          .upsert([payload], { onConflict: 'username' });
+          .upsert([fullPayload], { onConflict: 'username' });
 
+        // Fallback without position column if Supabase schema cache hasn't loaded it yet
         if (upsertErr && upsertErr.message && (upsertErr.message.includes('column') || upsertErr.message.includes('schema cache'))) {
-          // Retry with minimal safe fields without role if schema cache differs
           const safePayload = {
             id: userId,
             username: cleanUsername,
             fullName: fullName.trim(),
             email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
             password: finalPassword,
+            role: 'Admin',
           };
           const retryRes = await supabase
             .from('users')
