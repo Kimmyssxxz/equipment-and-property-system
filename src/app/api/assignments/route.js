@@ -60,72 +60,84 @@ export async function GET(request) {
 
     // 2. Fetch lookup records in parallel for robust in-memory relation mapping
     const [propRes, empRes, offRes] = await Promise.all([
-      supabase
-        .from('properties')
-        .select('id, propertyNumber, article, description, unitValue, poNumber, categoryId, status, unit, serialNumber, remarks, accountablePersonId, officeId, assignmentDate, acquisitionDate, createdAt'),
-      supabase
-        .from('employees')
-        .select('id, name, employeeId, position, officeId'),
-      supabase
-        .from('offices')
-        .select('id, code, name, head'),
+      supabase.from('properties').select('*'),
+      supabase.from('employees').select('*'),
+      supabase.from('offices').select('*'),
     ]);
 
     const allProps = propRes.data || [];
     const allEmps = empRes.data || [];
     const allOffs = offRes.data || [];
 
-    const propMap = new Map(allProps.map((p) => [p.id, p]));
-    const empMap = new Map(allEmps.map((e) => [e.id, e]));
-    const offMap = new Map(allOffs.map((o) => [o.id, o]));
+    const propMap = new Map();
+    allProps.forEach((p) => {
+      if (p.id) propMap.set(p.id, p);
+      if (p.propertyNumber) propMap.set(p.propertyNumber, p);
+      if (p.property_number) propMap.set(p.property_number, p);
+    });
+
+    const empMap = new Map();
+    allEmps.forEach((e) => {
+      if (e.id) empMap.set(e.id, e);
+      if (e.employeeId) empMap.set(e.employeeId, e);
+      if (e.employee_id) empMap.set(e.employee_id, e);
+    });
+
+    const offMap = new Map();
+    allOffs.forEach((o) => {
+      if (o.id) offMap.set(o.id, o);
+      if (o.code) offMap.set(o.code, o);
+    });
 
     let filteredAssignments = assignments || [];
 
     // 3. Format fields cleanly for recorded transfers
     const formatted = filteredAssignments.map((item) => {
-      const prop = propMap.get(item.propertyId) || {};
-      const emp = empMap.get(item.employeeId) || {};
-      const off = offMap.get(item.officeId) || {};
-      const prevEmp = item.previousEmployeeId ? empMap.get(item.previousEmployeeId) : null;
-      const prevOff = item.previousOfficeId ? offMap.get(item.previousOfficeId) : null;
+      const prop = propMap.get(item.propertyId) || propMap.get(item.property_id) || propMap.get(item.propertyNumber) || {};
+      const emp = empMap.get(item.employeeId) || empMap.get(item.employee_id) || empMap.get(item.newEmployeeId) || {};
+      const off = offMap.get(item.officeId) || offMap.get(item.office_id) || offMap.get(item.newOfficeId) || {};
+      const prevEmpId = item.previousEmployeeId || item.previous_employee_id;
+      const prevOffId = item.previousOfficeId || item.previous_office_id;
+      const prevEmp = prevEmpId ? empMap.get(prevEmpId) : null;
+      const prevOff = prevOffId ? offMap.get(prevOffId) : null;
 
       const cleanDate = item.assignmentDate
-        ? (item.assignmentDate.includes('T') ? item.assignmentDate.slice(0, 10) : item.assignmentDate)
+        ? (String(item.assignmentDate).includes('T') ? String(item.assignmentDate).slice(0, 10) : String(item.assignmentDate))
         : new Date(item.createdAt || Date.now()).toISOString().slice(0, 10);
 
-      const creator = item.createdBy || item.created_by || 'edolotallas';
+      const creator = item.createdBy || item.created_by || prop.createdBy || prop.created_by || 'edolotallas';
 
       return {
         id: item.id,
-        propertyId: item.propertyId,
-        propertyNumber: prop.propertyNumber || item.propertyNumber || 'N/A',
-        article: prop.article || item.article || 'Asset',
-        description: prop.description || '',
-        serialNumber: prop.serialNumber || item.serialNumber || '',
-        unitValue: prop.unitValue || 0,
-        unit: prop.unit || 'unit',
-        poNumber: prop.poNumber || '',
-        categoryId: prop.categoryId || null,
+        propertyId: item.propertyId || item.property_id || prop.id,
+        propertyNumber: prop.propertyNumber || prop.property_number || item.propertyNumber || item.property_number || 'N/A',
+        article: prop.article || item.article || prop.description || item.description || 'Asset',
+        description: prop.description || item.description || '',
+        serialNumber: prop.serialNumber || prop.serial_number || item.serialNumber || item.serial_number || '',
+        unitValue: prop.unitValue || prop.unit_value || item.unitValue || 0,
+        unit: prop.unit || item.unit || 'unit',
+        poNumber: prop.poNumber || prop.po_number || item.poNumber || '',
+        categoryId: prop.categoryId || prop.category_id || item.categoryId || null,
 
-        employeeId: item.employeeId,
+        employeeId: item.employeeId || item.employee_id,
         employeeName: (item.employeeId === 'emp_unassigned' || item.employeeId === 'UNASSIGNED' || !item.employeeId)
           ? 'Unassigned / Common Area'
           : (emp.name || item.employeeName || 'Assigned Officer'),
         employeePosition: (item.employeeId === 'emp_unassigned' || item.employeeId === 'UNASSIGNED' || !item.employeeId)
           ? 'Common Area Custodian'
           : (emp.position || ''),
-        employeeCode: emp.employeeId || '',
-        officeId: item.officeId,
+        employeeCode: emp.employeeId || emp.employee_id || '',
+        officeId: item.officeId || item.office_id,
         officeName: off.name || item.officeName || 'Assigned Office',
         officeCode: off.code || '',
-        previousEmployeeId: item.previousEmployeeId,
-        previousEmployeeName: prevEmp?.name || (item.previousEmployeeId ? 'Previous Custodian' : 'None (Initial Registration)'),
+        previousEmployeeId: prevEmpId,
+        previousEmployeeName: prevEmp?.name || (prevEmpId ? 'Previous Custodian' : 'None (Initial Registration)'),
         previousEmployeePosition: prevEmp?.position || '',
-        previousOfficeId: item.previousOfficeId,
-        previousOfficeName: prevOff?.name || (item.previousOfficeId ? 'Previous Office' : 'None (Initial Registration)'),
+        previousOfficeId: prevOffId,
+        previousOfficeName: prevOff?.name || (prevOffId ? 'Previous Office' : 'None (Initial Registration)'),
         assignmentDate: cleanDate,
         remarks: item.remarks || 'Official transfer of property accountability',
-        transferredBy: item.transferredBy || 'System Admin',
+        transferredBy: item.transferredBy || item.transferred_by || 'System Admin',
         createdBy: creator,
         encodedBy: creator,
         isActive: item.isActive !== false,
@@ -149,14 +161,14 @@ export async function GET(request) {
         return {
           id: `init_${p.id}`,
           propertyId: p.id,
-          propertyNumber: p.propertyNumber || 'N/A',
-          article: p.article || 'Asset',
+          propertyNumber: p.propertyNumber || p.property_number || 'N/A',
+          article: p.article || p.description || 'Asset',
           description: p.description || '',
-          serialNumber: p.serialNumber || '',
-          unitValue: p.unitValue || 0,
+          serialNumber: p.serialNumber || p.serial_number || '',
+          unitValue: p.unitValue || p.unit_value || 0,
           unit: p.unit || 'unit',
-          poNumber: p.poNumber || '',
-          categoryId: p.categoryId || null,
+          poNumber: p.poNumber || p.po_number || '',
+          categoryId: p.categoryId || p.category_id || null,
 
           employeeId: p.accountablePersonId || null,
           employeeName: emp.name || 'Assigned Custodian',

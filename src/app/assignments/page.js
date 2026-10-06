@@ -181,7 +181,23 @@ function AssignmentsContent() {
         loadedHistory = [];
       } else if (asgnData.success && Array.isArray(asgnData.assignments)) {
         setDbConnected(true);
-        loadedHistory = asgnData.assignments;
+        loadedHistory = asgnData.assignments.map((item) => {
+          const matchedProp = loadedProps.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyId || p.propertyNumber === item.propertyNumber);
+          const matchedEmp = loadedEmps.find((e) => e.id === item.employeeId);
+          const matchedOff = loadedOffs.find((o) => o.id === item.officeId);
+
+          return {
+            ...item,
+            propertyNumber: (item.propertyNumber && item.propertyNumber !== 'N/A') ? item.propertyNumber : (matchedProp?.propertyNumber || item.propertyNumber || 'N/A'),
+            article: (item.article && item.article !== 'Asset') ? item.article : (matchedProp?.article || matchedProp?.description || item.article || 'Asset'),
+            description: item.description || matchedProp?.description || '',
+            serialNumber: item.serialNumber || matchedProp?.serialNumber || '',
+            unitValue: item.unitValue || matchedProp?.unitValue || 0,
+            unit: item.unit || matchedProp?.unit || 'unit',
+            employeeName: item.employeeName && item.employeeName !== 'Assigned Officer' ? item.employeeName : (matchedEmp?.name || item.employeeName || 'Assigned Custodian'),
+            officeName: item.officeName && item.officeName !== 'Assigned Office' ? item.officeName : (matchedOff?.name || item.officeName || 'Assigned Office'),
+          };
+        });
       } else {
         loadedHistory = [];
       }
@@ -197,7 +213,7 @@ function AssignmentsContent() {
               id: `init_${p.id}`,
               propertyId: p.id,
               propertyNumber: p.propertyNumber || 'N/A',
-              article: p.article || 'Asset',
+              article: p.article || p.description || 'Asset',
               description: p.description || '',
               serialNumber: p.serialNumber || '',
               unitValue: p.unitValue || 0,
@@ -1244,24 +1260,35 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                           {h.assignmentDate}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-bold text-emerald-800">{h.propertyNumber}</span>
-                            {isSemiExpendableProp(h) ? (
-                              <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-blue-100 text-blue-900 border border-blue-200">
-                                Semi-Expendable
-                              </span>
-                            ) : (
-                              <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-200">
-                                Equipment/PPE
-                              </span>
-                            )}
-                          </div>
-                          <div className="font-semibold text-slate-900">{h.article}</div>
-                          {h.description && (
-                            <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200/80 rounded px-1.5 py-0.5 mt-1 max-w-xs truncate" title={`Technical Specs: ${h.description}`}>
-                              <span className="font-bold text-slate-700">Specs:</span> {h.description}
-                            </div>
-                          )}
+                          {(() => {
+                            const matchedProp = properties.find((p) => p.id === h.propertyId || p.propertyNumber === h.propertyId || p.propertyNumber === h.propertyNumber);
+                            const propNum = (h.propertyNumber && h.propertyNumber !== 'N/A') ? h.propertyNumber : (matchedProp?.propertyNumber || h.propertyNumber || 'N/A');
+                            const propArticle = (h.article && h.article !== 'Asset') ? h.article : (matchedProp?.article || matchedProp?.description || h.article || 'Asset');
+                            const propSpecs = h.description || matchedProp?.description || '';
+
+                            return (
+                              <>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-mono font-bold text-emerald-800">{propNum}</span>
+                                  {isSemiExpendableProp(h) || isSemiExpendableProp(matchedProp) ? (
+                                    <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-blue-100 text-blue-900 border border-blue-200">
+                                      Semi-Expendable
+                                    </span>
+                                  ) : (
+                                    <span className="px-1.5 py-0.2 rounded text-[9.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-200">
+                                      Equipment/PPE
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-semibold text-slate-900">{propArticle}</div>
+                                {propSpecs && (
+                                  <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200/80 rounded px-1.5 py-0.5 mt-1 max-w-xs truncate" title={`Technical Specs: ${propSpecs}`}>
+                                    <span className="font-bold text-slate-700">Specs:</span> {propSpecs}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </td>
                         <td className="py-3.5 px-4 text-slate-500">
                           <div className="font-semibold text-slate-800">{h.previousEmployeeName || 'None (Initial Registration)'}</div>
