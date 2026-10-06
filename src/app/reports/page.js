@@ -314,24 +314,37 @@ function ReportsContent() {
           const countRes = await fetch(`/api/physical-counts?sessionId=${session.id}`);
           const countData = await countRes.json();
           if (countRes.ok && Array.isArray(countData.counts)) {
-            items = countData.counts.map((c) => {
+            // ONLY include items that have actually been physically scanned / counted in this inventory session!
+            const scannedCounts = countData.counts.filter((c) => {
+              const hasCount = c.physicalCount !== null && c.physicalCount !== undefined;
+              const notPending = c.status !== 'PENDING';
+              return hasCount && notPending;
+            });
+
+            items = scannedCounts.map((c) => {
               const prop = allProps.find((p) => p.id === c.propertyId || p.propertyNumber === c.propertyNumber) || {};
               const finalUnitValue = prop.unitValue !== undefined && prop.unitValue !== null
                 ? parseVal(prop.unitValue)
                 : parseVal(c.unitValue);
 
+              const cardQty = c.quantityPerCard || prop.quantityPerCard || 1;
+              const actualCount = c.physicalCount !== null && c.physicalCount !== undefined ? c.physicalCount : cardQty;
+              const diff = c.difference !== null && c.difference !== undefined ? c.difference : (actualCount - cardQty);
+
               return {
                 id: c.id || prop.id,
+                propertyId: c.propertyId || prop.id,
                 propertyNumber: c.propertyNumber || prop.propertyNumber || 'N/A',
                 article: c.article || prop.article || 'Asset',
                 description: c.description || prop.description || '',
                 categoryId: prop.categoryId || c.categoryId,
                 unit: prop.unit || c.unit || 'unit',
                 unitValue: finalUnitValue,
-                quantityPerCard: c.quantityPerCard || prop.quantityPerCard || 1,
-                physicalCount: c.physicalCount !== null && c.physicalCount !== undefined ? c.physicalCount : (prop.quantityPerCard || 1),
-                difference: c.difference !== null && c.difference !== undefined ? c.difference : 0,
-                status: c.status || 'OK',
+                quantityPerCard: cardQty,
+                physicalCount: actualCount,
+                difference: diff,
+                status: c.status || (diff === 0 ? 'OK' : diff < 0 ? 'SHORTAGE' : 'OVERAGE'),
+                propertyStatus: prop.status || 'ACTIVE',
                 remarks: c.remarks || prop.remarks || '',
                 serialNumber: prop.serialNumber || '',
                 poNumber: prop.poNumber || '',
@@ -344,38 +357,6 @@ function ReportsContent() {
               };
             });
 
-            const existingPropNos = new Set(items.map((i) => i.propertyNumber));
-            const uncountedProps = allProps.filter((p) => {
-              const matchOfficer = !accountableOfficerId || p.accountablePersonId === accountableOfficerId;
-              const matchOffice = !officeId || p.officeId === officeId;
-              return matchOfficer && matchOffice && !existingPropNos.has(p.propertyNumber);
-            });
-
-            uncountedProps.forEach((p) => {
-              items.push({
-                id: 'prop-item-' + p.id,
-                propertyNumber: p.propertyNumber,
-                article: p.article,
-                description: p.description,
-                categoryId: p.categoryId,
-                unit: p.unit || 'unit',
-                unitValue: parseVal(p.unitValue),
-                quantityPerCard: p.quantityPerCard || 1,
-                physicalCount: p.quantityPerCard || 1,
-                difference: 0,
-                status: 'OK',
-                remarks: p.remarks || '',
-                serialNumber: p.serialNumber || '',
-                poNumber: p.poNumber || '',
-                brand: p.brand || '',
-                officeId: p.officeId || null,
-                officeName: p.officeName || null,
-                accountablePersonId: p.accountablePersonId || null,
-                accountablePersonName: p.accountablePersonName || null,
-                acquisitionDate: p.acquisitionDate || p.assignmentDate || '',
-              });
-            });
-
             if (selectedCategoryFilter && selectedCategoryFilter !== 'ALL') {
               items = items.filter((item) => isCategoryMatch(item.categoryId, selectedCategoryFilter));
             }
@@ -383,8 +364,8 @@ function ReportsContent() {
         } catch (cntErr) {
           console.warn('Count fetch fallback:', cntErr);
         }
-      } else {
-        // Pull active properties from Master Catalog directly by Category and Custodian
+      } else if (selectedTypeId === 'rspi') {
+        // RSPI: Registry of Semi-Expendable Property Issued (pulled from assigned properties)
         const matchingProps = allProps.filter((p) => {
           const matchOfficer = !accountableOfficerId || p.accountablePersonId === accountableOfficerId;
           const matchCat = isCategoryMatch(p.categoryId, selectedCategoryFilter);
@@ -393,6 +374,39 @@ function ReportsContent() {
 
         items = matchingProps.map((p) => ({
           id: 'prop-item-' + p.id,
+          propertyId: p.id,
+          propertyNumber: p.propertyNumber,
+          article: p.article,
+          description: p.description,
+          categoryId: p.categoryId,
+          unit: p.unit || 'unit',
+          unitValue: parseVal(p.unitValue),
+          quantityPerCard: p.quantityPerCard || 1,
+          physicalCount: p.quantityPerCard || 1,
+          difference: 0,
+          status: 'OK',
+          propertyStatus: p.status || 'ACTIVE',
+          remarks: p.remarks || '',
+          serialNumber: p.serialNumber || '',
+          poNumber: p.poNumber || '',
+          brand: p.brand || '',
+          officeId: p.officeId || null,
+          officeName: p.officeName || null,
+          accountablePersonId: p.accountablePersonId || null,
+          accountablePersonName: p.accountablePersonName || null,
+          acquisitionDate: p.acquisitionDate || p.assignmentDate || '',
+        }));
+      } else {
+        // Direct Catalog Mode (when explicitly chosen)
+        const matchingProps = allProps.filter((p) => {
+          const matchOfficer = !accountableOfficerId || p.accountablePersonId === accountableOfficerId;
+          const matchCat = isCategoryMatch(p.categoryId, selectedCategoryFilter);
+          return matchOfficer && matchCat;
+        });
+
+        items = matchingProps.map((p) => ({
+          id: 'prop-item-' + p.id,
+          propertyId: p.id,
           propertyNumber: p.propertyNumber,
           article: p.article,
           description: p.description,

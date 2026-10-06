@@ -161,48 +161,27 @@ function ReportPreviewContent() {
           const propsList = propRes.data?.properties || [];
           const categoriesList = catRes.data?.categories || [];
 
-          let rawItems = Array.isArray(target.snapshotData) && target.snapshotData.length > 0
+          let rawItems = Array.isArray(target.snapshotData)
             ? target.snapshotData
-            : Array.isArray(target.itemsSnapshot) && target.itemsSnapshot.length > 0
+            : Array.isArray(target.itemsSnapshot)
             ? target.itemsSnapshot
             : [];
 
-          // If snapshot is empty, pull all properties directly from master catalog
-          if (rawItems.length === 0) {
-            rawItems = propsList.map((p) => ({
-              id: p.id,
-              propertyNumber: p.propertyNumber,
-              article: p.article,
-              description: p.description,
-              categoryId: p.categoryId,
-              unit: p.unit || 'unit',
-              unitValue: parseVal(p.unitValue),
-              quantityPerCard: p.quantityPerCard || 1,
-              physicalCount: p.quantityPerCard || 1,
-              difference: 0,
-              status: 'OK',
-              remarks: p.remarks || '',
-              serialNumber: p.serialNumber || '',
-              poNumber: p.poNumber || '',
-              brand: p.brand || '',
-              acquisitionDate: p.acquisitionDate || p.assignmentDate || '',
-            }));
-          } else {
-            rawItems = rawItems.map((item) => {
-              const prop = propsList.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
-              const updatedVal = prop && prop.unitValue !== undefined && prop.unitValue !== null
-                ? parseVal(prop.unitValue)
-                : parseVal(item.unitValue);
-              return {
-                ...item,
-                unitValue: updatedVal,
-                categoryId: prop?.categoryId || item.categoryId,
-                article: item.article || prop?.article || 'Asset',
-                description: item.description || prop?.description || '',
-                brand: item.brand || prop?.brand || '',
-              };
-            });
-          }
+          // Enrich snapshot items with catalog metadata if available
+          rawItems = rawItems.map((item) => {
+            const prop = propsList.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+            const updatedVal = prop && prop.unitValue !== undefined && prop.unitValue !== null
+              ? parseVal(prop.unitValue)
+              : parseVal(item.unitValue);
+            return {
+              ...item,
+              unitValue: updatedVal,
+              categoryId: prop?.categoryId || item.categoryId,
+              article: item.article || prop?.article || 'Asset',
+              description: item.description || prop?.description || '',
+              brand: item.brand || prop?.brand || '',
+            };
+          });
 
           // Category filtering if category query parameter exists
           const catFilter = categoryQuery || target.categoryName || target.categoryId;
@@ -237,43 +216,6 @@ function ReportPreviewContent() {
             rawItems = rawItems.filter((item) => parseVal(item.unitValue) >= 50000);
           } else if (isRspiTarget || isRpcspTarget) {
             rawItems = rawItems.filter((item) => parseVal(item.unitValue) < 50000);
-          }
-
-          // Fallback if filtering produced 0 items but properties exist matching threshold
-          if (rawItems.length === 0 && (isRspiTarget || isRpcspTarget)) {
-            rawItems = propsList
-              .filter((p) => parseVal(p.unitValue) < 50000)
-              .map((p) => ({
-                id: p.id,
-                propertyNumber: p.propertyNumber,
-                article: p.article,
-                description: p.description,
-                categoryId: p.categoryId,
-                unit: p.unit || 'unit',
-                unitValue: parseVal(p.unitValue),
-                quantityPerCard: p.quantityPerCard || 1,
-                physicalCount: p.quantityPerCard || 1,
-                difference: 0,
-                status: 'OK',
-                remarks: p.remarks || '',
-                serialNumber: p.serialNumber || '',
-                poNumber: p.poNumber || '',
-                brand: p.brand || '',
-                acquisitionDate: p.acquisitionDate || p.assignmentDate || '',
-              }));
-
-            if (catFilter && catFilter !== 'ALL' && catFilter !== 'undefined') {
-              const catLower = String(catFilter).toLowerCase();
-              const matchingCat = categoriesList.find(
-                (c) => c.id === catFilter || c.code?.toLowerCase() === catLower || c.name?.toLowerCase() === catLower
-              );
-              rawItems = rawItems.filter((item) => {
-                if (matchingCat) {
-                  return String(item.categoryId).toLowerCase() === String(matchingCat.id).toLowerCase();
-                }
-                return String(item.categoryId).toLowerCase().includes(catLower);
-              });
-            }
           }
 
           setItems(rawItems);
