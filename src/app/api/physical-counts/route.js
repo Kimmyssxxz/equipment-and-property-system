@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { getSessionUser, extractEncoderFromRemarks } from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,11 +8,13 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch physical counts from Supabase Database
+// GET: Fetch physical counts from Supabase Database (User-Scoped)
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
+    const sessionUser = await getSessionUser(request);
+    const targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
 
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -53,11 +56,29 @@ export async function GET(request) {
     // Parallel fetch master properties
     const { data: properties } = await supabase
       .from('properties')
-      .select('id, propertyNumber, article, description, categoryId, unit, unitValue, quantityPerCard');
+      .select('id, propertyNumber, article, description, categoryId, unit, unitValue, quantityPerCard, remarks');
 
     const propMap = new Map((properties || []).map((p) => [p.id, p]));
 
-    const formatted = (rawCounts || []).map((c) => {
+    let filteredCounts = rawCounts || [];
+
+    // Filter counts based on the active logged in user
+    if (targetUsername) {
+      filteredCounts = filteredCounts.filter((c) => {
+        const prop = propMap.get(c.propertyId) || {};
+        const propEncoder = extractEncoderFromRemarks(prop.remarks);
+        const countUser = (c.countedBy || '').toLowerCase();
+
+        if (targetUsername === 'queenie_ppsc') {
+          return propEncoder === 'queenie_ppsc' || countUser.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return propEncoder === 'edolotallas' && !countUser.includes('queenie');
+        }
+        return propEncoder === targetUsername || countUser.includes(targetUsername);
+      });
+    }
+
+    const formatted = filteredCounts.map((c) => {
       const prop = propMap.get(c.propertyId) || {};
       const expected = c.quantityPerCard || prop.quantityPerCard || 1;
       const actual = c.physicalCount;
@@ -97,6 +118,7 @@ export async function GET(request) {
     return NextResponse.json({ error: err.message, counts: [] }, { status: 500 });
   }
 }
+
 
 // POST: Scan sticker / record physical count into Supabase Database
 export async function POST(request) {
@@ -188,6 +210,10 @@ export async function POST(request) {
 
     let finalCount;
 
+    const sessionUser = await getSessionUser(request);
+    const activeUserName = sessionUser?.fullName || sessionUser?.username || 'Admin';
+    const finalCountedBy = countedBy || activeUserName;
+
     if (existingCount) {
       const updatePayload = {
         physicalCount: countVal,
@@ -195,7 +221,7 @@ export async function POST(request) {
         status,
         remarks: remarks !== undefined ? remarks : existingCount.remarks || 'Scanned from property sticker',
         countedAt: new Date().toISOString(),
-        countedBy: countedBy || 'Admin',
+        countedBy: finalCountedBy,
         updatedAt: new Date().toISOString(),
       };
 
@@ -221,7 +247,7 @@ export async function POST(request) {
         status,
         remarks: remarks || 'Scanned from property sticker',
         countedAt: new Date().toISOString(),
-        countedBy: countedBy || 'Admin',
+        countedBy: finalCountedBy,
       };
 
       const { data: inserted, error: insertError } = await supabase

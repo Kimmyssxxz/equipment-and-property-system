@@ -232,4 +232,74 @@ export function clearSessionCookie(response) {
   return response;
 }
 
+/**
+ * Get active session user from incoming Request or cookies
+ */
+export async function getSessionUser(request) {
+  try {
+    let token = null;
+
+    if (request && typeof request.cookies?.get === 'function') {
+      token = request.cookies.get(COOKIE_NAME)?.value;
+    } else if (request && request.headers) {
+      const cookieHeader = typeof request.headers.get === 'function' ? request.headers.get('cookie') : request.headers?.cookie;
+      if (cookieHeader) {
+        const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+        if (match) token = match[1];
+      }
+    }
+
+    if (token) {
+      const payload = await verifySessionToken(token);
+      if (payload && payload.username) return payload;
+    }
+
+    // Header fallback (e.g. x-user-username)
+    if (request && typeof request.headers?.get === 'function') {
+      const headerUsername = request.headers.get('x-user-username');
+      if (headerUsername) {
+        return {
+          username: headerUsername.toLowerCase().trim(),
+          name: headerUsername,
+          role: 'Admin',
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Session user extraction notice:', err);
+  }
+  return null;
+}
+
+/**
+ * Encoder Tag Helpers for Properties
+ */
+export function attachEncoderToRemarks(remarks, username) {
+  const cleanRem = cleanRemarksForDisplay(remarks);
+  const cleanUser = (username || 'edolotallas').toLowerCase().trim();
+  return cleanRem ? `${cleanRem} [Encoder:${cleanUser}]` : `[Encoder:${cleanUser}]`;
+}
+
+export function extractEncoderFromRemarks(remarks) {
+  if (!remarks || typeof remarks !== 'string') return 'edolotallas';
+  const match = remarks.match(/\[(?:Encoder|User):\s*([^\]]+)\]/i);
+  if (match && match[1]) {
+    return match[1].toLowerCase().trim();
+  }
+  return 'edolotallas'; // Default fallback for all initial 93 properties
+}
+
+export function cleanRemarksForDisplay(remarks) {
+  if (!remarks || typeof remarks !== 'string') return '';
+  return remarks.replace(/\[(?:Encoder|User):\s*[^\]]+\]/gi, '').trim();
+}
+
+export function isPropertyOwnedByUser(property, user) {
+  if (!user || !user.username) return true;
+  const currentUsername = user.username.toLowerCase().trim();
+  const encoder = extractEncoderFromRemarks(property?.remarks);
+  return encoder === currentUsername;
+}
+
 export { COOKIE_NAME };
+

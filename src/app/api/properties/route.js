@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import {
+  getSessionUser,
+  attachEncoderToRemarks,
+  extractEncoderFromRemarks,
+  cleanRemarksForDisplay,
+} from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,8 +13,8 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch all properties / inventory items from Database
-export async function GET() {
+// GET: Fetch all properties / inventory items from Database (User-Scoped)
+export async function GET(request) {
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -27,6 +33,17 @@ export async function GET() {
         { error: 'Failed to initialize database client.', properties: [] },
         { status: 500 }
       );
+    }
+
+    const sessionUser = await getSessionUser(request);
+    let targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
+
+    if (request && request.url) {
+      try {
+        const { searchParams } = new URL(request.url);
+        const uParam = searchParams.get('username') || searchParams.get('user');
+        if (uParam) targetUsername = uParam.toLowerCase().trim();
+      } catch (e) {}
     }
 
     let { data, error } = await supabase
@@ -65,7 +82,24 @@ export async function GET() {
       return NextResponse.json({ error: error.message, properties: [] }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, properties: data || [] }, { status: 200 });
+    let rawList = data || [];
+
+    // Filter properties based on the logged-in user / encoder
+    if (targetUsername) {
+      rawList = rawList.filter((p) => {
+        const encoder = extractEncoderFromRemarks(p.remarks);
+        return encoder === targetUsername;
+      });
+    }
+
+    // Clean remarks for display so that [Encoder:...] tags are stripped
+    const formattedList = rawList.map((p) => ({
+      ...p,
+      remarks: cleanRemarksForDisplay(p.remarks),
+      encodedBy: extractEncoderFromRemarks(p.remarks),
+    }));
+
+    return NextResponse.json({ success: true, properties: formattedList }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, properties: [] }, { status: 500 });
   }
@@ -107,6 +141,9 @@ export async function POST(request) {
       );
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const trimmedPropNo = propertyNumber.trim();
     const trimmedArticle = article.trim();
     const trimmedDesc = description ? description.trim() : trimmedArticle;
@@ -142,6 +179,8 @@ export async function POST(request) {
       );
     }
 
+    const remarksWithEncoder = attachEncoderToRemarks(remarks, activeUsername);
+
     const newId = 'prop_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
     const newProperty = {
       id: newId,
@@ -156,7 +195,7 @@ export async function POST(request) {
       poNumber: poNumber ? poNumber.trim() : null,
       poDate: poDate ? new Date(poDate).toISOString() : null,
       serialNumber: cleanSerialNumber,
-      remarks: remarks ? remarks.trim() : null,
+      remarks: remarksWithEncoder,
       status: propStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -172,7 +211,13 @@ export async function POST(request) {
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, property: data || newProperty }, { status: 201 });
+    const returnedProp = {
+      ...(data || newProperty),
+      remarks: cleanRemarksForDisplay(remarks),
+      encodedBy: activeUsername,
+    };
+
+    return NextResponse.json({ success: true, property: returnedProp }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -215,6 +260,9 @@ export async function PUT(request) {
       );
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const trimmedPropNo = propertyNumber.trim();
     const trimmedArticle = article.trim();
     const trimmedDesc = description ? description.trim() : trimmedArticle;
@@ -226,7 +274,7 @@ export async function PUT(request) {
     // Check collision for propertyNumber excluding current id
     const { data: existing } = await supabase
       .from('properties')
-      .select('id, propertyNumber')
+      .select('id, propertyNumber, remarks')
       .neq('id', id)
       .eq('propertyNumber', trimmedPropNo);
 
@@ -239,6 +287,16 @@ export async function PUT(request) {
       );
     }
 
+    // Fetch existing item to preserve original encoder tag if any
+    const { data: currentProp } = await supabase
+      .from('properties')
+      .select('remarks')
+      .eq('id', id)
+      .maybeSingle();
+
+    const originalEncoder = currentProp ? extractEncoderFromRemarks(currentProp.remarks) : activeUsername;
+    const remarksWithEncoder = attachEncoderToRemarks(remarks, originalEncoder);
+
     const updatePayload = {
       propertyNumber: trimmedPropNo,
       article: trimmedArticle,
@@ -249,11 +307,10 @@ export async function PUT(request) {
       quantityPerCard: numQty,
       poNumber: poNumber ? poNumber.trim() : null,
       serialNumber: cleanSerialNumber,
-      remarks: remarks ? remarks.trim() : null,
+      remarks: remarksWithEncoder,
       status: propStatus,
       updatedAt: new Date().toISOString(),
     };
-
 
     if (acquisitionDate) {
       updatePayload.acquisitionDate = new Date(acquisitionDate).toISOString();
@@ -273,11 +330,18 @@ export async function PUT(request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, property: data }, { status: 200 });
+    const returned = {
+      ...data,
+      remarks: cleanRemarksForDisplay(data.remarks),
+      encodedBy: originalEncoder,
+    };
+
+    return NextResponse.json({ success: true, property: returned }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
 
 // DELETE: Delete a property record from Database
 export async function DELETE(request) {

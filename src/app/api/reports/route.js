@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { getSessionUser } from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,7 +8,7 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch all official reports (RPCPPE, RPCI, RPCSP) from Supabase Database
+// GET: Fetch all official reports (RPCPPE, RPCI, RPCSP) from Supabase Database (User-Scoped)
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -33,6 +34,9 @@ export async function GET(request) {
         { status: 500 }
       );
     }
+
+    const sessionUser = await getSessionUser(request);
+    const targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
 
     // 1. Fetch reports directly from Supabase
     let query = supabase
@@ -68,6 +72,21 @@ export async function GET(request) {
       return NextResponse.json({ error: repError.message, reports: [] }, { status: 400 });
     }
 
+    let filteredReports = rawReports || [];
+
+    // Filter reports based on active user
+    if (targetUsername) {
+      filteredReports = filteredReports.filter((r) => {
+        const genBy = (r.generatedBy || '').toLowerCase();
+        if (targetUsername === 'queenie_ppsc') {
+          return genBy.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return !genBy.includes('queenie');
+        }
+        return genBy.includes(targetUsername);
+      });
+    }
+
     // 2. Fetch lookup records in parallel for robust in-memory relation mapping
     const [empRes, offRes, sessRes] = await Promise.all([
       supabase.from('employees').select('id, name, employeeId, position, assumedDate'),
@@ -80,7 +99,7 @@ export async function GET(request) {
     const sessMap = new Map((sessRes.data || []).map((s) => [s.id, s]));
 
     // 3. Format reports cleanly
-    const formatted = (rawReports || []).map((r) => {
+    const formatted = filteredReports.map((r) => {
       const emp = empMap.get(r.accountablePersonId) || {};
       const off = offMap.get(r.officeId) || {};
       const sess = r.inventorySessionId ? sessMap.get(r.inventorySessionId) : null;
@@ -232,6 +251,9 @@ export async function POST(request) {
       console.warn('FK resolution warning:', fkErr);
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUserName = sessionUser?.fullName || sessionUser?.username || 'Admin';
+
     const reportPayload = {
       id: id || `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       reportNumber: finalReportNumber,
@@ -241,7 +263,7 @@ export async function POST(request) {
       accountablePersonId: validEmpId,
       officeId: validOffId,
       inventorySessionId: validSessId,
-      generatedBy: generatedBy || 'Admin',
+      generatedBy: generatedBy || activeUserName,
       status: status || 'FINALIZED',
       signatories: {
         ...(signatories || {}),

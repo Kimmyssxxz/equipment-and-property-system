@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { getSessionUser, extractEncoderFromRemarks } from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,8 +8,8 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch all property assignment records from Supabase Database
-export async function GET() {
+// GET: Fetch all property assignment records from Supabase Database (User-Scoped)
+export async function GET(request) {
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -28,6 +29,9 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const sessionUser = await getSessionUser(request);
+    const targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
 
     // 1. Fetch assignment records directly
     const { data: assignments, error: asgnError } = await supabase
@@ -58,7 +62,7 @@ export async function GET() {
     const [propRes, empRes, offRes] = await Promise.all([
       supabase
         .from('properties')
-        .select('id, propertyNumber, article, description, unitValue, poNumber, categoryId, status, unit, serialNumber'),
+        .select('id, propertyNumber, article, description, unitValue, poNumber, categoryId, status, unit, serialNumber, remarks'),
       supabase
         .from('employees')
         .select('id, name, employeeId, position, officeId'),
@@ -71,8 +75,26 @@ export async function GET() {
     const empMap = new Map((empRes.data || []).map((e) => [e.id, e]));
     const offMap = new Map((offRes.data || []).map((o) => [o.id, o]));
 
+    let filteredAssignments = assignments || [];
+
+    // Filter assignments by active logged in user
+    if (targetUsername) {
+      filteredAssignments = filteredAssignments.filter((item) => {
+        const prop = propMap.get(item.propertyId) || {};
+        const propEncoder = extractEncoderFromRemarks(prop.remarks);
+        const transBy = (item.transferredBy || '').toLowerCase();
+
+        if (targetUsername === 'queenie_ppsc') {
+          return propEncoder === 'queenie_ppsc' || transBy.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return propEncoder === 'edolotallas' && !transBy.includes('queenie');
+        }
+        return propEncoder === targetUsername || transBy.includes(targetUsername);
+      });
+    }
+
     // 3. Format fields cleanly
-    const formatted = (assignments || []).map((item) => {
+    const formatted = filteredAssignments.map((item) => {
       const prop = propMap.get(item.propertyId) || {};
       const emp = empMap.get(item.employeeId) || {};
       const off = offMap.get(item.officeId) || {};
@@ -226,6 +248,9 @@ export async function POST(request) {
       }
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUserName = sessionUser?.fullName ? `${sessionUser.fullName} (${sessionUser.role || 'Admin'})` : (sessionUser?.username || 'System Admin');
+
     let newRecord = {
       id: newAsgnId,
       propertyId: targetPropertyId,
@@ -235,7 +260,7 @@ export async function POST(request) {
       previousOfficeId: prevOffId,
       assignmentDate: parsedDate,
       remarks: remarks ? remarks.trim() : 'Official transfer of property accountability',
-      transferredBy: transferredBy ? transferredBy.trim() : 'System Admin',
+      transferredBy: transferredBy ? transferredBy.trim() : activeUserName,
       isActive: true,
       createdAt: new Date().toISOString(),
     };

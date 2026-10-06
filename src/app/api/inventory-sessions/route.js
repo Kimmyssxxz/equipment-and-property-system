@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { getSessionUser } from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,7 +8,7 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch all inventory sessions from Supabase Database
+// GET: Fetch all inventory sessions from Supabase Database (User-Scoped)
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -27,6 +28,9 @@ export async function GET(request) {
         { status: 500 }
       );
     }
+
+    const sessionUser = await getSessionUser(request);
+    const targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
 
     let query = supabase
       .from('inventory_sessions')
@@ -57,6 +61,20 @@ export async function GET(request) {
       return NextResponse.json({ error: sessError.message, sessions: [] }, { status: 400 });
     }
 
+    let filteredSessions = rawSessions || [];
+
+    if (targetUsername) {
+      filteredSessions = filteredSessions.filter((s) => {
+        const invPerson = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || s.remarks || '').toLowerCase();
+        if (targetUsername === 'queenie_ppsc') {
+          return invPerson.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return !invPerson.includes('queenie');
+        }
+        return invPerson.includes(targetUsername);
+      });
+    }
+
     // Parallel fetch lookups
     const [empRes, offRes] = await Promise.all([
       supabase.from('employees').select('id, name, employeeId, position'),
@@ -66,7 +84,7 @@ export async function GET(request) {
     const empMap = new Map((empRes.data || []).map((e) => [e.id, e]));
     const offMap = new Map((offRes.data || []).map((o) => [o.id, o]));
 
-    const formatted = (rawSessions || []).map((s) => {
+    const formatted = filteredSessions.map((s) => {
       const invPerson = s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || 'All Personnel';
 
       const cleanAsOf = s.asOfDate
@@ -95,6 +113,7 @@ export async function GET(request) {
         updatedAt: s.updatedAt,
       };
     });
+
 
     if (sessionId && formatted.length > 0) {
       return NextResponse.json({ success: true, session: formatted[0] }, { status: 200 });
