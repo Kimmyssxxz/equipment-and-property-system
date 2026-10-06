@@ -1,5 +1,4 @@
 import './globals.css';
-import PwaRegister from '@/components/PwaRegister';
 
 export const viewport = {
   themeColor: '#059669',
@@ -43,7 +42,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased selection:bg-emerald-500 selection:text-white">
         {children}
-        <PwaRegister />
       </body>
     </html>
   );

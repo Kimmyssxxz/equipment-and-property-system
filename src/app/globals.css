@@ -77,8 +77,11 @@ button, input, select, textarea, optgroup {
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 10mm 14mm !important;
-    page-break-after: always;
+    padding: 8mm 12mm !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Reset main and all outer layout wrappers to transparent with zero padding, borders, or rounded corners */
