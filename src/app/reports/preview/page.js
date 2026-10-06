@@ -423,7 +423,7 @@ function ReportPreviewContent() {
     return (
       <div className="mt-3 space-y-0.5">
         {lines.map((line, idx) => (
-          <p key={idx} className="text-[11px] text-slate-700 font-sans leading-tight">
+          <p key={idx} className="text-[10.5px] text-slate-700 font-sans leading-tight whitespace-nowrap">
             {line}
           </p>
         ))}
@@ -590,39 +590,39 @@ function ReportPreviewContent() {
           <table style="width:100%; border:none; margin-top:25px; font-family:Arial,sans-serif;">
             <tr style="border:none; vertical-align:top;">
               <!-- Certified Correct by (4 Columns: Member 1, Member 2, Member 3, Chairperson) -->
-              <td style="border:none; width:52%; padding-right:15px;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Certified Correct by:</p>
+              <td style="border:none; width:52%; padding-right:15px; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Certified Correct by:</p>
                 <table style="width:100%; border:none;">
                   <tr style="border:none; vertical-align:top;">
-                    <td style="border:none; width:25%; padding-right:6px;">
+                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member1Name}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.member1Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%; padding-right:6px;">
+                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member2Name}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%; padding-right:6px;">
+                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member3Name}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.member3Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%;">
+                    <td style="border:none; width:25%; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.certifiedCorrectByName}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.certifiedCorrectByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
@@ -631,23 +631,23 @@ function ReportPreviewContent() {
               </td>
 
               <!-- Approved by -->
-              <td style="border:none; width:26%; padding-right:15px;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Approved by:</p>
+              <td style="border:none; width:26%; padding-right:15px; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Approved by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.approvedByName}
                 </p>
-                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                   ${(sigs.approvedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
 
               <!-- Verified by -->
-              <td style="border:none; width:22%;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Verified by:</p>
+              <td style="border:none; width:22%; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Verified by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.verifiedByName}
                 </p>
-                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                   ${(sigs.verifiedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
@@ -989,39 +989,39 @@ function ReportPreviewContent() {
           <table style="width:100%; border:none; margin-top:25px; font-family:Arial,sans-serif;">
             <tr style="border:none; vertical-align:top;">
               <!-- Certified Correct by (4 Columns: Member 1, Member 2, Member 3, Chairperson) -->
-              <td style="border:none; width:52%; padding-right:15px;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Certified Correct by:</p>
+              <td style="border:none; width:52%; padding-right:15px; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Certified Correct by:</p>
                 <table style="width:100%; border:none;">
                   <tr style="border:none; vertical-align:top;">
-                    <td style="border:none; width:25%; padding-right:6px;">
+                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member1Name}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.member1Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%; padding-right:6px;">
+                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member2Name}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%; padding-right:6px;">
+                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member3Name}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.member3Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%;">
+                    <td style="border:none; width:25%; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.certifiedCorrectByName}
                       </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                         ${(sigs.certifiedCorrectByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
@@ -1030,23 +1030,23 @@ function ReportPreviewContent() {
               </td>
 
               <!-- Approved by -->
-              <td style="border:none; width:26%; padding-right:15px;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Approved by:</p>
+              <td style="border:none; width:26%; padding-right:15px; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Approved by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.approvedByName}
                 </p>
-                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                   ${(sigs.approvedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
 
               <!-- Verified by -->
-              <td style="border:none; width:22%;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Verified by:</p>
+              <td style="border:none; width:22%; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Verified by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.verifiedByName}
                 </p>
-                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
+                <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
                   ${(sigs.verifiedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
@@ -1317,14 +1317,14 @@ function ReportPreviewContent() {
             </div>
 
             {/* Signatories Footer matching official format */}
-            <div className="mt-8 pt-4 font-sans text-xs">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 text-left items-start">
-                {/* 1. Certified Correct by (Takes 6 of 12 columns: 4 Signatories side-by-side) */}
-                <div className="lg:col-span-6">
-                  <p className="font-bold text-[11px] mb-7 text-black">Certified Correct by:</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="mt-8 pt-4 font-sans text-xs overflow-x-auto">
+              <div className="flex flex-col lg:flex-row justify-between gap-6 sm:gap-8 text-left items-start min-w-max pb-2">
+                {/* 1. Certified Correct by (4 Committee Signatories side-by-side) */}
+                <div className="space-y-1">
+                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Certified Correct by:</p>
+                  <div className="flex flex-row gap-6 sm:gap-8 items-start">
                     {/* Member 1 */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member1Name}
@@ -1334,7 +1334,7 @@ function ReportPreviewContent() {
                     </div>
 
                     {/* Member 2 */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member2Name}
@@ -1344,17 +1344,17 @@ function ReportPreviewContent() {
                     </div>
 
                     {/* Member 3 */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member3Name}
                         </p>
                       </div>
-                      {renderPositions(sigs.member3Title, 'Supply Section Representative')}
+                      {renderPositions(sigs.member3Title, 'Chief, GSS')}
                     </div>
 
                     {/* Chairperson */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.certifiedCorrectByName}
@@ -1365,9 +1365,9 @@ function ReportPreviewContent() {
                   </div>
                 </div>
 
-                {/* 2. Approved by (Takes 3 of 12 columns) */}
-                <div className="lg:col-span-3 sm:col-span-1">
-                  <p className="font-bold text-[11px] mb-7 text-black">Approved by:</p>
+                {/* 2. Approved by */}
+                <div className="space-y-1 min-w-[200px]">
+                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Approved by:</p>
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
@@ -1378,9 +1378,9 @@ function ReportPreviewContent() {
                   </div>
                 </div>
 
-                {/* 3. Verified by (Takes 3 of 12 columns) */}
-                <div className="lg:col-span-3 sm:col-span-1">
-                  <p className="font-bold text-[11px] mb-7 text-black">Verified by:</p>
+                {/* 3. Verified by */}
+                <div className="space-y-1 min-w-[180px]">
+                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Verified by:</p>
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
@@ -1668,14 +1668,14 @@ function ReportPreviewContent() {
             </div>
 
             {/* Official Configurable Signatories Section */}
-            <div className="mt-8 pt-4 font-sans text-xs">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 text-left items-start">
-                {/* 1. Certified Correct by (Takes 6 of 12 columns: 4 Signatories side-by-side) */}
-                <div className="lg:col-span-6">
-                  <p className="font-bold text-[11px] mb-7 text-black">Certified Correct by:</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="mt-8 pt-4 font-sans text-xs overflow-x-auto">
+              <div className="flex flex-col lg:flex-row justify-between gap-6 sm:gap-8 text-left items-start min-w-max pb-2">
+                {/* 1. Certified Correct by (4 Committee Signatories side-by-side) */}
+                <div className="space-y-1">
+                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Certified Correct by:</p>
+                  <div className="flex flex-row gap-6 sm:gap-8 items-start">
                     {/* Member 1 */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member1Name}
@@ -1685,7 +1685,7 @@ function ReportPreviewContent() {
                     </div>
 
                     {/* Member 2 */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member2Name}
@@ -1695,17 +1695,17 @@ function ReportPreviewContent() {
                     </div>
 
                     {/* Member 3 */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member3Name}
                         </p>
                       </div>
-                      {renderPositions(sigs.member3Title, 'Supply Section Representative')}
+                      {renderPositions(sigs.member3Title, 'Chief, GSS')}
                     </div>
 
                     {/* Chairperson */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-[140px]">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.certifiedCorrectByName}
@@ -1716,9 +1716,9 @@ function ReportPreviewContent() {
                   </div>
                 </div>
 
-                {/* 2. Approved by (Takes 3 of 12 columns) */}
-                <div className="lg:col-span-3 sm:col-span-1">
-                  <p className="font-bold text-[11px] mb-7 text-black">Approved by:</p>
+                {/* 2. Approved by */}
+                <div className="space-y-1 min-w-[200px]">
+                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Approved by:</p>
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
@@ -1729,9 +1729,9 @@ function ReportPreviewContent() {
                   </div>
                 </div>
 
-                {/* 3. Verified by (Takes 3 of 12 columns) */}
-                <div className="lg:col-span-3 sm:col-span-1">
-                  <p className="font-bold text-[11px] mb-7 text-black">Verified by:</p>
+                {/* 3. Verified by */}
+                <div className="space-y-1 min-w-[180px]">
+                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Verified by:</p>
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">

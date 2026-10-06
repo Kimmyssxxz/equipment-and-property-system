@@ -138,13 +138,13 @@ function ReportsContent() {
   const [showSignatoriesConfig, setShowSignatoriesConfig] = useState(false);
   const [customSignatories, setCustomSignatories] = useState({
     member1Name: 'ELMER G. DOLOTALLAS',
-    member1Title: 'Supply Accountable Officer',
+    member1Title: 'Member, NFSTI Inventory Committee / Supply Accountable Officer',
     member2Name: 'GLORIA C. PERIDO',
-    member2Title: 'Budget Officer',
+    member2Title: 'Member, NFSTI Inventory Committee / Budget Officer',
     member3Name: 'JENELYN N. EDEN',
-    member3Title: 'Supply Section Representative',
+    member3Title: 'Member, NFSTI Inventory Committee / Chief, GSS',
     certifiedCorrectByName: 'MA. CARLA G. FELIPE, RN',
-    certifiedCorrectByTitle: 'Chief, Admin',
+    certifiedCorrectByTitle: 'Chairperson, NFSTI Inventory Committee / Chief, Admin',
     approvedByName: 'ATTY. ERCY NANETTE P MADRIAGA, DPSSG',
     approvedByTitle: 'Director, NFSTI',
     verifiedByName: 'YVES ARDEN CABANLONG',
@@ -152,9 +152,9 @@ function ReportsContent() {
     member4Name: '',
     member5Name: '',
     preparedByName: 'ELMER G. DOLOTALLAS',
-    preparedByTitle: 'Supply Accountable Officer',
+    preparedByTitle: 'Member, NFSTI Inventory Committee / Supply Accountable Officer',
     teamLeaderName: 'GLORIA C. PERIDO',
-    teamLeaderTitle: 'Budget Officer',
+    teamLeaderTitle: 'Member, NFSTI Inventory Committee / Budget Officer',
   });
 
   const [notification, setNotification] = useState(null);
