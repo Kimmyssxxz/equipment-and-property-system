@@ -72,11 +72,24 @@ export default function DashboardPage() {
     loadBackendDashboardData();
   }, []);
 
-  // KPI Calculations
+  // KPI Calculations (Scoped to Active Admin's Properties)
   const totalProperties = properties.length;
   const totalPropertyValue = properties.reduce((acc, p) => acc + (p.unitValue || 0) * (p.quantityPerCard || 1), 0);
-  const totalPersonnel = employees.length;
-  const totalOffices = offices.length;
+
+  // Derive personnel and deploying areas directly from this admin's properties
+  const assignedEmployeeIds = new Set(
+    properties
+      .map((p) => p.accountablePersonId)
+      .filter((id) => id && id !== 'emp_unassigned' && id !== 'UNASSIGNED')
+  );
+  const assignedOfficeIds = new Set(
+    properties
+      .map((p) => p.officeId)
+      .filter((id) => id && id !== 'off_unassigned' && id !== 'UNASSIGNED')
+  );
+
+  const totalPersonnel = assignedEmployeeIds.size;
+  const totalOffices = assignedOfficeIds.size;
 
   const countedProperties = counts.filter((c) => c.status !== 'PENDING').length;
   const pendingProperties = counts.filter((c) => c.status === 'PENDING').length;

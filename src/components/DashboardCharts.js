@@ -24,17 +24,8 @@ export default function DashboardCharts({
   // --- CHART 1 DATA: Property Count & Value Distribution by Category ---
   const categoryStats = React.useMemo(() => {
     const colors = ['#059669', '#10b981', '#34d399', '#0284c7', '#6366f1', '#f59e0b', '#ec4899'];
-    if (!categories || categories.length === 0) {
-      const defaultLabels = ['IT Equipment', 'Office Furniture', 'Communication Tech', 'Other Assets'];
-      const defaultSeries = [54, 41, 38, 16];
-      const defaultTotal = defaultSeries.reduce((a, b) => a + b, 0);
-      const items = defaultLabels.map((lbl, idx) => ({
-        name: lbl,
-        value: defaultSeries[idx],
-        percentage: Math.round((defaultSeries[idx] / defaultTotal) * 100),
-        color: colors[idx % colors.length],
-      }));
-      return { labels: defaultLabels, series: defaultSeries, items, total: defaultTotal };
+    if (!properties || properties.length === 0) {
+      return { labels: ['No Properties'], series: [0], items: [], total: 0 };
     }
 
     const catMap = {};
@@ -59,16 +50,7 @@ export default function DashboardCharts({
     const activeEntries = Object.values(catMap).filter((item) => item.val > 0 || item.count > 0);
 
     if (activeEntries.length === 0) {
-      const defaultLabels = categories.slice(0, 5).map((c) => c.name || c.code);
-      const defaultSeries = [54, 41, 38, 16, 12];
-      const defaultTotal = defaultSeries.reduce((a, b) => a + b, 0);
-      const items = defaultLabels.map((lbl, idx) => ({
-        name: lbl,
-        value: defaultSeries[idx],
-        percentage: Math.round((defaultSeries[idx] / defaultTotal) * 100),
-        color: colors[idx % colors.length],
-      }));
-      return { labels: defaultLabels, series: defaultSeries, items, total: defaultTotal };
+      return { labels: ['No Properties'], series: [0], items: [], total: 0 };
     }
 
     const labels = activeEntries.map((e) => e.name);
@@ -136,18 +118,18 @@ export default function DashboardCharts({
 
   // --- PERSONNEL LIST DATA FOR DIRECTORY TABLE ---
   const personnelList = React.useMemo(() => {
+    if (!properties || properties.length === 0) return [];
     const raw = (personnel && personnel.length > 0) ? personnel : employees;
-    if (raw && raw.length > 0) return raw;
-
-    return [
-      { id: '1', name: 'Capt. Juan Dela Cruz', designation: 'Supply Officer', department: 'Logistics Division', status: 'Active' },
-      { id: '2', name: 'Engr. Maria Santos', designation: 'IT Systems Admin', department: 'IT Infrastructure', status: 'Active' },
-      { id: '3', name: 'Lt. Carlos Reyes', designation: 'Property Custodian', department: 'Admin Services', status: 'Active' },
-      { id: '4', name: 'Dr. Ana Lim', designation: 'Department Head', department: 'Finance Office', status: 'Active' },
-      { id: '5', name: 'Sgt. Mark Torralba', designation: 'Inventory Auditor', department: 'Inspection Unit', status: 'Active' },
-      { id: '6', name: 'Grace Villamor', designation: 'Records Officer', department: 'Central Registry', status: 'Active' },
-    ];
-  }, [personnel, employees]);
+    const assignedEmpIds = new Set(
+      properties
+        .map((p) => p.accountablePersonId)
+        .filter((id) => id && id !== 'emp_unassigned' && id !== 'UNASSIGNED')
+    );
+    if (assignedEmpIds.size > 0) {
+      return (raw || []).filter((p) => assignedEmpIds.has(p.id));
+    }
+    return raw || [];
+  }, [personnel, employees, properties]);
 
   // --- CHART 3: AREA CHART FOR PROPERTY COUNT & VALUATION PER OFFICE ---
   const areaChartData = React.useMemo(() => {
@@ -159,10 +141,23 @@ export default function DashboardCharts({
         'Logistics & Supply',
         'Finance Division',
         'Operations Dept',
-        'Inspection Office',
-        'Central Registry',
-        'Personnel Unit',
       ];
+    }
+
+    if (!properties || properties.length === 0) {
+      return {
+        categories: officeList,
+        series: [
+          {
+            name: 'Assigned Property Count (Units)',
+            data: officeList.map(() => 0),
+          },
+          {
+            name: 'Total Office Valuation (PHP)',
+            data: officeList.map(() => 0),
+          },
+        ],
+      };
     }
 
     const officeCountMap = {};
@@ -187,16 +182,8 @@ export default function DashboardCharts({
       }
     });
 
-    const defaultCounts = [42, 58, 75, 39, 64, 28, 51, 33];
-    const defaultVals = [185000, 240000, 310000, 160000, 290000, 120000, 210000, 145000];
-
-    const propertyCounts = officeList.map((name, i) =>
-      officeCountMap[name] > 0 ? officeCountMap[name] : defaultCounts[i % defaultCounts.length]
-    );
-
-    const totalValuations = officeList.map((name, i) =>
-      officeValMap[name] > 0 ? Math.round(officeValMap[name]) : defaultVals[i % defaultVals.length]
-    );
+    const propertyCounts = officeList.map((name) => officeCountMap[name] || 0);
+    const totalValuations = officeList.map((name) => Math.round(officeValMap[name] || 0));
 
     return {
       categories: officeList,
@@ -430,54 +417,63 @@ export default function DashboardCharts({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
-                  {personnelList.map((p, idx) => {
-                    const nameStr = p.name || `${p.firstname || ''} ${p.lastname || ''}`.trim() || 'Officer Name';
-                    const assignedCount = properties.filter(
-                      (item) =>
-                        item.assignedTo === p.id ||
-                        item.assignedTo === nameStr ||
-                        item.accountableOfficer === nameStr
-                    ).length;
+                  {personnelList.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-400 font-medium text-xs">
+                        No accountable personnel with assigned property records yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    personnelList.map((p, idx) => {
+                      const nameStr = p.name || `${p.firstname || ''} ${p.lastname || ''}`.trim() || 'Officer Name';
+                      const assignedCount = properties.filter(
+                        (item) =>
+                          item.accountablePersonId === p.id ||
+                          item.assignedTo === p.id ||
+                          item.assignedTo === nameStr ||
+                          item.accountableOfficer === nameStr
+                      ).length;
 
-                    const officeObj = offices.find((o) => o.id === p.officeId);
-                    const deptName = p.department || p.office || (officeObj ? (officeObj.name || officeObj.code) : 'General Office');
+                      const officeObj = offices.find((o) => o.id === p.officeId);
+                      const deptName = p.department || p.office || (officeObj ? (officeObj.name || officeObj.code) : 'General Office');
 
-                    return (
-                      <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 pl-1">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold flex items-center justify-center text-[10px] shrink-0">
-                              {nameStr.charAt(0).toUpperCase()}
+                      return (
+                        <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-2.5 pl-1">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold flex items-center justify-center text-[10px] shrink-0">
+                                {nameStr.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-900 leading-tight truncate">
+                                  {nameStr}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate">
+                                  {p.designation || p.position || p.employeeId || 'Accountable Officer'}
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-900 leading-tight truncate">
-                                {nameStr}
-                              </p>
-                              <p className="text-[10px] text-slate-400 font-medium truncate">
-                                {p.designation || p.position || p.employeeId || 'Accountable Officer'}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-2.5 text-slate-600 text-[11px]">
-                          <span className="truncate block max-w-[120px]" title={deptName}>
-                            {deptName}
-                          </span>
-                        </td>
-                        <td className="py-2.5 text-center">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {assignedCount > 0 ? `${assignedCount} items` : '1 item'}
-                          </span>
-                        </td>
-                        <td className="py-2.5 text-right pr-1">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50/60 px-2 py-0.5 rounded-full border border-emerald-100">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                            Active
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+                          <td className="py-2.5 text-slate-600 text-[11px]">
+                            <span className="truncate block max-w-[120px]" title={deptName}>
+                              {deptName}
+                            </span>
+                          </td>
+                          <td className="py-2.5 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {assignedCount} items
+                            </span>
+                          </td>
+                          <td className="py-2.5 text-right pr-1">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50/60 px-2 py-0.5 rounded-full border border-emerald-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                              Active
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
