@@ -73,8 +73,9 @@ export async function POST(request) {
           const seedUser = {
             id: isQueenie ? 'usr-admin-queenie' : 'usr-admin-1',
             username: isQueenie ? 'queenie_ppsc' : 'edolotallas',
-            email: isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com',
+            email: isQueenie ? 'queenie.ppsc@ppsc.gov.ph' : 'supplyoffice1996@gmail.com',
             fullName: isQueenie ? 'Queenie PPSC' : 'Elmer G. Dolotallas',
+            position: isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin',
             password: hashedPassword,
             role: 'Admin',
           };

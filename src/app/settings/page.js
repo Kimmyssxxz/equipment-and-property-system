@@ -343,7 +343,7 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
           username: active?.username || 'queenie_ppsc',
           fullName: active?.fullName || active?.name || 'Queenie PPSC',
           position: active?.position || 'Property & Supply Admin',
-          email: active?.email || 'queenie.ppsc@gmail.com',
+          email: active?.email || 'queenie.ppsc@ppsc.gov.ph',
           password: '••••••••••••',
         };
       }

@@ -32,7 +32,7 @@ export async function GET(request) {
       ? {
           username: 'queenie_ppsc',
           fullName: 'Queenie PPSC',
-          email: 'queenie.ppsc@gmail.com',
+          email: 'queenie.ppsc@ppsc.gov.ph',
           position: 'Property & Supply Admin',
           password: 'NFSTISupply123',
         }
@@ -128,7 +128,7 @@ export async function POST(request) {
           id: userId,
           username: cleanUsername,
           fullName: fullName.trim(),
-          email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
+          email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@ppsc.gov.ph' : 'supplyoffice1996@gmail.com'),
           position: position ? position.trim() : (isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin'),
           password: finalPassword,
           role: 'Admin',
@@ -144,7 +144,7 @@ export async function POST(request) {
             id: userId,
             username: cleanUsername,
             fullName: fullName.trim(),
-            email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
+            email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@ppsc.gov.ph' : 'supplyoffice1996@gmail.com'),
             password: finalPassword,
             role: 'Admin',
           };
