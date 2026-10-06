@@ -180,6 +180,13 @@ function ReportPreviewContent() {
               article: item.article || prop?.article || 'Asset',
               description: item.description || prop?.description || '',
               brand: item.brand || prop?.brand || '',
+              propertyStatus: item.propertyStatus || prop?.status || 'ACTIVE',
+              remarks: item.remarks || prop?.remarks || '',
+              poNumber: item.poNumber || prop?.poNumber || '',
+              officeId: item.officeId || prop?.officeId || null,
+              officeName: item.officeName || prop?.officeName || null,
+              accountablePersonId: item.accountablePersonId || prop?.accountablePersonId || null,
+              acquisitionDate: item.acquisitionDate || prop?.acquisitionDate || prop?.assignmentDate || '',
             };
           });
 
@@ -355,6 +362,40 @@ function ReportPreviewContent() {
       return fallbackDt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
     return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  // Helper: format YYYY-MM-DD -> "dated on Month DD, YYYY"
+  const formatDatedOn = (dateStr) => {
+    if (!dateStr) return '';
+    const dateOnly = String(dateStr).split('T')[0];
+    const d = new Date(dateOnly + 'T00:00:00');
+    if (isNaN(d.getTime())) {
+      const fallbackD = new Date(dateStr);
+      if (isNaN(fallbackD.getTime())) return `dated on ${dateStr}`;
+      return `dated on ${fallbackD.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+    }
+    const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return `dated on ${formatted}`;
+  };
+
+  // Helper to detect unserviceable / condemned / disposed / BER items
+  const checkIsUnserviceable = (item, prop) => {
+    const pStatus = String(item?.propertyStatus || prop?.status || item?.status || '').toUpperCase();
+    const pRemarks = String(item?.remarks || prop?.remarks || '').toUpperCase();
+    return (
+      pStatus === 'UNSERVICEABLE' ||
+      pStatus === 'CONDEMNED' ||
+      pStatus === 'DISPOSED' ||
+      pStatus === 'FOR_DISPOSAL' ||
+      pStatus.includes('UNSERVICEABLE') ||
+      pStatus.includes('DISPOSAL') ||
+      pRemarks.includes('UNSERVICEABLE') ||
+      pRemarks.includes('DISPOSAL') ||
+      pRemarks.includes('CONDEMNED') ||
+      pRemarks.includes('DAMAGED') ||
+      pRemarks.includes('BER') ||
+      pRemarks.includes('DEFECTIVE')
+    );
   };
 
   // Helper to render multiple positions on distinct lines
@@ -749,29 +790,42 @@ function ReportPreviewContent() {
             ? `₱${(uVal * diffQty).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
             : '-';
 
-          // Office, PO, Acq Date
-          const officeName = item.officeName || (offices.find((o) => o.id === item.officeId)?.name) || '';
-          const poNum = item.poNumber || '';
-          const acqDate = item.acquisitionDate || '';
+          const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+          const isUnserviceable = checkIsUnserviceable(item, prop);
 
-          const remarksText = [
-            officeName ? officeName.toUpperCase() : 'UNASSIGNED OFFICE',
-            poNum ? poNum : 'PO N/A',
-            acqDate ? formatDatedOn(acqDate) : 'dated on N/A',
-          ].join('<br/>');
+          // Office, PO, Acq Date
+          const officeName = item.officeName || (offices.find((o) => o.id === item.officeId)?.name) || (offices.find((o) => o.id === prop?.officeId)?.name) || '';
+          const poNum = item.poNumber || prop?.poNumber || '';
+          const acqDate = item.acquisitionDate || prop?.acquisitionDate || '';
+
+          const remarksList = [];
+          if (isUnserviceable) {
+            const rawRemark = (item.remarks && item.remarks.toLowerCase().includes('unserviceable'))
+              ? item.remarks
+              : (prop?.remarks && prop.remarks.toLowerCase().includes('unserviceable'))
+              ? prop.remarks
+              : 'UNSERVICEABLE';
+            remarksList.push(`<strong style="color:#dc2626; font-size:9pt;">${rawRemark.toUpperCase()}</strong>`);
+          }
+          if (officeName) remarksList.push(officeName.toUpperCase());
+          if (poNum) remarksList.push(poNum);
+          if (acqDate) remarksList.push(formatDatedOn(acqDate));
+
+          const remarksText = remarksList.join('<br/>') || 'N/A';
+          const rowStyle = isUnserviceable ? 'color: #dc2626; font-weight: bold;' : '';
 
           return `
-            <tr>
-              <td>${item.article || ''}</td>
-              <td>${item.description || ''}</td>
-              <td style="text-align:center;">${item.propertyNumber || ''}</td>
-              <td style="text-align:center;">${item.unit || 'unit'}</td>
-              <td style="text-align:right;">₱${uVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td style="text-align:center;">${qty}</td>
-              <td style="text-align:center;">${item.physicalCount !== null && item.physicalCount !== undefined ? item.physicalCount : qty}</td>
-              <td style="text-align:center;">${shortQtyStr}</td>
-              <td style="text-align:right;">${shortValStr}</td>
-              <td>${remarksText}</td>
+            <tr style="${rowStyle}">
+              <td style="${isUnserviceable ? 'color:#dc2626;' : ''}">${item.article || ''}</td>
+              <td style="${isUnserviceable ? 'color:#dc2626;' : ''}">${item.description || ''}</td>
+              <td style="text-align:center; ${isUnserviceable ? 'color:#dc2626; font-weight:bold;' : ''}">${item.propertyNumber || ''}</td>
+              <td style="text-align:center; ${isUnserviceable ? 'color:#dc2626;' : ''}">${item.unit || 'unit'}</td>
+              <td style="text-align:right; ${isUnserviceable ? 'color:#dc2626; font-weight:bold;' : ''}">₱${uVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td style="text-align:center; ${isUnserviceable ? 'color:#dc2626;' : ''}">${qty}</td>
+              <td style="text-align:center; ${isUnserviceable ? 'color:#dc2626;' : ''}">${item.physicalCount !== null && item.physicalCount !== undefined ? item.physicalCount : qty}</td>
+              <td style="text-align:center; ${isUnserviceable ? 'color:#dc2626;' : ''}">${shortQtyStr}</td>
+              <td style="text-align:right; ${isUnserviceable ? 'color:#dc2626;' : ''}">${shortValStr}</td>
+              <td style="${isUnserviceable ? 'color:#dc2626;' : ''}">${remarksText}</td>
             </tr>
           `;
         }).join('')
@@ -1565,40 +1619,44 @@ function ReportPreviewContent() {
                       const diffQty = Math.abs(item.difference || 0);
 
                       const prop = properties.find((p) => p.id === item.propertyId || p.propertyNumber === item.propertyNumber);
+                      const isUnserviceable = checkIsUnserviceable(item, prop);
+
                       const actualOffId = item.officeId || prop?.officeId;
                       const office = offices.find((o) => o.id === actualOffId);
                       const officeName = office?.name || (item.officeName && item.officeName !== 'Unassigned Office' ? item.officeName : prop?.officeName) || '';
                       const poNum = prop?.poNumber || item.poNumber || prop?.poNo || item.poNo || '';
                       const acqDate = prop?.acquisitionDate || item.acquisitionDate || prop?.assignmentDate || item.assignmentDate || '';
 
-                      const formatDatedOn = (dateStr) => {
-                        if (!dateStr) return '';
-                        const dateOnly = String(dateStr).split('T')[0];
-                        const d = new Date(dateOnly + 'T00:00:00');
-                        if (isNaN(d.getTime())) {
-                          const fallbackD = new Date(dateStr);
-                          if (isNaN(fallbackD.getTime())) return `dated on ${dateStr}`;
-                          return `dated on ${fallbackD.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                        }
-                        const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                        return `dated on ${formatted}`;
-                      };
+                      const unserviceableRemarkText = (item.remarks && item.remarks.toLowerCase().includes('unserviceable'))
+                        ? item.remarks
+                        : (prop?.remarks && prop.remarks.toLowerCase().includes('unserviceable'))
+                        ? prop.remarks
+                        : 'Unserviceable';
 
                       return (
-                        <tr key={index} className="align-top">
-                          <td className="border border-black p-2 font-bold">{item.article}</td>
-                          <td className="border border-black p-2 whitespace-pre-line text-[11px]">{item.description}</td>
-                          <td className="border border-black p-2 font-mono font-bold text-center">{item.propertyNumber}</td>
-                          <td className="border border-black p-2 text-center">{item.unit || 'unit'}</td>
-                          <td className="border border-black p-2 text-right font-mono font-bold">₱{unitVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                          <td className="border border-black p-2 text-center font-bold">{item.quantityPerCard || 1}</td>
-                          <td className="border border-black p-2 text-center font-bold">{item.physicalCount !== null ? item.physicalCount : item.quantityPerCard || 1}</td>
-                          <td className="border border-black p-2 text-center font-mono font-bold">{isShortage ? `${diffQty}` : isOverage ? `+${diffQty}` : '-'}</td>
-                          <td className="border border-black p-2 text-right font-mono font-bold">{isShortage || isOverage ? `₱${(unitVal * diffQty).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}</td>
+                        <tr
+                          key={index}
+                          className={`align-top ${isUnserviceable ? 'text-red-600 font-semibold bg-red-50/50 print:text-red-600' : 'text-black'}`}
+                          style={isUnserviceable ? { color: '#dc2626' } : undefined}
+                        >
+                          <td className={`border border-black p-2 font-bold ${isUnserviceable ? 'text-red-600' : ''}`}>{item.article}</td>
+                          <td className={`border border-black p-2 whitespace-pre-line text-[11px] ${isUnserviceable ? 'text-red-600 font-medium' : ''}`}>{item.description}</td>
+                          <td className={`border border-black p-2 font-mono font-bold text-center ${isUnserviceable ? 'text-red-600' : ''}`}>{item.propertyNumber}</td>
+                          <td className={`border border-black p-2 text-center ${isUnserviceable ? 'text-red-600' : ''}`}>{item.unit || 'unit'}</td>
+                          <td className={`border border-black p-2 text-right font-mono font-bold ${isUnserviceable ? 'text-red-600' : ''}`}>₱{unitVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className={`border border-black p-2 text-center font-bold ${isUnserviceable ? 'text-red-600' : ''}`}>{item.quantityPerCard || 1}</td>
+                          <td className={`border border-black p-2 text-center font-bold ${isUnserviceable ? 'text-red-600' : ''}`}>{item.physicalCount !== null ? item.physicalCount : item.quantityPerCard || 1}</td>
+                          <td className={`border border-black p-2 text-center font-mono font-bold ${isUnserviceable ? 'text-red-600' : ''}`}>{isShortage ? `${diffQty}` : isOverage ? `+${diffQty}` : '-'}</td>
+                          <td className={`border border-black p-2 text-right font-mono font-bold ${isUnserviceable ? 'text-red-600' : ''}`}>{isShortage || isOverage ? `₱${(unitVal * diffQty).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}</td>
                           <td className="border border-black p-2 text-[11px] leading-tight font-sans space-y-1">
-                            {officeName ? <div className="font-bold text-black uppercase">{officeName}</div> : <div className="font-bold text-slate-400 uppercase">UNASSIGNED OFFICE</div>}
-                            {poNum ? <div className="text-slate-800 font-semibold">{poNum}</div> : <div className="text-slate-500 font-medium">PO N/A</div>}
-                            {acqDate ? <div className="text-slate-700 font-normal">{formatDatedOn(acqDate)}</div> : <div className="text-slate-400 italic">dated on N/A</div>}
+                            {isUnserviceable && (
+                              <div className="font-extrabold text-red-600 uppercase border border-red-400 bg-red-100/90 px-1.5 py-0.5 rounded text-[10.5px] inline-block tracking-wide print:text-red-600 print:border-red-600">
+                                {unserviceableRemarkText.toUpperCase()}
+                              </div>
+                            )}
+                            {officeName ? <div className={`font-bold uppercase ${isUnserviceable ? 'text-red-700' : 'text-black'}`}>{officeName}</div> : <div className="font-bold text-slate-400 uppercase">UNASSIGNED OFFICE</div>}
+                            {poNum ? <div className={`font-semibold ${isUnserviceable ? 'text-red-600' : 'text-slate-800'}`}>{poNum}</div> : <div className="text-slate-500 font-medium">PO N/A</div>}
+                            {acqDate ? <div className={`font-normal ${isUnserviceable ? 'text-red-600' : 'text-slate-700'}`}>{formatDatedOn(acqDate)}</div> : <div className="text-slate-400 italic">dated on N/A</div>}
                           </td>
                         </tr>
                       );

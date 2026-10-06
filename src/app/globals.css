@@ -53,9 +53,11 @@ button, input, select, textarea, optgroup {
   body {
     background: #ffffff !important;
     background-image: none !important;
-    color: #000000 !important;
+    color: #000000;
     margin: 0 !important;
     padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Default page rule: A4 portrait with zero margin for exact edge-to-edge coupon bond sizing */
@@ -82,6 +84,8 @@ button, input, select, textarea, optgroup {
     break-after: auto !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Reset main and all outer layout wrappers to transparent with zero padding, borders, or rounded corners */
