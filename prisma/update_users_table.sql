@@ -1,8 +1,12 @@
 -- ==============================================================================
--- Migration: Add & Update Profile Fields in "users" Table in Supabase
+-- Migration: Add & Update All User Profile Columns in "users" Table in Supabase
 -- ==============================================================================
 
--- 1. Add missing columns to "users" table
+-- 1. Ensure all user profile columns exist in Supabase "users" table
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "id" TEXT PRIMARY KEY DEFAULT ('usr_' || substr(md5(random()::text), 1, 12));
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "username" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "fullName" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "position" TEXT DEFAULT 'Supply Officer / Admin';
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "role" TEXT DEFAULT 'Admin';
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "password" TEXT DEFAULT 'NFSTISupply123';
@@ -10,7 +14,7 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "password" TEXT DEFAULT 'NFSTISuppl
 -- 2. Ensure password column has a safe default value
 ALTER TABLE "users" ALTER COLUMN "password" SET DEFAULT 'NFSTISupply123';
 
--- 3. Insert or update Admin accounts with non-null password included
+-- 3. Insert or update Admin accounts with all fields saved in Supabase
 INSERT INTO "users" ("id", "username", "fullName", "email", "position", "role", "password")
 VALUES 
   ('usr-admin-1', 'edolotallas', 'Elmer G. Dolotallas', 'supplyoffice1996@gmail.com', 'Supply Officer / Admin', 'Admin', 'NFSTISupply123'),
@@ -22,5 +26,5 @@ ON CONFLICT ("username") DO UPDATE SET
   "role" = EXCLUDED."role",
   "password" = COALESCE("users"."password", EXCLUDED."password");
 
--- 4. Notify PostgREST to reload schema cache
+-- 4. Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
