@@ -587,14 +587,15 @@ function ReportPreviewContent() {
           </table>
           <br/><br/>
 
-          <table style="width:100%; border:none; margin-top:25px; font-family:Arial,sans-serif;">
+          <table style="width:100%; border:none; margin-top:20px; font-family:Arial,sans-serif; page-break-inside:avoid;">
             <tr style="border:none; vertical-align:top;">
-              <!-- Certified Correct by (4 Columns: Member 1, Member 2, Member 3, Chairperson) -->
-              <td style="border:none; width:52%; padding-right:15px; white-space:nowrap;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Certified Correct by:</p>
+              <!-- 1. Certified Correct by (2x2 Grid: Elmer & Carla on Top, Gloria & Jenelyn at Bottom) -->
+              <td style="border:none; width:48%; padding-right:15px; vertical-align:top;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:14px; white-space:nowrap;">Certified Correct by:</p>
                 <table style="width:100%; border:none;">
+                  <!-- Row 1: Elmer G. Dolotallas & Ma. Carla G. Felipe, RN -->
                   <tr style="border:none; vertical-align:top;">
-                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
+                    <td style="border:none; width:50%; padding-right:10px; padding-bottom:16px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member1Name}
                       </p>
@@ -602,23 +603,7 @@ function ReportPreviewContent() {
                         ${(sigs.member1Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
-                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
-                        ${sigs.member2Name}
-                      </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
-                        ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
-                      </p>
-                    </td>
-                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
-                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
-                        ${sigs.member3Name}
-                      </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
-                        ${(sigs.member3Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
-                      </p>
-                    </td>
-                    <td style="border:none; width:25%; white-space:nowrap;">
+                    <td style="border:none; width:50%; padding-bottom:16px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.certifiedCorrectByName}
                       </p>
@@ -627,12 +612,31 @@ function ReportPreviewContent() {
                       </p>
                     </td>
                   </tr>
+                  <!-- Row 2 (Sa baba): Gloria C. Perido & Jenelyn N. Eden -->
+                  <tr style="border:none; vertical-align:top;">
+                    <td style="border:none; width:50%; padding-right:10px; white-space:nowrap;">
+                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
+                        ${sigs.member2Name}
+                      </p>
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
+                        ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                      </p>
+                    </td>
+                    <td style="border:none; width:50%; white-space:nowrap;">
+                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
+                        ${sigs.member3Name}
+                      </p>
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
+                        ${(sigs.member3Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                      </p>
+                    </td>
+                  </tr>
                 </table>
               </td>
 
-              <!-- Approved by -->
-              <td style="border:none; width:26%; padding-right:15px; white-space:nowrap;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Approved by:</p>
+              <!-- 2. Approved by -->
+              <td style="border:none; width:27%; padding-right:15px; vertical-align:top; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:14px; white-space:nowrap;">Approved by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.approvedByName}
                 </p>
@@ -641,9 +645,9 @@ function ReportPreviewContent() {
                 </p>
               </td>
 
-              <!-- Verified by -->
-              <td style="border:none; width:22%; white-space:nowrap;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Verified by:</p>
+              <!-- 3. Verified by -->
+              <td style="border:none; width:25%; vertical-align:top; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:14px; white-space:nowrap;">Verified by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.verifiedByName}
                 </p>
@@ -986,14 +990,15 @@ function ReportPreviewContent() {
             </tbody>
           </table>
 
-          <table style="width:100%; border:none; margin-top:25px; font-family:Arial,sans-serif;">
+          <table style="width:100%; border:none; margin-top:20px; font-family:Arial,sans-serif; page-break-inside:avoid;">
             <tr style="border:none; vertical-align:top;">
-              <!-- Certified Correct by (4 Columns: Member 1, Member 2, Member 3, Chairperson) -->
-              <td style="border:none; width:52%; padding-right:15px; white-space:nowrap;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Certified Correct by:</p>
+              <!-- 1. Certified Correct by (2x2 Grid: Elmer & Carla on Top, Gloria & Jenelyn at Bottom) -->
+              <td style="border:none; width:48%; padding-right:15px; vertical-align:top;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:14px; white-space:nowrap;">Certified Correct by:</p>
                 <table style="width:100%; border:none;">
+                  <!-- Row 1: Elmer G. Dolotallas & Ma. Carla G. Felipe, RN -->
                   <tr style="border:none; vertical-align:top;">
-                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
+                    <td style="border:none; width:50%; padding-right:10px; padding-bottom:16px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.member1Name}
                       </p>
@@ -1001,23 +1006,7 @@ function ReportPreviewContent() {
                         ${(sigs.member1Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
-                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
-                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
-                        ${sigs.member2Name}
-                      </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
-                        ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
-                      </p>
-                    </td>
-                    <td style="border:none; width:25%; padding-right:6px; white-space:nowrap;">
-                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
-                        ${sigs.member3Name}
-                      </p>
-                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
-                        ${(sigs.member3Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
-                      </p>
-                    </td>
-                    <td style="border:none; width:25%; white-space:nowrap;">
+                    <td style="border:none; width:50%; padding-bottom:16px; white-space:nowrap;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                         ${sigs.certifiedCorrectByName}
                       </p>
@@ -1026,12 +1015,31 @@ function ReportPreviewContent() {
                       </p>
                     </td>
                   </tr>
+                  <!-- Row 2 (Sa baba): Gloria C. Perido & Jenelyn N. Eden -->
+                  <tr style="border:none; vertical-align:top;">
+                    <td style="border:none; width:50%; padding-right:10px; white-space:nowrap;">
+                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
+                        ${sigs.member2Name}
+                      </p>
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
+                        ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                      </p>
+                    </td>
+                    <td style="border:none; width:50%; white-space:nowrap;">
+                      <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
+                        ${sigs.member3Name}
+                      </p>
+                      <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2; white-space:nowrap;">
+                        ${(sigs.member3Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                      </p>
+                    </td>
+                  </tr>
                 </table>
               </td>
 
-              <!-- Approved by -->
-              <td style="border:none; width:26%; padding-right:15px; white-space:nowrap;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Approved by:</p>
+              <!-- 2. Approved by -->
+              <td style="border:none; width:27%; padding-right:15px; vertical-align:top; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:14px; white-space:nowrap;">Approved by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.approvedByName}
                 </p>
@@ -1040,9 +1048,9 @@ function ReportPreviewContent() {
                 </p>
               </td>
 
-              <!-- Verified by -->
-              <td style="border:none; width:22%; white-space:nowrap;">
-                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px; white-space:nowrap;">Verified by:</p>
+              <!-- 3. Verified by -->
+              <td style="border:none; width:25%; vertical-align:top; white-space:nowrap;">
+                <p style="font-weight:bold; font-size:9.5pt; margin-bottom:14px; white-space:nowrap;">Verified by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0; white-space:nowrap;">
                   ${sigs.verifiedByName}
                 </p>
@@ -1317,15 +1325,15 @@ function ReportPreviewContent() {
             </div>
 
             {/* Signatories Footer matching official format */}
-            <div className="mt-8 pt-4 font-sans text-xs overflow-x-auto">
-              <div className="flex flex-col lg:flex-row justify-between gap-6 sm:gap-8 text-left items-start min-w-max pb-2">
-                {/* 1. Certified Correct by (4 Committee Signatories side-by-side) */}
-                <div className="space-y-1">
-                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Certified Correct by:</p>
-                  <div className="flex flex-row gap-6 sm:gap-8 items-start">
-                    {/* Member 1 */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
+            <div className="mt-6 pt-3 font-sans text-xs break-inside-avoid print:break-inside-avoid">
+              <div className="grid grid-cols-12 gap-6 text-left items-start">
+                {/* 1. Certified Correct by (Takes 6 of 12 columns: 2x2 grid) */}
+                <div className="col-span-6 space-y-1">
+                  <p className="font-bold text-[11px] mb-4 text-black whitespace-nowrap">Certified Correct by:</p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    {/* Row 1, Col 1: Member 1 */}
+                    <div className="space-y-1">
+                      <div className="min-h-[24px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member1Name}
                         </p>
@@ -1333,9 +1341,19 @@ function ReportPreviewContent() {
                       {renderPositions(sigs.member1Title, 'Supply Accountable Officer')}
                     </div>
 
-                    {/* Member 2 */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
+                    {/* Row 1, Col 2: Chairperson */}
+                    <div className="space-y-1">
+                      <div className="min-h-[24px] flex items-end">
+                        <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
+                          {sigs.certifiedCorrectByName}
+                        </p>
+                      </div>
+                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chief, Admin')}
+                    </div>
+
+                    {/* Row 2, Col 1 (Sa baba): Member 2 */}
+                    <div className="space-y-1 pt-1">
+                      <div className="min-h-[24px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member2Name}
                         </p>
@@ -1343,33 +1361,23 @@ function ReportPreviewContent() {
                       {renderPositions(sigs.member2Title, 'Budget Officer')}
                     </div>
 
-                    {/* Member 3 */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
+                    {/* Row 2, Col 2 (Sa baba): Member 3 */}
+                    <div className="space-y-1 pt-1">
+                      <div className="min-h-[24px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member3Name}
                         </p>
                       </div>
                       {renderPositions(sigs.member3Title, 'Chief, GSS')}
                     </div>
-
-                    {/* Chairperson */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
-                        <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
-                          {sigs.certifiedCorrectByName}
-                        </p>
-                      </div>
-                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chief, Admin')}
-                    </div>
                   </div>
                 </div>
 
-                {/* 2. Approved by */}
-                <div className="space-y-1 min-w-[200px]">
-                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Approved by:</p>
+                {/* 2. Approved by (Takes 3 of 12 columns) */}
+                <div className="col-span-3 space-y-1">
+                  <p className="font-bold text-[11px] mb-4 text-black whitespace-nowrap">Approved by:</p>
                   <div className="space-y-1">
-                    <div className="min-h-[28px] flex items-end">
+                    <div className="min-h-[24px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                         {sigs.approvedByName}
                       </p>
@@ -1378,11 +1386,11 @@ function ReportPreviewContent() {
                   </div>
                 </div>
 
-                {/* 3. Verified by */}
-                <div className="space-y-1 min-w-[180px]">
-                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Verified by:</p>
+                {/* 3. Verified by (Takes 3 of 12 columns) */}
+                <div className="col-span-3 space-y-1">
+                  <p className="font-bold text-[11px] mb-4 text-black whitespace-nowrap">Verified by:</p>
                   <div className="space-y-1">
-                    <div className="min-h-[28px] flex items-end">
+                    <div className="min-h-[24px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                         {sigs.verifiedByName}
                       </p>
@@ -1668,15 +1676,15 @@ function ReportPreviewContent() {
             </div>
 
             {/* Official Configurable Signatories Section */}
-            <div className="mt-8 pt-4 font-sans text-xs overflow-x-auto">
-              <div className="flex flex-col lg:flex-row justify-between gap-6 sm:gap-8 text-left items-start min-w-max pb-2">
-                {/* 1. Certified Correct by (4 Committee Signatories side-by-side) */}
-                <div className="space-y-1">
-                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Certified Correct by:</p>
-                  <div className="flex flex-row gap-6 sm:gap-8 items-start">
-                    {/* Member 1 */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
+            <div className="mt-6 pt-3 font-sans text-xs break-inside-avoid print:break-inside-avoid">
+              <div className="grid grid-cols-12 gap-6 text-left items-start">
+                {/* 1. Certified Correct by (Takes 6 of 12 columns: 2x2 grid) */}
+                <div className="col-span-6 space-y-1">
+                  <p className="font-bold text-[11px] mb-4 text-black whitespace-nowrap">Certified Correct by:</p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    {/* Row 1, Col 1: Member 1 */}
+                    <div className="space-y-1">
+                      <div className="min-h-[24px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member1Name}
                         </p>
@@ -1684,9 +1692,19 @@ function ReportPreviewContent() {
                       {renderPositions(sigs.member1Title, 'Supply Accountable Officer')}
                     </div>
 
-                    {/* Member 2 */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
+                    {/* Row 1, Col 2: Chairperson */}
+                    <div className="space-y-1">
+                      <div className="min-h-[24px] flex items-end">
+                        <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
+                          {sigs.certifiedCorrectByName}
+                        </p>
+                      </div>
+                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chief, Admin')}
+                    </div>
+
+                    {/* Row 2, Col 1 (Sa baba): Member 2 */}
+                    <div className="space-y-1 pt-1">
+                      <div className="min-h-[24px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member2Name}
                         </p>
@@ -1694,33 +1712,23 @@ function ReportPreviewContent() {
                       {renderPositions(sigs.member2Title, 'Budget Officer')}
                     </div>
 
-                    {/* Member 3 */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
+                    {/* Row 2, Col 2 (Sa baba): Member 3 */}
+                    <div className="space-y-1 pt-1">
+                      <div className="min-h-[24px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                           {sigs.member3Name}
                         </p>
                       </div>
                       {renderPositions(sigs.member3Title, 'Chief, GSS')}
                     </div>
-
-                    {/* Chairperson */}
-                    <div className="space-y-1 min-w-[140px]">
-                      <div className="min-h-[28px] flex items-end">
-                        <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
-                          {sigs.certifiedCorrectByName}
-                        </p>
-                      </div>
-                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chief, Admin')}
-                    </div>
                   </div>
                 </div>
 
-                {/* 2. Approved by */}
-                <div className="space-y-1 min-w-[200px]">
-                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Approved by:</p>
+                {/* 2. Approved by (Takes 3 of 12 columns) */}
+                <div className="col-span-3 space-y-1">
+                  <p className="font-bold text-[11px] mb-4 text-black whitespace-nowrap">Approved by:</p>
                   <div className="space-y-1">
-                    <div className="min-h-[28px] flex items-end">
+                    <div className="min-h-[24px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                         {sigs.approvedByName}
                       </p>
@@ -1729,11 +1737,11 @@ function ReportPreviewContent() {
                   </div>
                 </div>
 
-                {/* 3. Verified by */}
-                <div className="space-y-1 min-w-[180px]">
-                  <p className="font-bold text-[11px] mb-7 text-black whitespace-nowrap">Verified by:</p>
+                {/* 3. Verified by (Takes 3 of 12 columns) */}
+                <div className="col-span-3 space-y-1">
+                  <p className="font-bold text-[11px] mb-4 text-black whitespace-nowrap">Verified by:</p>
                   <div className="space-y-1">
-                    <div className="min-h-[28px] flex items-end">
+                    <div className="min-h-[24px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black whitespace-nowrap">
                         {sigs.verifiedByName}
                       </p>
