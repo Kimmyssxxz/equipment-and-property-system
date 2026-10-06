@@ -148,11 +148,18 @@ function SidebarContent({ totalItems = 0 }) {
               }
             } catch (e) {}
           }
+          const isOwner = (item) => {
+            const creator = (item.createdBy || item.encodedBy || 'edolotallas').toLowerCase().trim();
+            if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie');
+            if (currentUsername === 'edolotallas') return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+            return creator === currentUsername;
+          };
+
           if (offRes.ok) {
             try {
               const offData = await offRes.json();
               if (offData.success && Array.isArray(offData.offices)) {
-                offsCount = offData.offices.length;
+                offsCount = offData.offices.filter(isOwner).length;
               }
             } catch (e) {}
           }
@@ -161,7 +168,7 @@ function SidebarContent({ totalItems = 0 }) {
               const empData = await empRes.json();
               const emps = empData.employees || empData.personnel;
               if (empData.success && Array.isArray(emps)) {
-                empsCount = emps.length;
+                empsCount = emps.filter(isOwner).length;
               }
             } catch (e) {}
           }
@@ -169,7 +176,7 @@ function SidebarContent({ totalItems = 0 }) {
             try {
               const propData = await propRes.json();
               if (propData.success && Array.isArray(propData.properties)) {
-                liveProps = propData.properties;
+                liveProps = propData.properties.filter(isOwner);
               }
             } catch (e) {}
           }

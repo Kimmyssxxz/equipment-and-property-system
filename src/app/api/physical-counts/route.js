@@ -98,7 +98,23 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ success: true, counts: formatted }, { status: 200 });
+    let filtered = formatted;
+    if (targetUsername) {
+      filtered = formatted.filter((c) => {
+        const prop = propMap.get(c.propertyId) || {};
+        const propCreator = (prop.createdBy || prop.created_by || extractEncoderFromRemarks(prop.remarks) || 'edolotallas').toLowerCase().trim();
+        const countUser = (c.countedBy || c.createdBy || '').toLowerCase().trim();
+
+        if (targetUsername === 'queenie_ppsc') {
+          return propCreator === 'queenie_ppsc' || propCreator.includes('queenie') || countUser.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return (propCreator === 'edolotallas' || (!propCreator.includes('queenie') && propCreator !== 'queenie_ppsc')) && !countUser.includes('queenie');
+        }
+        return propCreator === targetUsername || countUser.includes(targetUsername);
+      });
+    }
+
+    return NextResponse.json({ success: true, counts: filtered }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, counts: [] }, { status: 500 });
   }

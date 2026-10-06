@@ -195,11 +195,19 @@ function ReportsContent() {
       const rawSess = sessRes.data?.sessions || [];
       const sigs = sigRes.data?.signatories;
 
-      const emps = rawEmps;
-      const offs = rawOffs;
-      const props = rawProps;
-      const reps = rawReps;
-      const sessList = rawSess;
+      const isOwner = (item) => {
+        const creator = (item.createdBy || item.encodedBy || '').toLowerCase().trim();
+        const genBy = (item.generatedBy || item.inventoryPerson || '').toLowerCase().trim();
+        if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie') || genBy.includes('queenie');
+        if (currentUsername === 'edolotallas') return (creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc')) && !genBy.includes('queenie');
+        return creator === currentUsername || genBy.includes(currentUsername);
+      };
+
+      const emps = rawEmps.filter(isOwner);
+      const offs = rawOffs.filter(isOwner);
+      const props = rawProps.filter(isOwner);
+      const reps = rawReps.filter(isOwner);
+      const sessList = rawSess.filter(isOwner);
 
       setEmployees(emps);
       setOffices(offs);

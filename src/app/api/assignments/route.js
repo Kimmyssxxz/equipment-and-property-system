@@ -141,6 +141,7 @@ export async function GET(request) {
       .map((p) => {
         const emp = empMap.get(p.accountablePersonId) || {};
         const off = offMap.get(p.officeId) || {};
+        const creator = p.createdBy || p.created_by || extractEncoderFromRemarks(p.remarks) || 'edolotallas';
         const cleanDate = p.assignmentDate
           ? (String(p.assignmentDate).includes('T') ? String(p.assignmentDate).slice(0, 10) : String(p.assignmentDate))
           : (p.acquisitionDate ? String(p.acquisitionDate).slice(0, 10) : new Date(p.createdAt || Date.now()).toISOString().slice(0, 10));
@@ -172,12 +173,29 @@ export async function GET(request) {
           assignmentDate: cleanDate,
           remarks: p.remarks || 'Initial property registration and assignment',
           transferredBy: 'System Registration',
+          createdBy: creator,
+          encodedBy: creator,
           isActive: true,
           createdAt: p.createdAt || new Date().toISOString(),
         };
       });
 
-    const combinedAssignments = [...formatted, ...initialAssignments];
+    let combinedAssignments = [...formatted, ...initialAssignments];
+
+    if (targetUsername) {
+      combinedAssignments = combinedAssignments.filter((a) => {
+        const prop = propMap.get(a.propertyId) || {};
+        const propCreator = (prop.createdBy || prop.created_by || extractEncoderFromRemarks(prop.remarks) || a.createdBy || a.encodedBy || 'edolotallas').toLowerCase().trim();
+        const transBy = (a.transferredBy || a.createdBy || '').toLowerCase().trim();
+
+        if (targetUsername === 'queenie_ppsc') {
+          return propCreator === 'queenie_ppsc' || propCreator.includes('queenie') || transBy.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return (propCreator === 'edolotallas' || (!propCreator.includes('queenie') && propCreator !== 'queenie_ppsc')) && !transBy.includes('queenie');
+        }
+        return propCreator === targetUsername || transBy.includes(targetUsername);
+      });
+    }
 
     return NextResponse.json({ success: true, assignments: combinedAssignments }, { status: 200 });
   } catch (err) {

@@ -84,7 +84,7 @@ export async function GET(request) {
 
     let rawList = data || [];
 
-    // Clean remarks for display so that [Encoder:...] tags are stripped and createdBy is set
+    // Clean remarks for display and set createdBy
     const formattedList = rawList.map((p) => {
       const creator = p.createdBy || p.created_by || extractEncoderFromRemarks(p.remarks) || 'edolotallas';
       return {
@@ -95,7 +95,20 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ success: true, properties: formattedList }, { status: 200 });
+    let filteredList = formattedList;
+    if (targetUsername) {
+      filteredList = formattedList.filter((p) => {
+        const creator = (p.createdBy || p.encodedBy || 'edolotallas').toLowerCase().trim();
+        if (targetUsername === 'queenie_ppsc') {
+          return creator === 'queenie_ppsc' || creator.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+        }
+        return creator === targetUsername;
+      });
+    }
+
+    return NextResponse.json({ success: true, properties: filteredList }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, properties: [] }, { status: 500 });
   }

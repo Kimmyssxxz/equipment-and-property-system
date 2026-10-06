@@ -106,11 +106,25 @@ export async function GET(request) {
     });
 
 
-    if (sessionId && formatted.length > 0) {
-      return NextResponse.json({ success: true, session: formatted[0] }, { status: 200 });
+    let filtered = formatted;
+    if (targetUsername) {
+      filtered = formatted.filter((s) => {
+        const creator = (s.createdBy || s.encodedBy || '').toLowerCase().trim();
+        const invPerson = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || s.remarks || '').toLowerCase().trim();
+        if (targetUsername === 'queenie_ppsc') {
+          return creator === 'queenie_ppsc' || creator.includes('queenie') || invPerson.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return (creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc')) && !invPerson.includes('queenie');
+        }
+        return creator === targetUsername || invPerson.includes(targetUsername);
+      });
     }
 
-    return NextResponse.json({ success: true, sessions: formatted }, { status: 200 });
+    if (sessionId && filtered.length > 0) {
+      return NextResponse.json({ success: true, session: filtered[0] }, { status: 200 });
+    }
+
+    return NextResponse.json({ success: true, sessions: filtered }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, sessions: [] }, { status: 500 });
   }

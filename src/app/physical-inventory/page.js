@@ -220,45 +220,57 @@ export default function PhysicalInventoryPage() {
           setCategories([]);
         }
 
+        const isOwner = (item) => {
+          const creator = (item.createdBy || item.encodedBy || '').toLowerCase().trim();
+          const person = (item.inventoryPerson || item.accountableOfficerName || item.finalizedBy || item.countedBy || item.transferredBy || '').toLowerCase().trim();
+          if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie') || person.includes('queenie');
+          if (currentUsername === 'edolotallas') return (creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc')) && !person.includes('queenie');
+          return creator === currentUsername || person.includes(currentUsername);
+        };
+
         if (offData.success && Array.isArray(offData.offices)) {
-          setOffices(offData.offices);
-          StorageManager.saveOffices(offData.offices);
+          const userOffs = offData.offices.filter(isOwner);
+          setOffices(userOffs);
+          StorageManager.saveOffices(userOffs);
         } else {
           setOffices([]);
         }
 
         if (empData.success && (Array.isArray(empData.personnel) || Array.isArray(empData.employees))) {
-          const empArr = empData.personnel || empData.employees;
-          setEmployees(empArr);
-          StorageManager.saveEmployees(empArr);
+          const rawEmps = empData.personnel || empData.employees;
+          const userEmps = rawEmps.filter(isOwner);
+          setEmployees(userEmps);
+          StorageManager.saveEmployees(userEmps);
         } else {
           setEmployees([]);
         }
 
         if (asgnData.success && Array.isArray(asgnData.assignments)) {
-          setAssignmentsHistory(asgnData.assignments);
-          StorageManager.saveAssignmentsHistory(asgnData.assignments);
+          const userAsgns = asgnData.assignments.filter(isOwner);
+          setAssignmentsHistory(userAsgns);
+          StorageManager.saveAssignmentsHistory(userAsgns);
         } else {
           setAssignmentsHistory([]);
         }
 
         if (sessRes.ok && sessData.success && Array.isArray(sessData.sessions)) {
           setDbConnected(true);
-          loadedSessions = sessData.sessions;
+          loadedSessions = sessData.sessions.filter(isOwner);
           StorageManager.saveInventorySessions?.(loadedSessions);
         } else {
           loadedSessions = [];
         }
 
         if (cntsRes.ok && cntsData.success && Array.isArray(cntsData.counts)) {
-          loadedCounts = cntsData.counts;
+          loadedCounts = cntsData.counts.filter(isOwner);
           StorageManager.savePhysicalCounts?.(loadedCounts);
         } else {
           loadedCounts = [];
         }
 
         if (propsRes.ok && propsData.success && Array.isArray(propsData.properties)) {
-          const apiProps = propsData.properties.map((p) => ({
+          const userProps = propsData.properties.filter(isOwner);
+          const apiProps = userProps.map((p) => ({
             ...p,
             propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
             article: p.article || p.name || 'Equipment Item',

@@ -63,15 +63,22 @@ function ReportPreviewContent() {
 
         if (setRes.data?.settings) setSettings(setRes.data.settings);
         if (setRes.data?.signatories) setApiSignatories(setRes.data.signatories);
+        const isOwner = (item) => {
+          const creator = (item.createdBy || item.encodedBy || 'edolotallas').toLowerCase().trim();
+          if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie');
+          if (currentUsername === 'edolotallas') return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+          return creator === currentUsername;
+        };
+
         if (propRes.data?.properties) {
-          setProperties(propRes.data.properties);
+          setProperties(propRes.data.properties.filter(isOwner));
         }
         if (empRes.data?.personnel || empRes.data?.employees) {
           const rawEmps = empRes.data?.personnel || empRes.data?.employees || [];
-          setEmployees(rawEmps);
+          setEmployees(rawEmps.filter(isOwner));
         }
         if (offRes.data?.offices) {
-          setOffices(offRes.data.offices);
+          setOffices(offRes.data.offices.filter(isOwner));
         }
         if (catRes.data?.categories) setCategories(catRes.data.categories);
 

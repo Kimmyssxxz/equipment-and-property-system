@@ -112,9 +112,17 @@ export default function PersonnelPage() {
       const propData = await parseJsonSafely(propRes);
       const asgnData = await parseJsonSafely(asgnRes);
 
+      const isOwner = (item) => {
+        const creator = (item.createdBy || item.encodedBy || 'edolotallas').toLowerCase().trim();
+        if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie');
+        if (currentUsername === 'edolotallas') return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+        return creator === currentUsername;
+      };
+
       if (offData.success && Array.isArray(offData.offices)) {
-        setOffices(offData.offices);
-        StorageManager.saveOffices(offData.offices);
+        const userOffices = offData.offices.filter(isOwner);
+        setOffices(userOffices);
+        StorageManager.saveOffices(userOffices);
       } else {
         setOffices([]);
       }
@@ -123,22 +131,28 @@ export default function PersonnelPage() {
         setIsTableMissing(true);
         setEmployees([]);
       } else if (empData.success && Array.isArray(empData.employees)) {
-        setEmployees(empData.employees);
-        StorageManager.saveEmployees(empData.employees);
+        const userEmployees = empData.employees.filter(isOwner);
+        setEmployees(userEmployees);
+        StorageManager.saveEmployees(userEmployees);
       } else {
         setEmployees([]);
       }
 
       if (propData.success && Array.isArray(propData.properties)) {
-        setProperties(propData.properties);
-        StorageManager.saveProperties(propData.properties);
+        const userProps = propData.properties.filter(isOwner);
+        setProperties(userProps);
+        StorageManager.saveProperties(userProps);
       } else {
         setProperties([]);
       }
 
       if (asgnData.success && Array.isArray(asgnData.assignments)) {
-        setAssignmentsHistory(asgnData.assignments);
-        StorageManager.saveAssignmentsHistory(asgnData.assignments);
+        const userAsgns = asgnData.assignments.filter((asgn) => {
+          const transBy = (asgn.transferredBy || asgn.createdBy || asgn.encodedBy || '').toLowerCase();
+          return isOwner(asgn) || transBy.includes(currentUsername);
+        });
+        setAssignmentsHistory(userAsgns);
+        StorageManager.saveAssignmentsHistory(userAsgns);
       } else {
         setAssignmentsHistory([]);
       }

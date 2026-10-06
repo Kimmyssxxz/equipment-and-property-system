@@ -145,11 +145,25 @@ export async function GET(request) {
       };
     });
 
-    if (reportId && formatted.length > 0) {
-      return NextResponse.json({ success: true, report: formatted[0] }, { status: 200 });
+    let filtered = formatted;
+    if (targetUsername) {
+      filtered = formatted.filter((r) => {
+        const creator = (r.createdBy || r.encodedBy || '').toLowerCase().trim();
+        const genBy = (r.generatedBy || '').toLowerCase().trim();
+        if (targetUsername === 'queenie_ppsc') {
+          return creator === 'queenie_ppsc' || creator.includes('queenie') || genBy.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return (creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc')) && !genBy.includes('queenie');
+        }
+        return creator === targetUsername || genBy.includes(targetUsername);
+      });
     }
 
-    return NextResponse.json({ success: true, reports: formatted }, { status: 200 });
+    if (reportId && filtered.length > 0) {
+      return NextResponse.json({ success: true, report: filtered[0] }, { status: 200 });
+    }
+
+    return NextResponse.json({ success: true, reports: filtered }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, reports: [] }, { status: 500 });
   }

@@ -108,16 +108,25 @@ export default function OfficesPage() {
       const empData = await parseJsonSafely(empRes);
       const propData = await parseJsonSafely(propRes);
 
+      const isOwner = (item) => {
+        const creator = (item.createdBy || item.encodedBy || 'edolotallas').toLowerCase().trim();
+        if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie');
+        if (currentUsername === 'edolotallas') return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+        return creator === currentUsername;
+      };
+
       if (propData.success && Array.isArray(propData.properties)) {
-        setProperties(propData.properties);
-        StorageManager.saveProperties(propData.properties);
+        const userProps = propData.properties.filter(isOwner);
+        setProperties(userProps);
+        StorageManager.saveProperties(userProps);
       } else {
         setProperties([]);
       }
 
       if (empData.success && Array.isArray(empData.employees)) {
-        setEmployees(empData.employees);
-        StorageManager.saveEmployees(empData.employees);
+        const userEmps = empData.employees.filter(isOwner);
+        setEmployees(userEmps);
+        StorageManager.saveEmployees(userEmps);
       } else {
         setEmployees([]);
       }
@@ -126,8 +135,9 @@ export default function OfficesPage() {
         setIsTableMissing(true);
         setOffices([]);
       } else if (offData.success && Array.isArray(offData.offices)) {
-        setOffices(offData.offices);
-        StorageManager.saveOffices(offData.offices);
+        const userOffs = offData.offices.filter(isOwner);
+        setOffices(userOffs);
+        StorageManager.saveOffices(userOffs);
       } else {
         setOffices([]);
       }

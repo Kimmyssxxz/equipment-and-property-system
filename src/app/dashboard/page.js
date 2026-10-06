@@ -49,21 +49,28 @@ export default function DashboardPage() {
         authFetch('/api/physical-counts').then((r) => r.json()),
       ]);
 
+      const isOwner = (item) => {
+        const creator = (item.createdBy || item.encodedBy || 'edolotallas').toLowerCase().trim();
+        if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie');
+        if (currentUsername === 'edolotallas') return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+        return creator === currentUsername;
+      };
+
       if (propRes.status === 'fulfilled' && Array.isArray(propRes.value?.properties)) {
-        setProperties(propRes.value.properties);
+        setProperties(propRes.value.properties.filter(isOwner));
       } else {
         setProperties([]);
       }
 
       if (empRes.status === 'fulfilled') {
         const emps = empRes.value?.personnel || empRes.value?.employees || [];
-        setEmployees(emps);
+        setEmployees(emps.filter(isOwner));
       } else {
         setEmployees([]);
       }
 
       if (offRes.status === 'fulfilled' && Array.isArray(offRes.value?.offices)) {
-        setOffices(offRes.value.offices);
+        setOffices(offRes.value.offices.filter(isOwner));
       } else {
         setOffices([]);
       }
@@ -75,7 +82,7 @@ export default function DashboardPage() {
       }
 
       if (countRes.status === 'fulfilled' && Array.isArray(countRes.value?.counts)) {
-        setCounts(countRes.value.counts);
+        setCounts(countRes.value.counts.filter(isOwner));
       } else {
         setCounts([]);
       }

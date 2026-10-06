@@ -95,7 +95,20 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ success: true, employees: formattedList }, { status: 200 });
+    let filteredList = formattedList;
+    if (targetUsername) {
+      filteredList = formattedList.filter((emp) => {
+        const creator = (emp.createdBy || emp.encodedBy || 'edolotallas').toLowerCase().trim();
+        if (targetUsername === 'queenie_ppsc') {
+          return creator === 'queenie_ppsc' || creator.includes('queenie');
+        } else if (targetUsername === 'edolotallas') {
+          return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
+        }
+        return creator === targetUsername;
+      });
+    }
+
+    return NextResponse.json({ success: true, employees: filteredList }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, employees: [] }, { status: 500 });
   }
