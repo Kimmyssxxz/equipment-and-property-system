@@ -130,15 +130,30 @@ export async function POST(request) {
           fullName: fullName.trim(),
           email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
           password: finalPassword,
-          position: position ? position.trim() : (isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin'),
           role: 'Admin',
         };
 
-        const { error: upsertErr } = await supabase
+        let { error: upsertErr } = await supabase
           .from('users')
           .upsert([payload], { onConflict: 'username' });
 
+        if (upsertErr && upsertErr.message && (upsertErr.message.includes('column') || upsertErr.message.includes('schema cache'))) {
+          // Retry with minimal safe fields without role if schema cache differs
+          const safePayload = {
+            id: userId,
+            username: cleanUsername,
+            fullName: fullName.trim(),
+            email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
+            password: finalPassword,
+          };
+          const retryRes = await supabase
+            .from('users')
+            .upsert([safePayload], { onConflict: 'username' });
+          upsertErr = retryRes.error;
+        }
+
         if (upsertErr) {
+          console.warn('Profile Supabase upsert notice:', upsertErr.message);
           return NextResponse.json(
             { success: false, error: `Supabase save notice: ${upsertErr.message}` },
             { status: 400 }
