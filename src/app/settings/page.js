@@ -50,16 +50,26 @@ export default function SettingsPage() {
   });
 
   const [signatories, setSignatories] = useState({
-    preparedByName: '',
-    preparedByTitle: '',
+    member1Name: '',
+    member1Title: '',
+    member2Name: '',
+    member2Title: '',
     certifiedCorrectByName: '',
     certifiedCorrectByTitle: '',
-    teamLeaderName: '',
-    teamLeaderTitle: '',
     approvedByName: '',
     approvedByTitle: '',
     verifiedByName: '',
     verifiedByTitle: '',
+    member3Name: '',
+    member3Title: '',
+    member4Name: '',
+    member4Title: '',
+    member5Name: '',
+    member5Title: '',
+    preparedByName: '',
+    preparedByTitle: '',
+    teamLeaderName: '',
+    teamLeaderTitle: '',
   });
 
   const [roles, setRoles] = useState([]);
@@ -527,190 +537,133 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                 <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
                   <span>
-                    <strong>Multi-Position Support:</strong> Puwede kang maglagay ng multiple positions / designations sa pamamagitan ng paghihiwalay gamit ang slash (<code className="bg-white px-1.5 py-0.5 rounded border border-emerald-300 font-bold">/</code>), comma, o bagong linya. Awtomatiko itong lalabas nang maayos sa naka-landscape na report.
+                    <strong>COA Standard Multi-Signatories:</strong> Sumusunod ang format na ito sa opisyal na COA/NFTI template. Puwede kang maglagay ng multiple positions gamit ang slash (<code className="bg-white px-1.5 py-0.5 rounded border border-emerald-300 font-bold">/</code>) o bagong linya.
                   </span>
                 </div>
 
+                {/* Section 1: Certified Correct by (Inventory Committee) */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                  <div className="border-b border-slate-200/80 pb-2 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                        1. Certified Correct by (Inventory Committee)
+                      </span>
+                      <p className="text-[11px] text-slate-500">
+                        Naglalaman ng 2 Committee Members at 1 Chairperson para sa physical inventory verification.
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      3 Committee Columns
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Member 1 */}
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                        Member 1 (e.g. Supply Officer)
+                      </span>
+                      <input
+                        type="text"
+                        value={signatories.member1Name || ''}
+                        onChange={(e) => setSignatories({ ...signatories, member1Name: e.target.value })}
+                        placeholder="e.g. MONALIZA A. RAQUIÑO"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
+                      />
+                      <input
+                        type="text"
+                        value={signatories.member1Title || ''}
+                        onChange={(e) => setSignatories({ ...signatories, member1Title: e.target.value })}
+                        placeholder="Member, NFTI Inventory Committee / Supply Officer, NFTI"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
+                      />
+                    </div>
+
+                    {/* Member 2 */}
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                        Member 2 (e.g. Budget Officer)
+                      </span>
+                      <input
+                        type="text"
+                        value={signatories.member2Name || ''}
+                        onChange={(e) => setSignatories({ ...signatories, member2Name: e.target.value })}
+                        placeholder="e.g. DIONICIA A. BIDES"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
+                      />
+                      <input
+                        type="text"
+                        value={signatories.member2Title || ''}
+                        onChange={(e) => setSignatories({ ...signatories, member2Title: e.target.value })}
+                        placeholder="Member, NFTI Inventory Committee / Budget Officer, NFTI"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
+                      />
+                    </div>
+
+                    {/* Chairperson */}
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                        Chairperson (Certified Correct by)
+                      </span>
+                      <input
+                        type="text"
+                        value={signatories.certifiedCorrectByName || ''}
+                        onChange={(e) => setSignatories({ ...signatories, certifiedCorrectByName: e.target.value })}
+                        placeholder="e.g. ENGR. DOSMEDO G. TABRILLA, MPSA"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
+                      />
+                      <input
+                        type="text"
+                        value={signatories.certifiedCorrectByTitle || ''}
+                        onChange={(e) => setSignatories({ ...signatories, certifiedCorrectByTitle: e.target.value })}
+                        placeholder="Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* 1. Prepared by */}
+                  {/* Section 2: Approved by */}
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      1. Prepared by:
-                    </span>
-                    <input
-                      type="text"
-                      value={signatories.preparedByName || ''}
-                      onChange={(e) => setSignatories({ ...signatories, preparedByName: e.target.value })}
-                      placeholder="Full Name"
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                    />
-                    <input
-                      type="text"
-                      value={signatories.preparedByTitle || ''}
-                      onChange={(e) => setSignatories({ ...signatories, preparedByTitle: e.target.value })}
-                      placeholder="Designation / Multiple Positions (e.g. Supply Section Rep / Custodian)"
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
-                    />
-                  </div>
-
-                  {/* 2. Certified Correct by */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      2. Certified Correct by:
-                    </span>
-                    <input
-                      type="text"
-                      value={signatories.certifiedCorrectByName || ''}
-                      onChange={(e) => setSignatories({ ...signatories, certifiedCorrectByName: e.target.value })}
-                      placeholder="Full Name"
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                    />
-                    <input
-                      type="text"
-                      value={signatories.certifiedCorrectByTitle || ''}
-                      onChange={(e) => setSignatories({ ...signatories, certifiedCorrectByTitle: e.target.value })}
-                      placeholder="Designation / Multiple Positions (e.g. Supply Officer V / Admin Officer)"
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
-                    />
-                  </div>
-
-                  {/* 3. Team Leader */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      3. Team Leader:
-                    </span>
-                    <input
-                      type="text"
-                      value={signatories.teamLeaderName || ''}
-                      onChange={(e) => setSignatories({ ...signatories, teamLeaderName: e.target.value })}
-                      placeholder="Full Name"
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                    />
-                    <input
-                      type="text"
-                      value={signatories.teamLeaderTitle || ''}
-                      onChange={(e) => setSignatories({ ...signatories, teamLeaderTitle: e.target.value })}
-                      placeholder="Designation / Multiple Positions (e.g. Committee Chair / Chief Admin Officer)"
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
-                    />
-                  </div>
-
-                  {/* 4. Approved by */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      4. Approved by:
+                      2. Approved by:
                     </span>
                     <input
                       type="text"
                       value={signatories.approvedByName || ''}
                       onChange={(e) => setSignatories({ ...signatories, approvedByName: e.target.value })}
-                      placeholder="Full Name"
+                      placeholder="e.g. FCSUPT BELINDA B. OCHAVE"
                       className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
                     />
                     <input
                       type="text"
                       value={signatories.approvedByTitle || ''}
                       onChange={(e) => setSignatories({ ...signatories, approvedByTitle: e.target.value })}
-                      placeholder="Designation / Multiple Positions (e.g. Acting Executive Director / VP)"
+                      placeholder="e.g. Director, NFTI"
                       className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
                     />
                   </div>
 
-                  {/* 5. Inventory Committee Members (5 Persons - Names Only) */}
-                  <div className="sm:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                      <div>
-                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                          5. Physical Inventory Committee Members (Optional Slots)
-                        </span>
-                        <p className="text-[11px] text-slate-500">
-                          Pangalan lamang ng mga miyembro (walang indibidwal na posisyon). 2 default members; magdagdag kung kinakailangan.
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                        Committee Members
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Member 1</label>
-                        <input
-                          type="text"
-                          value={signatories.member1Name || ''}
-                          onChange={(e) => setSignatories({ ...signatories, member1Name: e.target.value })}
-                          placeholder="Member 1 Name"
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Member 2</label>
-                        <input
-                          type="text"
-                          value={signatories.member2Name || ''}
-                          onChange={(e) => setSignatories({ ...signatories, member2Name: e.target.value })}
-                          placeholder="Member 2 Name"
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Member 3 (Optional)</label>
-                        <input
-                          type="text"
-                          value={signatories.member3Name || ''}
-                          onChange={(e) => setSignatories({ ...signatories, member3Name: e.target.value })}
-                          placeholder="Member 3 Name"
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Member 4 (Optional)</label>
-                        <input
-                          type="text"
-                          value={signatories.member4Name || ''}
-                          onChange={(e) => setSignatories({ ...signatories, member4Name: e.target.value })}
-                          placeholder="Member 4 Name"
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Member 5 (Optional)</label>
-                        <input
-                          type="text"
-                          value={signatories.member5Name || ''}
-                          onChange={(e) => setSignatories({ ...signatories, member5Name: e.target.value })}
-                          placeholder="Member 5 Name"
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 6. Verified by */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 sm:col-span-2">
+                  {/* Section 3: Verified by */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      6. Verified by (State Auditor / Audit Team Leader):
+                      3. Verified by (State Auditor / COA Representative):
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={signatories.verifiedByName || ''}
-                        onChange={(e) => setSignatories({ ...signatories, verifiedByName: e.target.value })}
-                        placeholder="Full Name (e.g. YVES ARDEN M. CABANLONG)"
-                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                      />
-                      <input
-                        type="text"
-                        value={signatories.verifiedByTitle || ''}
-                        onChange={(e) => setSignatories({ ...signatories, verifiedByTitle: e.target.value })}
-                        placeholder="Designation / Multi-Positions (e.g. State Auditor IV / Audit Team Leader, RO IVA)"
-                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      value={signatories.verifiedByName || ''}
+                      onChange={(e) => setSignatories({ ...signatories, verifiedByName: e.target.value })}
+                      placeholder="e.g. JAMES CHRISTOPHER G. BANAAG"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                    />
+                    <input
+                      type="text"
+                      value={signatories.verifiedByTitle || ''}
+                      onChange={(e) => setSignatories({ ...signatories, verifiedByTitle: e.target.value })}
+                      placeholder="e.g. State Auditor IV / Audit Team Leader, RO IVA"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
+                    />
                   </div>
                 </div>
 

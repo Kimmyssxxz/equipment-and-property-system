@@ -198,12 +198,12 @@ export async function POST(request) {
       ];
 
       ['member1', 'member2', 'member3', 'member4', 'member5'].forEach((mKey, idx) => {
-        if (signatories[`${mKey}Name`]) {
+        if (signatories[`${mKey}Name`] !== undefined) {
           sigRowsToUpsert.push({
             roleKey: mKey,
             label: `Inventory Member ${idx + 1}`,
-            name: signatories[`${mKey}Name`],
-            title: signatories[`${mKey}Title`] || 'Member',
+            name: signatories[`${mKey}Name`] || '',
+            title: signatories[`${mKey}Title`] || '',
             order: 6 + idx,
           });
         }

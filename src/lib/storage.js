@@ -9,21 +9,33 @@ export const initialRoles = [
 ];
 
 export const initialSignatoriesConfig = {
-  preparedByName: '',
-  preparedByTitle: 'Supply Section Representative',
-  member1Name: '',
-  member2Name: '',
+  // Certified Correct by (Inventory Committee)
+  member1Name: 'MONALIZA A. RAQUIÑO',
+  member1Title: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
+  member2Name: 'DIONICIA A. BIDES',
+  member2Title: 'Member, NFTI Inventory Committee / Budget Officer, NFTI',
+  certifiedCorrectByName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
+  certifiedCorrectByTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
+
+  // Approved by (Director)
+  approvedByName: 'FCSUPT BELINDA B. OCHAVE',
+  approvedByTitle: 'Director, NFTI',
+
+  // Verified by (State Auditor)
+  verifiedByName: 'JAMES CHRISTOPHER G. BANAAG',
+  verifiedByTitle: 'State Auditor IV / Audit Team Leader, RO IVA',
+
+  // Backward compatibility aliases
+  preparedByName: 'MONALIZA A. RAQUIÑO',
+  preparedByTitle: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
+  teamLeaderName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
+  teamLeaderTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
   member3Name: '',
+  member3Title: '',
   member4Name: '',
+  member4Title: '',
   member5Name: '',
-  certifiedCorrectByName: '',
-  certifiedCorrectByTitle: 'Supply Accountable Officer / Chairperson',
-  teamLeaderName: '',
-  teamLeaderTitle: 'SDO',
-  approvedByName: '',
-  approvedByTitle: 'Director',
-  verifiedByName: '',
-  verifiedByTitle: 'State Auditor IV',
+  member5Title: '',
 };
 
 export const initialSettings = {

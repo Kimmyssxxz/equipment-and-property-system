@@ -137,21 +137,23 @@ function ReportsContent() {
   // Custom Signatories Form Toggle
   const [showSignatoriesConfig, setShowSignatoriesConfig] = useState(false);
   const [customSignatories, setCustomSignatories] = useState({
-    preparedByName: 'KIM RYAN AÑONUEVO',
-    preparedByTitle: 'Supply Section Representative',
-    certifiedCorrectByName: 'ELMER G. DOLOTALLAS',
-    certifiedCorrectByTitle: 'Supply Accountable Officer / Chairperson',
-    teamLeaderName: 'GLORIA C. PERIDO',
-    teamLeaderTitle: 'SDO',
-    approvedByName: 'ATTY ERCY NANETTE P MADRIAGA, DPSSG',
-    approvedByTitle: 'Police Colonel / Director',
-    verifiedByName: 'YVES ARDEN M. CABANLONG',
+    member1Name: 'MONALIZA A. RAQUIÑO',
+    member1Title: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
+    member2Name: 'DIONICIA A. BIDES',
+    member2Title: 'Member, NFTI Inventory Committee / Budget Officer, NFTI',
+    certifiedCorrectByName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
+    certifiedCorrectByTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
+    approvedByName: 'FCSUPT BELINDA B. OCHAVE',
+    approvedByTitle: 'Director, NFTI',
+    verifiedByName: 'JAMES CHRISTOPHER G. BANAAG',
     verifiedByTitle: 'State Auditor IV / Audit Team Leader, RO IVA',
-    member1Name: 'JOANNA ROSE B. RIÑA',
-    member2Name: 'JENELYN N. EDEN',
     member3Name: '',
     member4Name: '',
     member5Name: '',
+    preparedByName: 'MONALIZA A. RAQUIÑO',
+    preparedByTitle: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
+    teamLeaderName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
+    teamLeaderTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
   });
 
   const [notification, setNotification] = useState(null);
@@ -743,169 +745,129 @@ function ReportsContent() {
                   <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                     <div>
                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                        Official Document Signatories Configuration
+                        Official Document Signatories Configuration (COA Format)
                       </span>
                       <p className="text-[11px] text-slate-500">
-                        Custom signatories for certified copy generation and COA standard submission
+                        Custom signatories for official RPCPPE, RPCSP, and IIRUP reports
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* 1. Prepared by */}
-                    <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">1. Prepared by</label>
-                      <input
-                        type="text"
-                        value={customSignatories.preparedByName || ''}
-                        onChange={(e) => setCustomSignatories({ ...customSignatories, preparedByName: e.target.value })}
-                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="Name"
-                      />
-                      <input
-                        type="text"
-                        value={customSignatories.preparedByTitle || ''}
-                        onChange={(e) => setCustomSignatories({ ...customSignatories, preparedByTitle: e.target.value })}
-                        className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="Title / Position"
-                      />
+                  {/* 1. Certified Correct by */}
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                        1. Certified Correct by (Inventory Committee)
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        3 Committee Signatories
+                      </span>
                     </div>
 
-                    {/* 2. Certified Correct by */}
-                    <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">2. Certified Correct by</label>
-                      <input
-                        type="text"
-                        value={customSignatories.certifiedCorrectByName || ''}
-                        onChange={(e) => setCustomSignatories({ ...customSignatories, certifiedCorrectByName: e.target.value })}
-                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="Name"
-                      />
-                      <input
-                        type="text"
-                        value={customSignatories.certifiedCorrectByTitle || ''}
-                        onChange={(e) => setCustomSignatories({ ...customSignatories, certifiedCorrectByTitle: e.target.value })}
-                        className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="Title / Multi-positions"
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Member 1 */}
+                      <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase">
+                          Member 1 (Supply Officer)
+                        </label>
+                        <input
+                          type="text"
+                          value={customSignatories.member1Name || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, member1Name: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="e.g. MONALIZA A. RAQUIÑO"
+                        />
+                        <input
+                          type="text"
+                          value={customSignatories.member1Title || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, member1Title: e.target.value })}
+                          className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
+                          placeholder="Member, NFTI Inventory Committee / Supply Officer, NFTI"
+                        />
+                      </div>
 
-                    {/* 3. Team Leader */}
-                    <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">3. Team Leader</label>
-                      <input
-                        type="text"
-                        value={customSignatories.teamLeaderName || ''}
-                        onChange={(e) => setCustomSignatories({ ...customSignatories, teamLeaderName: e.target.value })}
-                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="Name"
-                      />
-                      <input
-                        type="text"
-                        value={customSignatories.teamLeaderTitle || ''}
-                        onChange={(e) => setCustomSignatories({ ...customSignatories, teamLeaderTitle: e.target.value })}
-                        className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="Title / Multi-positions"
-                      />
-                    </div>
+                      {/* Member 2 */}
+                      <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase">
+                          Member 2 (Budget Officer)
+                        </label>
+                        <input
+                          type="text"
+                          value={customSignatories.member2Name || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, member2Name: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="e.g. DIONICIA A. BIDES"
+                        />
+                        <input
+                          type="text"
+                          value={customSignatories.member2Title || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, member2Title: e.target.value })}
+                          className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
+                          placeholder="Member, NFTI Inventory Committee / Budget Officer, NFTI"
+                        />
+                      </div>
 
-                    {/* 4. Approved by */}
-                    <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">4. Approved by</label>
+                      {/* Chairperson */}
+                      <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase">
+                          Chairperson (Certified Correct by)
+                        </label>
+                        <input
+                          type="text"
+                          value={customSignatories.certifiedCorrectByName || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, certifiedCorrectByName: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="e.g. ENGR. DOSMEDO G. TABRILLA, MPSA"
+                        />
+                        <input
+                          type="text"
+                          value={customSignatories.certifiedCorrectByTitle || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, certifiedCorrectByTitle: e.target.value })}
+                          className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
+                          placeholder="Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* 2. Approved by */}
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1.5">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase">2. Approved by (Director)</label>
                       <input
                         type="text"
                         value={customSignatories.approvedByName || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, approvedByName: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="Name"
+                        placeholder="e.g. FCSUPT BELINDA B. OCHAVE"
                       />
                       <input
                         type="text"
                         value={customSignatories.approvedByTitle || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, approvedByTitle: e.target.value })}
                         className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="Title / Multi-positions"
+                        placeholder="e.g. Director, NFTI"
                       />
                     </div>
-                  </div>
 
-                  {/* 5. Members Section (5 Committee Members - Names Only) */}
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                        5. Physical Inventory Committee Members (Names Only)
+                    {/* 3. Verified by */}
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-1.5">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase">
+                        3. Verified by (State Auditor / Audit Team Leader)
                       </label>
-                      <span className="text-[10px] text-slate-400 font-bold">Committee Members</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-                      <div>
-                        <input
-                          type="text"
-                          value={customSignatories.member1Name || ''}
-                          onChange={(e) => setCustomSignatories({ ...customSignatories, member1Name: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Member 1"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={customSignatories.member2Name || ''}
-                          onChange={(e) => setCustomSignatories({ ...customSignatories, member2Name: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Member 2"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={customSignatories.member3Name || ''}
-                          onChange={(e) => setCustomSignatories({ ...customSignatories, member3Name: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Member 3 (Optional)"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={customSignatories.member4Name || ''}
-                          onChange={(e) => setCustomSignatories({ ...customSignatories, member4Name: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Member 4 (Optional)"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={customSignatories.member5Name || ''}
-                          onChange={(e) => setCustomSignatories({ ...customSignatories, member5Name: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Member 5 (Optional)"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 6. Verified by */}
-                  <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1.5">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">
-                      6. Verified by (State Auditor / Audit Team Leader)
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
                         type="text"
                         value={customSignatories.verifiedByName || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, verifiedByName: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="State Auditor Name (e.g. YVES ARDEN M. CABANLONG)"
+                        placeholder="e.g. JAMES CHRISTOPHER G. BANAAG"
                       />
                       <input
                         type="text"
                         value={customSignatories.verifiedByTitle || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, verifiedByTitle: e.target.value })}
                         className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="Title / Multi-Positions (e.g. State Auditor IV / Audit Team Leader, RO IVA)"
+                        placeholder="e.g. State Auditor IV / Audit Team Leader, RO IVA"
                       />
                     </div>
                   </div>
