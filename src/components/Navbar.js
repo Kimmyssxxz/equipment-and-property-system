@@ -19,11 +19,24 @@ import {
 import { StorageManager } from '@/lib/storage';
 
 export default function Navbar({ pageTitle = 'Dashboard', icon: PageIcon }) {
-  const [activeUser, setActiveUser] = useState({
-    name: 'Elmer G. Dolotallas',
-    role: 'Admin',
-    position: 'Supply Officer',
-    initials: 'ED',
+  const [activeUser, setActiveUser] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const u = StorageManager.getActiveUser();
+        if (u) {
+          const name = u.name || u.fullName || 'Admin';
+          const parts = name.trim().split(/\s+/);
+          const initials = u.initials || (parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase());
+          return { ...u, name, initials };
+        }
+      } catch (e) {}
+    }
+    return {
+      name: 'Admin User',
+      role: 'Admin',
+      position: 'Supply Officer / Admin',
+      initials: 'AU',
+    };
   });
   const [roles, setRoles] = useState([]);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -36,7 +49,12 @@ export default function Navbar({ pageTitle = 'Dashboard', icon: PageIcon }) {
       const user = StorageManager.getActiveUser();
       const allRoles = StorageManager.getRoles();
       const logs = StorageManager.getAuditLogs();
-      if (user) setActiveUser(user);
+      if (user) {
+        const name = user.name || user.fullName || 'Admin';
+        const parts = name.trim().split(/\s+/);
+        const initials = user.initials || (parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase());
+        setActiveUser({ ...user, name, initials });
+      }
       if (allRoles) setRoles(allRoles);
       if (logs) setAuditLogs(logs.slice(0, 5));
     } catch (e) {}

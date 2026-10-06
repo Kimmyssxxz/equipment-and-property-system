@@ -74,12 +74,38 @@ function SidebarContent({ totalItems = 0 }) {
     rpcsp: 0,
   });
 
-  const [activeUser, setActiveUser] = useState({
-    name: 'Elmer G. Dolotallas',
-    role: 'Admin',
-    position: 'Supply Officer',
-    initials: 'ED',
+  const [activeUser, setActiveUser] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const u = StorageManager.getActiveUser();
+        if (u) {
+          const name = u.name || u.fullName || 'Admin';
+          const parts = name.trim().split(/\s+/);
+          const initials = u.initials || (parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase());
+          return { ...u, name, initials };
+        }
+      } catch (e) {}
+    }
+    return {
+      name: 'Admin User',
+      role: 'Admin',
+      position: 'Supply Officer / Admin',
+      initials: 'AU',
+    };
   });
+
+  // Sync activeUser on mount and path changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const u = StorageManager.getActiveUser();
+      if (u) {
+        const name = u.name || u.fullName || 'Admin';
+        const parts = name.trim().split(/\s+/);
+        const initials = u.initials || (parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase());
+        setActiveUser({ ...u, name, initials });
+      }
+    }
+  }, [pathname]);
 
   // Load persistent collapsed state and dynamic badge counters on mount
   useEffect(() => {
@@ -93,6 +119,12 @@ function SidebarContent({ totalItems = 0 }) {
     const refreshCounts = async () => {
       try {
         const user = StorageManager.getActiveUser();
+        if (user) {
+          const name = user.name || user.fullName || 'Admin';
+          const parts = name.trim().split(/\s+/);
+          const initials = user.initials || (parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase());
+          setActiveUser({ ...user, name, initials });
+        }
         const currentUsername = (user?.username || 'edolotallas').toLowerCase().trim();
 
         let catsCount = 0;
