@@ -28,6 +28,7 @@ function ReportPreviewContent() {
   const [report, setReport] = useState(null);
   const [items, setItems] = useState([]);
   const [settings, setSettings] = useState(null);
+  const [apiSignatories, setApiSignatories] = useState(null);
   const [properties, setProperties] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [offices, setOffices] = useState([]);
@@ -61,6 +62,7 @@ function ReportPreviewContent() {
         ]);
 
         if (setRes.data?.settings) setSettings(setRes.data.settings);
+        if (setRes.data?.signatories) setApiSignatories(setRes.data.signatories);
         if (propRes.data?.properties) {
           const userProps = propRes.data.properties.filter(
             (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
@@ -308,38 +310,30 @@ function ReportPreviewContent() {
     .filter((i) => i.status === 'OVERAGE')
     .reduce((sum, i) => sum + (i.unitValue || 0) * (i.difference || 1), 0);
 
-  const configuredSigs = typeof window !== 'undefined' ? StorageManager.getSignatoriesConfig() : {};
-  let sigs = { ...initialSignatoriesConfig, ...configuredSigs, ...(report.signatories || {}) };
-  if (
-    sigs.preparedByName === 'CARMELO S. BALITA' ||
-    sigs.teamLeaderName === 'MARIA SOCORRO C. CRISTOBAL' ||
-    sigs.preparedByName === 'KIM RYAN AÑONUEVO' ||
-    sigs.preparedByName === 'JENELYN N. EDEN' ||
-    sigs.preparedByName === 'JENNYLYN EDEN' ||
-    sigs.approvedByName?.includes('MADRIAGA') ||
-    sigs.verifiedByName?.includes('CABANLONG') ||
-    sigs.certifiedCorrectByName === 'ELMER G. DOLOTALLAS' ||
-    !sigs.member1Name ||
-    !sigs.certifiedCorrectByName
-  ) {
-    sigs = {
-      ...sigs,
-      member1Name: (sigs.member1Name && !sigs.member1Name.includes('JOANNA') && !sigs.member1Name.includes('JENELYN')) ? sigs.member1Name : 'MONALIZA A. RAQUIÑO',
-      member1Title: (sigs.member1Title && !sigs.member1Title.includes('Supply Section') && !sigs.member1Title.includes('Member')) ? sigs.member1Title : 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
-      member2Name: (sigs.member2Name && !sigs.member2Name.includes('JENELYN') && !sigs.member2Name.includes('DAISY')) ? sigs.member2Name : 'DIONICIA A. BIDES',
-      member2Title: (sigs.member2Title && !sigs.member2Title.includes('Supply Section') && !sigs.member2Title.includes('Member')) ? sigs.member2Title : 'Member, NFTI Inventory Committee / Budget Officer, NFTI',
-      certifiedCorrectByName: (sigs.certifiedCorrectByName && sigs.certifiedCorrectByName !== 'ELMER G. DOLOTALLAS') ? sigs.certifiedCorrectByName : 'ENGR. DOSMEDO G. TABRILLA, MPSA',
-      certifiedCorrectByTitle: (sigs.certifiedCorrectByTitle && sigs.certifiedCorrectByTitle !== 'Supply Accountable Officer / Chairperson') ? sigs.certifiedCorrectByTitle : 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
-      approvedByName: (sigs.approvedByName && !sigs.approvedByName.includes('MADRIAGA')) ? sigs.approvedByName : 'FCSUPT BELINDA B. OCHAVE',
-      approvedByTitle: (sigs.approvedByTitle && !sigs.approvedByTitle.includes('Police Colonel') && !sigs.approvedByTitle.includes('DPSSG') && sigs.approvedByTitle !== 'Director') ? sigs.approvedByTitle : 'Director, NFTI',
-      verifiedByName: (sigs.verifiedByName && !sigs.verifiedByName.includes('CABANLONG')) ? sigs.verifiedByName : 'JAMES CHRISTOPHER G. BANAAG',
-      verifiedByTitle: (sigs.verifiedByTitle && !sigs.verifiedByTitle.includes('CABANLONG')) ? sigs.verifiedByTitle : 'State Auditor IV / Audit Team Leader, RO IVA',
-      preparedByName: sigs.preparedByName || 'MONALIZA A. RAQUIÑO',
-      preparedByTitle: sigs.preparedByTitle || 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
-      teamLeaderName: sigs.teamLeaderName || 'ENGR. DOSMEDO G. TABRILLA, MPSA',
-      teamLeaderTitle: sigs.teamLeaderTitle || 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
-    };
-  }
+  const configuredSigs = {
+    ...initialSignatoriesConfig,
+    ...(typeof window !== 'undefined' ? StorageManager.getSignatoriesConfig() : {}),
+    ...(apiSignatories || {}),
+    ...(settings?.signatories || {}),
+  };
+  const repSigs = report?.signatories || {};
+
+  const sigs = {
+    member1Name: repSigs.member1Name || repSigs.preparedByName || configuredSigs.member1Name || configuredSigs.preparedByName || 'ELMER G. DOLOTALLAS',
+    member1Title: repSigs.member1Title || repSigs.preparedByTitle || configuredSigs.member1Title || configuredSigs.preparedByTitle || 'Supply Accountable Officer',
+
+    member2Name: repSigs.member2Name || repSigs.teamLeaderName || configuredSigs.member2Name || configuredSigs.teamLeaderName || 'GLORIA C. PERIDO',
+    member2Title: repSigs.member2Title || repSigs.teamLeaderTitle || configuredSigs.member2Title || configuredSigs.teamLeaderTitle || 'Budget Officer',
+
+    certifiedCorrectByName: repSigs.certifiedCorrectByName || configuredSigs.certifiedCorrectByName || 'MA. CARLA G. FELIPE, RN',
+    certifiedCorrectByTitle: repSigs.certifiedCorrectByTitle || configuredSigs.certifiedCorrectByTitle || 'Chief, Admin',
+
+    approvedByName: repSigs.approvedByName || configuredSigs.approvedByName || 'ATTY. ERCY NANETTE P MADRIAGA, DPSSG',
+    approvedByTitle: repSigs.approvedByTitle || configuredSigs.approvedByTitle || 'Director, NFSTI',
+
+    verifiedByName: repSigs.verifiedByName || configuredSigs.verifiedByName || 'YVES ARDEN CABANLONG',
+    verifiedByTitle: repSigs.verifiedByTitle || configuredSigs.verifiedByTitle || 'State Auditor IV/ Audit Team Leader, RO IV A',
+  };
 
   const typeParam = (searchParams.get('type') || '').toLowerCase();
   const isIIRUP = typeParam === 'iirup' || (report.reportType || report.title || '').toUpperCase().includes('IIRUP') || (report.reportType || report.title || '').toUpperCase().includes('UNSERVICEABLE');
@@ -599,26 +593,26 @@ function ReportPreviewContent() {
                   <tr style="border:none; vertical-align:top;">
                     <td style="border:none; width:33%; padding-right:10px;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                        ${sigs.member1Name || 'MONALIZA A. RAQUIÑO'}
+                        ${sigs.member1Name}
                       </p>
                       <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                        ${(sigs.member1Title || 'Member, NFTI Inventory Committee / Supply Officer, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                        ${(sigs.member1Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
                     <td style="border:none; width:33%; padding-right:10px;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                        ${sigs.member2Name || 'DIONICIA A. BIDES'}
+                        ${sigs.member2Name}
                       </p>
                       <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                        ${(sigs.member2Title || 'Member, NFTI Inventory Committee / Budget Officer, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                        ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
                     <td style="border:none; width:34%;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                        ${sigs.certifiedCorrectByName || 'ENGR. DOSMEDO G. TABRILLA, MPSA'}
+                        ${sigs.certifiedCorrectByName}
                       </p>
                       <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                        ${(sigs.certifiedCorrectByTitle || 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                        ${(sigs.certifiedCorrectByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
                   </tr>
@@ -629,10 +623,10 @@ function ReportPreviewContent() {
               <td style="border:none; width:21%; padding-right:15px;">
                 <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Approved by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                  ${sigs.approvedByName || 'FCSUPT BELINDA B. OCHAVE'}
+                  ${sigs.approvedByName}
                 </p>
                 <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                  ${(sigs.approvedByTitle || 'Director, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                  ${(sigs.approvedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
 
@@ -640,10 +634,10 @@ function ReportPreviewContent() {
               <td style="border:none; width:21%;">
                 <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Verified by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                  ${sigs.verifiedByName || 'JAMES CHRISTOPHER G. BANAAG'}
+                  ${sigs.verifiedByName}
                 </p>
                 <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                  ${(sigs.verifiedByTitle || 'State Auditor IV / Audit Team Leader, RO IVA').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                  ${(sigs.verifiedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
             </tr>
@@ -991,26 +985,26 @@ function ReportPreviewContent() {
                   <tr style="border:none; vertical-align:top;">
                     <td style="border:none; width:33%; padding-right:10px;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                        ${sigs.member1Name || 'MONALIZA A. RAQUIÑO'}
+                        ${sigs.member1Name}
                       </p>
                       <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                        ${(sigs.member1Title || 'Member, NFTI Inventory Committee / Supply Officer, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                        ${(sigs.member1Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
                     <td style="border:none; width:33%; padding-right:10px;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                        ${sigs.member2Name || 'DIONICIA A. BIDES'}
+                        ${sigs.member2Name}
                       </p>
                       <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                        ${(sigs.member2Title || 'Member, NFTI Inventory Committee / Budget Officer, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                        ${(sigs.member2Title || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
                     <td style="border:none; width:34%;">
                       <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                        ${sigs.certifiedCorrectByName || 'ENGR. DOSMEDO G. TABRILLA, MPSA'}
+                        ${sigs.certifiedCorrectByName}
                       </p>
                       <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                        ${(sigs.certifiedCorrectByTitle || 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                        ${(sigs.certifiedCorrectByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                       </p>
                     </td>
                   </tr>
@@ -1021,10 +1015,10 @@ function ReportPreviewContent() {
               <td style="border:none; width:21%; padding-right:15px;">
                 <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Approved by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                  ${sigs.approvedByName || 'FCSUPT BELINDA B. OCHAVE'}
+                  ${sigs.approvedByName}
                 </p>
                 <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                  ${(sigs.approvedByTitle || 'Director, NFTI').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                  ${(sigs.approvedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
 
@@ -1032,10 +1026,10 @@ function ReportPreviewContent() {
               <td style="border:none; width:21%;">
                 <p style="font-weight:bold; font-size:9.5pt; margin-bottom:24px;">Verified by:</p>
                 <p style="font-weight:bold; font-size:9.5pt; text-transform:uppercase; text-decoration:underline; margin:0;">
-                  ${sigs.verifiedByName || 'JAMES CHRISTOPHER G. BANAAG'}
+                  ${sigs.verifiedByName}
                 </p>
                 <p style="font-size:8pt; margin-top:3px; color:#222; line-height:1.2;">
-                  ${(sigs.verifiedByTitle || 'State Auditor IV / Audit Team Leader, RO IVA').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
+                  ${(sigs.verifiedByTitle || '').split(/[\/|\n]/).map(s => s.trim()).filter(Boolean).join('<br/>')}
                 </p>
               </td>
             </tr>
@@ -1315,30 +1309,30 @@ function ReportPreviewContent() {
                     <div className="space-y-1">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                          {sigs.member1Name || 'MONALIZA A. RAQUIÑO'}
+                          {sigs.member1Name}
                         </p>
                       </div>
-                      {renderPositions(sigs.member1Title, 'Member, NFTI Inventory Committee / Supply Officer, NFTI')}
+                      {renderPositions(sigs.member1Title, 'Supply Accountable Officer')}
                     </div>
 
                     {/* Member 2 */}
                     <div className="space-y-1">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                          {sigs.member2Name || 'DIONICIA A. BIDES'}
+                          {sigs.member2Name}
                         </p>
                       </div>
-                      {renderPositions(sigs.member2Title, 'Member, NFTI Inventory Committee / Budget Officer, NFTI')}
+                      {renderPositions(sigs.member2Title, 'Budget Officer')}
                     </div>
 
                     {/* Chairperson */}
                     <div className="space-y-1">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                          {sigs.certifiedCorrectByName || 'ENGR. DOSMEDO G. TABRILLA, MPSA'}
+                          {sigs.certifiedCorrectByName}
                         </p>
                       </div>
-                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI')}
+                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chief, Admin')}
                     </div>
                   </div>
                 </div>
@@ -1349,10 +1343,10 @@ function ReportPreviewContent() {
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                        {sigs.approvedByName || 'FCSUPT BELINDA B. OCHAVE'}
+                        {sigs.approvedByName}
                       </p>
                     </div>
-                    {renderPositions(sigs.approvedByTitle, 'Director, NFTI')}
+                    {renderPositions(sigs.approvedByTitle, 'Director, NFSTI')}
                   </div>
                 </div>
 
@@ -1362,10 +1356,10 @@ function ReportPreviewContent() {
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                        {sigs.verifiedByName || 'JAMES CHRISTOPHER G. BANAAG'}
+                        {sigs.verifiedByName}
                       </p>
                     </div>
-                    {renderPositions(sigs.verifiedByTitle, 'State Auditor IV / Audit Team Leader, RO IVA')}
+                    {renderPositions(sigs.verifiedByTitle, 'State Auditor IV/ Audit Team Leader, RO IV A')}
                   </div>
                 </div>
               </div>
@@ -1656,30 +1650,30 @@ function ReportPreviewContent() {
                     <div className="space-y-1">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                          {sigs.member1Name || 'MONALIZA A. RAQUIÑO'}
+                          {sigs.member1Name}
                         </p>
                       </div>
-                      {renderPositions(sigs.member1Title, 'Member, NFTI Inventory Committee / Supply Officer, NFTI')}
+                      {renderPositions(sigs.member1Title, 'Supply Accountable Officer')}
                     </div>
 
                     {/* Member 2 */}
                     <div className="space-y-1">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                          {sigs.member2Name || 'DIONICIA A. BIDES'}
+                          {sigs.member2Name}
                         </p>
                       </div>
-                      {renderPositions(sigs.member2Title, 'Member, NFTI Inventory Committee / Budget Officer, NFTI')}
+                      {renderPositions(sigs.member2Title, 'Budget Officer')}
                     </div>
 
                     {/* Chairperson */}
                     <div className="space-y-1">
                       <div className="min-h-[28px] flex items-end">
                         <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                          {sigs.certifiedCorrectByName || 'ENGR. DOSMEDO G. TABRILLA, MPSA'}
+                          {sigs.certifiedCorrectByName}
                         </p>
                       </div>
-                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI')}
+                      {renderPositions(sigs.certifiedCorrectByTitle, 'Chief, Admin')}
                     </div>
                   </div>
                 </div>
@@ -1690,10 +1684,10 @@ function ReportPreviewContent() {
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                        {sigs.approvedByName || 'FCSUPT BELINDA B. OCHAVE'}
+                        {sigs.approvedByName}
                       </p>
                     </div>
-                    {renderPositions(sigs.approvedByTitle, 'Director, NFTI')}
+                    {renderPositions(sigs.approvedByTitle, 'Director, NFSTI')}
                   </div>
                 </div>
 
@@ -1703,10 +1697,10 @@ function ReportPreviewContent() {
                   <div className="space-y-1">
                     <div className="min-h-[28px] flex items-end">
                       <p className="font-extrabold uppercase border-b border-black pb-0.5 inline-block text-[11px] text-black">
-                        {sigs.verifiedByName || 'JAMES CHRISTOPHER G. BANAAG'}
+                        {sigs.verifiedByName}
                       </p>
                     </div>
-                    {renderPositions(sigs.verifiedByTitle, 'State Auditor IV / Audit Team Leader, RO IVA')}
+                    {renderPositions(sigs.verifiedByTitle, 'State Auditor IV/ Audit Team Leader, RO IV A')}
                   </div>
                 </div>
               </div>

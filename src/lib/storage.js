@@ -10,26 +10,26 @@ export const initialRoles = [
 
 export const initialSignatoriesConfig = {
   // Certified Correct by (Inventory Committee)
-  member1Name: 'MONALIZA A. RAQUIÑO',
-  member1Title: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
-  member2Name: 'DIONICIA A. BIDES',
-  member2Title: 'Member, NFTI Inventory Committee / Budget Officer, NFTI',
-  certifiedCorrectByName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
-  certifiedCorrectByTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
+  member1Name: 'ELMER G. DOLOTALLAS',
+  member1Title: 'Supply Accountable Officer',
+  member2Name: 'GLORIA C. PERIDO',
+  member2Title: 'Budget Officer',
+  certifiedCorrectByName: 'MA. CARLA G. FELIPE, RN',
+  certifiedCorrectByTitle: 'Chief, Admin',
 
   // Approved by (Director)
-  approvedByName: 'FCSUPT BELINDA B. OCHAVE',
-  approvedByTitle: 'Director, NFTI',
+  approvedByName: 'ATTY. ERCY NANETTE P MADRIAGA, DPSSG',
+  approvedByTitle: 'Director, NFSTI',
 
   // Verified by (State Auditor)
-  verifiedByName: 'JAMES CHRISTOPHER G. BANAAG',
-  verifiedByTitle: 'State Auditor IV / Audit Team Leader, RO IVA',
+  verifiedByName: 'YVES ARDEN CABANLONG',
+  verifiedByTitle: 'State Auditor IV/ Audit Team Leader, RO IV A',
 
-  // Backward compatibility aliases
-  preparedByName: 'MONALIZA A. RAQUIÑO',
-  preparedByTitle: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
-  teamLeaderName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
-  teamLeaderTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
+  // Aliases for compatibility
+  preparedByName: 'ELMER G. DOLOTALLAS',
+  preparedByTitle: 'Supply Accountable Officer',
+  teamLeaderName: 'GLORIA C. PERIDO',
+  teamLeaderTitle: 'Budget Officer',
   member3Name: '',
   member3Title: '',
   member4Name: '',

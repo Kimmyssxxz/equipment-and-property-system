@@ -174,7 +174,21 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
           StorageManager.saveSettings(mergedSettings);
         }
         if (data.signatories && Object.keys(data.signatories).length > 0) {
-          const mergedSigs = { ...StorageManager.getSignatoriesConfig(), ...data.signatories };
+          const mergedSigs = {
+            ...initialSignatoriesConfig,
+            ...StorageManager.getSignatoriesConfig(),
+            ...data.signatories,
+            member1Name: data.signatories.member1Name || data.signatories.preparedByName || initialSignatoriesConfig.member1Name,
+            member1Title: data.signatories.member1Title || data.signatories.preparedByTitle || initialSignatoriesConfig.member1Title,
+            member2Name: data.signatories.member2Name || data.signatories.teamLeaderName || initialSignatoriesConfig.member2Name,
+            member2Title: data.signatories.member2Title || data.signatories.teamLeaderTitle || initialSignatoriesConfig.member2Title,
+            certifiedCorrectByName: data.signatories.certifiedCorrectByName || initialSignatoriesConfig.certifiedCorrectByName,
+            certifiedCorrectByTitle: data.signatories.certifiedCorrectByTitle || initialSignatoriesConfig.certifiedCorrectByTitle,
+            approvedByName: data.signatories.approvedByName || initialSignatoriesConfig.approvedByName,
+            approvedByTitle: data.signatories.approvedByTitle || initialSignatoriesConfig.approvedByTitle,
+            verifiedByName: data.signatories.verifiedByName || initialSignatoriesConfig.verifiedByName,
+            verifiedByTitle: data.signatories.verifiedByTitle || initialSignatoriesConfig.verifiedByTitle,
+          };
           setSignatories(mergedSigs);
           StorageManager.saveSignatoriesConfig(mergedSigs);
         }
@@ -253,12 +267,23 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
     e.preventDefault();
     setIsSaving(true);
     try {
-      StorageManager.saveSignatoriesConfig(signatories);
+      const payloadSignatories = {
+        ...signatories,
+        preparedByName: signatories.member1Name || signatories.preparedByName || '',
+        preparedByTitle: signatories.member1Title || signatories.preparedByTitle || '',
+        teamLeaderName: signatories.member2Name || signatories.teamLeaderName || '',
+        teamLeaderTitle: signatories.member2Title || signatories.teamLeaderTitle || '',
+        member1Name: signatories.member1Name || signatories.preparedByName || '',
+        member1Title: signatories.member1Title || signatories.preparedByTitle || '',
+        member2Name: signatories.member2Name || signatories.teamLeaderName || '',
+        member2Title: signatories.member2Title || signatories.teamLeaderTitle || '',
+      };
+      StorageManager.saveSignatoriesConfig(payloadSignatories);
 
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signatories }),
+        body: JSON.stringify({ signatories: payloadSignatories }),
       });
       const data = await res.json();
 
@@ -567,14 +592,14 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                         type="text"
                         value={signatories.member1Name || ''}
                         onChange={(e) => setSignatories({ ...signatories, member1Name: e.target.value })}
-                        placeholder="e.g. MONALIZA A. RAQUIÑO"
+                        placeholder="e.g. ELMER G. DOLOTALLAS"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
                       />
                       <input
                         type="text"
                         value={signatories.member1Title || ''}
                         onChange={(e) => setSignatories({ ...signatories, member1Title: e.target.value })}
-                        placeholder="Member, NFTI Inventory Committee / Supply Officer, NFTI"
+                        placeholder="Supply Accountable Officer"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
                       />
                     </div>
@@ -588,14 +613,14 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                         type="text"
                         value={signatories.member2Name || ''}
                         onChange={(e) => setSignatories({ ...signatories, member2Name: e.target.value })}
-                        placeholder="e.g. DIONICIA A. BIDES"
+                        placeholder="e.g. GLORIA C. PERIDO"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
                       />
                       <input
                         type="text"
                         value={signatories.member2Title || ''}
                         onChange={(e) => setSignatories({ ...signatories, member2Title: e.target.value })}
-                        placeholder="Member, NFTI Inventory Committee / Budget Officer, NFTI"
+                        placeholder="Budget Officer"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
                       />
                     </div>
@@ -609,14 +634,14 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                         type="text"
                         value={signatories.certifiedCorrectByName || ''}
                         onChange={(e) => setSignatories({ ...signatories, certifiedCorrectByName: e.target.value })}
-                        placeholder="e.g. ENGR. DOSMEDO G. TABRILLA, MPSA"
+                        placeholder="e.g. MA. CARLA G. FELIPE, RN"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
                       />
                       <input
                         type="text"
                         value={signatories.certifiedCorrectByTitle || ''}
                         onChange={(e) => setSignatories({ ...signatories, certifiedCorrectByTitle: e.target.value })}
-                        placeholder="Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI"
+                        placeholder="Chief, Admin"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
                       />
                     </div>
@@ -633,14 +658,14 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                       type="text"
                       value={signatories.approvedByName || ''}
                       onChange={(e) => setSignatories({ ...signatories, approvedByName: e.target.value })}
-                      placeholder="e.g. FCSUPT BELINDA B. OCHAVE"
+                      placeholder="e.g. ATTY. ERCY NANETTE P MADRIAGA, DPSSG"
                       className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
                     />
                     <input
                       type="text"
                       value={signatories.approvedByTitle || ''}
                       onChange={(e) => setSignatories({ ...signatories, approvedByTitle: e.target.value })}
-                      placeholder="e.g. Director, NFTI"
+                      placeholder="e.g. Director, NFSTI"
                       className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
                     />
                   </div>
@@ -654,14 +679,14 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                       type="text"
                       value={signatories.verifiedByName || ''}
                       onChange={(e) => setSignatories({ ...signatories, verifiedByName: e.target.value })}
-                      placeholder="e.g. JAMES CHRISTOPHER G. BANAAG"
+                      placeholder="e.g. YVES ARDEN CABANLONG"
                       className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
                     />
                     <input
                       type="text"
                       value={signatories.verifiedByTitle || ''}
                       onChange={(e) => setSignatories({ ...signatories, verifiedByTitle: e.target.value })}
-                      placeholder="e.g. State Auditor IV / Audit Team Leader, RO IVA"
+                      placeholder="e.g. State Auditor IV/ Audit Team Leader, RO IV A"
                       className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600"
                     />
                   </div>

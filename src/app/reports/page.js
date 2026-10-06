@@ -137,23 +137,23 @@ function ReportsContent() {
   // Custom Signatories Form Toggle
   const [showSignatoriesConfig, setShowSignatoriesConfig] = useState(false);
   const [customSignatories, setCustomSignatories] = useState({
-    member1Name: 'MONALIZA A. RAQUIÑO',
-    member1Title: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
-    member2Name: 'DIONICIA A. BIDES',
-    member2Title: 'Member, NFTI Inventory Committee / Budget Officer, NFTI',
-    certifiedCorrectByName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
-    certifiedCorrectByTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
-    approvedByName: 'FCSUPT BELINDA B. OCHAVE',
-    approvedByTitle: 'Director, NFTI',
-    verifiedByName: 'JAMES CHRISTOPHER G. BANAAG',
-    verifiedByTitle: 'State Auditor IV / Audit Team Leader, RO IVA',
+    member1Name: 'ELMER G. DOLOTALLAS',
+    member1Title: 'Supply Accountable Officer',
+    member2Name: 'GLORIA C. PERIDO',
+    member2Title: 'Budget Officer',
+    certifiedCorrectByName: 'MA. CARLA G. FELIPE, RN',
+    certifiedCorrectByTitle: 'Chief, Admin',
+    approvedByName: 'ATTY. ERCY NANETTE P MADRIAGA, DPSSG',
+    approvedByTitle: 'Director, NFSTI',
+    verifiedByName: 'YVES ARDEN CABANLONG',
+    verifiedByTitle: 'State Auditor IV/ Audit Team Leader, RO IV A',
     member3Name: '',
     member4Name: '',
     member5Name: '',
-    preparedByName: 'MONALIZA A. RAQUIÑO',
-    preparedByTitle: 'Member, NFTI Inventory Committee / Supply Officer, NFTI',
-    teamLeaderName: 'ENGR. DOSMEDO G. TABRILLA, MPSA',
-    teamLeaderTitle: 'Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI',
+    preparedByName: 'ELMER G. DOLOTALLAS',
+    preparedByTitle: 'Supply Accountable Officer',
+    teamLeaderName: 'GLORIA C. PERIDO',
+    teamLeaderTitle: 'Budget Officer',
   });
 
   const [notification, setNotification] = useState(null);
@@ -217,7 +217,20 @@ function ReportsContent() {
       setReports(reps);
       setSessions(sessList);
       if (sigs && Object.keys(sigs).length > 0) {
-        setCustomSignatories((prev) => ({ ...prev, ...sigs }));
+        setCustomSignatories((prev) => ({
+          ...prev,
+          ...sigs,
+          member1Name: sigs.member1Name || sigs.preparedByName || prev.member1Name,
+          member1Title: sigs.member1Title || sigs.preparedByTitle || prev.member1Title,
+          member2Name: sigs.member2Name || sigs.teamLeaderName || prev.member2Name,
+          member2Title: sigs.member2Title || sigs.teamLeaderTitle || prev.member2Title,
+          certifiedCorrectByName: sigs.certifiedCorrectByName || prev.certifiedCorrectByName,
+          certifiedCorrectByTitle: sigs.certifiedCorrectByTitle || prev.certifiedCorrectByTitle,
+          approvedByName: sigs.approvedByName || prev.approvedByName,
+          approvedByTitle: sigs.approvedByTitle || prev.approvedByTitle,
+          verifiedByName: sigs.verifiedByName || prev.verifiedByName,
+          verifiedByTitle: sigs.verifiedByTitle || prev.verifiedByTitle,
+        }));
       }
       setDbConnected(true);
 
@@ -775,14 +788,14 @@ function ReportsContent() {
                           value={customSignatories.member1Name || ''}
                           onChange={(e) => setCustomSignatories({ ...customSignatories, member1Name: e.target.value })}
                           className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="e.g. MONALIZA A. RAQUIÑO"
+                          placeholder="e.g. ELMER G. DOLOTALLAS"
                         />
                         <input
                           type="text"
                           value={customSignatories.member1Title || ''}
                           onChange={(e) => setCustomSignatories({ ...customSignatories, member1Title: e.target.value })}
                           className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
-                          placeholder="Member, NFTI Inventory Committee / Supply Officer, NFTI"
+                          placeholder="Supply Accountable Officer"
                         />
                       </div>
 
@@ -796,14 +809,14 @@ function ReportsContent() {
                           value={customSignatories.member2Name || ''}
                           onChange={(e) => setCustomSignatories({ ...customSignatories, member2Name: e.target.value })}
                           className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="e.g. DIONICIA A. BIDES"
+                          placeholder="e.g. GLORIA C. PERIDO"
                         />
                         <input
                           type="text"
                           value={customSignatories.member2Title || ''}
                           onChange={(e) => setCustomSignatories({ ...customSignatories, member2Title: e.target.value })}
                           className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
-                          placeholder="Member, NFTI Inventory Committee / Budget Officer, NFTI"
+                          placeholder="Budget Officer"
                         />
                       </div>
 
@@ -817,14 +830,14 @@ function ReportsContent() {
                           value={customSignatories.certifiedCorrectByName || ''}
                           onChange={(e) => setCustomSignatories({ ...customSignatories, certifiedCorrectByName: e.target.value })}
                           className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="e.g. ENGR. DOSMEDO G. TABRILLA, MPSA"
+                          placeholder="e.g. MA. CARLA G. FELIPE, RN"
                         />
                         <input
                           type="text"
                           value={customSignatories.certifiedCorrectByTitle || ''}
                           onChange={(e) => setCustomSignatories({ ...customSignatories, certifiedCorrectByTitle: e.target.value })}
                           className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
-                          placeholder="Chairperson, NFTI Inventory Committee / OIC, Admin, NFTI"
+                          placeholder="Chief, Admin"
                         />
                       </div>
                     </div>
@@ -839,14 +852,14 @@ function ReportsContent() {
                         value={customSignatories.approvedByName || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, approvedByName: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="e.g. FCSUPT BELINDA B. OCHAVE"
+                        placeholder="e.g. ATTY. ERCY NANETTE P MADRIAGA, DPSSG"
                       />
                       <input
                         type="text"
                         value={customSignatories.approvedByTitle || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, approvedByTitle: e.target.value })}
                         className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="e.g. Director, NFTI"
+                        placeholder="e.g. Director, NFSTI"
                       />
                     </div>
 
@@ -860,14 +873,14 @@ function ReportsContent() {
                         value={customSignatories.verifiedByName || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, verifiedByName: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
-                        placeholder="e.g. JAMES CHRISTOPHER G. BANAAG"
+                        placeholder="e.g. YVES ARDEN CABANLONG"
                       />
                       <input
                         type="text"
                         value={customSignatories.verifiedByTitle || ''}
                         onChange={(e) => setCustomSignatories({ ...customSignatories, verifiedByTitle: e.target.value })}
                         className="w-full px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600"
-                        placeholder="e.g. State Auditor IV / Audit Team Leader, RO IVA"
+                        placeholder="e.g. State Auditor IV/ Audit Team Leader, RO IV A"
                       />
                     </div>
                   </div>

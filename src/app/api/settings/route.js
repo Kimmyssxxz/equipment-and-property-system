@@ -73,12 +73,20 @@ export async function GET() {
         if (row.roleKey === 'preparedBy') {
           signatoriesObj.preparedByName = row.name;
           signatoriesObj.preparedByTitle = row.title;
+          if (!signatoriesObj.member1Name) {
+            signatoriesObj.member1Name = row.name;
+            signatoriesObj.member1Title = row.title;
+          }
         } else if (row.roleKey === 'certifiedCorrectBy') {
           signatoriesObj.certifiedCorrectByName = row.name;
           signatoriesObj.certifiedCorrectByTitle = row.title;
         } else if (row.roleKey === 'teamLeader') {
           signatoriesObj.teamLeaderName = row.name;
           signatoriesObj.teamLeaderTitle = row.title;
+          if (!signatoriesObj.member2Name) {
+            signatoriesObj.member2Name = row.name;
+            signatoriesObj.member2Title = row.title;
+          }
         } else if (row.roleKey === 'approvedBy') {
           signatoriesObj.approvedByName = row.name;
           signatoriesObj.approvedByTitle = row.title;
@@ -88,6 +96,13 @@ export async function GET() {
         } else if (row.roleKey?.startsWith('member')) {
           signatoriesObj[`${row.roleKey}Name`] = row.name;
           if (row.title) signatoriesObj[`${row.roleKey}Title`] = row.title;
+          if (row.roleKey === 'member1') {
+            signatoriesObj.preparedByName = row.name;
+            signatoriesObj.preparedByTitle = row.title;
+          } else if (row.roleKey === 'member2') {
+            signatoriesObj.teamLeaderName = row.name;
+            signatoriesObj.teamLeaderTitle = row.title;
+          }
         }
       });
     }
@@ -163,8 +178,8 @@ export async function POST(request) {
         {
           roleKey: 'preparedBy',
           label: 'Prepared by',
-          name: signatories.preparedByName || '',
-          title: signatories.preparedByTitle || '',
+          name: signatories.member1Name || signatories.preparedByName || '',
+          title: signatories.member1Title || signatories.preparedByTitle || '',
           order: 1,
         },
         {
@@ -177,8 +192,8 @@ export async function POST(request) {
         {
           roleKey: 'teamLeader',
           label: 'Team Leader',
-          name: signatories.teamLeaderName || '',
-          title: signatories.teamLeaderTitle || '',
+          name: signatories.member2Name || signatories.teamLeaderName || '',
+          title: signatories.member2Title || signatories.teamLeaderTitle || '',
           order: 3,
         },
         {
@@ -198,12 +213,19 @@ export async function POST(request) {
       ];
 
       ['member1', 'member2', 'member3', 'member4', 'member5'].forEach((mKey, idx) => {
-        if (signatories[`${mKey}Name`] !== undefined) {
+        const valName = signatories[`${mKey}Name`] !== undefined
+          ? signatories[`${mKey}Name`]
+          : (mKey === 'member1' ? signatories.preparedByName : mKey === 'member2' ? signatories.teamLeaderName : undefined);
+        const valTitle = signatories[`${mKey}Title`] !== undefined
+          ? signatories[`${mKey}Title`]
+          : (mKey === 'member1' ? signatories.preparedByTitle : mKey === 'member2' ? signatories.teamLeaderTitle : undefined);
+
+        if (valName !== undefined || signatories[`${mKey}Name`] !== undefined) {
           sigRowsToUpsert.push({
             roleKey: mKey,
             label: `Inventory Member ${idx + 1}`,
-            name: signatories[`${mKey}Name`] || '',
-            title: signatories[`${mKey}Title`] || '',
+            name: valName || '',
+            title: valTitle || '',
             order: 6 + idx,
           });
         }
