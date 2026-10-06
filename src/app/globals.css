@@ -48,8 +48,54 @@ button, input, select, textarea, optgroup {
   background: #94a3b8;
 }
 
+/* Global Top-Level Zero-Margin Page Rules to eliminate browser default header (Date/Time & Title) and footer (URL & Page Number) */
+@page {
+  size: auto;
+  margin: 0mm !important;
+}
+
+@page :left {
+  margin: 0mm !important;
+}
+
+@page :right {
+  margin: 0mm !important;
+}
+
+@page :first {
+  margin: 0mm !important;
+}
+
+@page landscape-report {
+  size: 13in 8.5in;
+  margin: 0mm !important;
+}
+
 /* Print styling for formal Government Property & Equipment Reports and Property Stickers */
 @media print {
+  @page {
+    size: auto;
+    margin: 0mm !important;
+  }
+
+  @page :left {
+    margin: 0mm !important;
+  }
+
+  @page :right {
+    margin: 0mm !important;
+  }
+
+  @page :first {
+    margin: 0mm !important;
+  }
+
+  @page landscape-report {
+    size: 13in 8.5in;
+    margin: 0mm !important;
+  }
+
+  html,
   body {
     background: #ffffff !important;
     background-image: none !important;
@@ -58,18 +104,6 @@ button, input, select, textarea, optgroup {
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-  }
-
-  /* Default page rule: A4 portrait with zero margin for exact edge-to-edge coupon bond sizing */
-  @page {
-    size: A4 portrait;
-    margin: 0 !important;
-  }
-
-  /* Official Philippine Long Bond Paper (Folio) Landscape for official inventory reports */
-  @page landscape-report {
-    size: 13in 8.5in;
-    margin: 0 !important;
   }
 
   .report-sheet {

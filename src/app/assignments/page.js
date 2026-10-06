@@ -243,11 +243,21 @@ function AssignmentsContent() {
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
 
-  const handlePrintAllStickers = () => {
-    setSelectedAssignmentForTag(null);
+  const triggerPrint = (setupAction) => {
+    if (setupAction) setupAction();
+    const originalTitle = typeof document !== 'undefined' ? document.title : '';
+    if (typeof document !== 'undefined') document.title = '';
     setTimeout(() => {
       window.print();
-    }, 50);
+      setTimeout(() => {
+        if (typeof document !== 'undefined') document.title = originalTitle;
+      }, 500);
+    }, 60);
+  };
+
+  const handlePrintAllStickers = () => {
+    setSelectedAssignmentForTag(null);
+    triggerPrint();
   };
 
   // Selected Property Object
@@ -665,8 +675,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
                   <>
                     <button
                       onClick={() => {
-                        setSelectedAssignmentForTag(notification.createdItem);
-                        setTimeout(() => window.print(), 50);
+                        triggerPrint(() => setSelectedAssignmentForTag(notification.createdItem));
                       }}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
                     >
@@ -1269,8 +1278,7 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
 
                             <button
                               onClick={() => {
-                                setSelectedAssignmentForTag(h);
-                                setTimeout(() => window.print(), 50);
+                                triggerPrint(() => setSelectedAssignmentForTag(h));
                               }}
                               className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer"
                               title="Print Property QR Code Sticker Tag"
@@ -1490,6 +1498,12 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
           {/* Property QR Code Sticker Tag Printable Container (Direct Print) */}
           {selectedAssignmentForTag && (
             <div className="hidden print:block">
+              <style dangerouslySetInnerHTML={{ __html: `
+                @page { size: auto; margin: 0mm !important; }
+                @page :left { margin: 0mm !important; }
+                @page :right { margin: 0mm !important; }
+                @page :first { margin: 0mm !important; }
+              ` }} />
               {/* Printable Horizontal Rectangular Property Sticker Card */}
               <div
                 id="property-tag-print-area"
@@ -1738,6 +1752,12 @@ CREATE POLICY "Allow full access to property_assignments" ON "property_assignmen
           {/* Printable Batch Property QR Code Stickers Layout (Hidden on screen, active directly during window.print()) */}
 
           <div className="hidden print:block">
+            <style dangerouslySetInnerHTML={{ __html: `
+              @page { size: auto; margin: 0mm !important; }
+              @page :left { margin: 0mm !important; }
+              @page :right { margin: 0mm !important; }
+              @page :first { margin: 0mm !important; }
+            ` }} />
             {stickerPages.map((pageItems, pageIdx) => (
               <div key={pageIdx} className="no-break-page flex flex-col items-center print:block print:w-[210mm] print:h-[297mm] print:m-0 print:p-0">
                 {/* A4 Sheet Container - Edge to Edge Coupon Bond Paper (No Outer Rounded Box) */}
