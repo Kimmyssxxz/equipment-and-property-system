@@ -141,13 +141,14 @@ function ReportsContent() {
     member1Title: 'Supply Accountable Officer',
     member2Name: 'GLORIA C. PERIDO',
     member2Title: 'Budget Officer',
+    member3Name: 'JENELYN N. EDEN',
+    member3Title: 'Supply Section Representative',
     certifiedCorrectByName: 'MA. CARLA G. FELIPE, RN',
     certifiedCorrectByTitle: 'Chief, Admin',
     approvedByName: 'ATTY. ERCY NANETTE P MADRIAGA, DPSSG',
     approvedByTitle: 'Director, NFSTI',
     verifiedByName: 'YVES ARDEN CABANLONG',
     verifiedByTitle: 'State Auditor IV/ Audit Team Leader, RO IV A',
-    member3Name: '',
     member4Name: '',
     member5Name: '',
     preparedByName: 'ELMER G. DOLOTALLAS',
@@ -773,11 +774,11 @@ function ReportsContent() {
                         1. Certified Correct by (Inventory Committee)
                       </span>
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                        3 Committee Signatories
+                        4 Committee Signatories
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {/* Member 1 */}
                       <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                         <label className="block text-[10px] font-bold text-slate-600 uppercase">
@@ -817,6 +818,27 @@ function ReportsContent() {
                           onChange={(e) => setCustomSignatories({ ...customSignatories, member2Title: e.target.value })}
                           className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
                           placeholder="Budget Officer"
+                        />
+                      </div>
+
+                      {/* Member 3 */}
+                      <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase">
+                          Member 3 (Committee Member)
+                        </label>
+                        <input
+                          type="text"
+                          value={customSignatories.member3Name || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, member3Name: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="e.g. JENELYN N. EDEN"
+                        />
+                        <input
+                          type="text"
+                          value={customSignatories.member3Title || ''}
+                          onChange={(e) => setCustomSignatories({ ...customSignatories, member3Title: e.target.value })}
+                          className="w-full px-3 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600"
+                          placeholder="Supply Section Representative"
                         />
                       </div>
 

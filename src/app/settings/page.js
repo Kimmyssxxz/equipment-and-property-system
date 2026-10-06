@@ -182,6 +182,8 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
             member1Title: data.signatories.member1Title || data.signatories.preparedByTitle || initialSignatoriesConfig.member1Title,
             member2Name: data.signatories.member2Name || data.signatories.teamLeaderName || initialSignatoriesConfig.member2Name,
             member2Title: data.signatories.member2Title || data.signatories.teamLeaderTitle || initialSignatoriesConfig.member2Title,
+            member3Name: data.signatories.member3Name || initialSignatoriesConfig.member3Name,
+            member3Title: data.signatories.member3Title || initialSignatoriesConfig.member3Title,
             certifiedCorrectByName: data.signatories.certifiedCorrectByName || initialSignatoriesConfig.certifiedCorrectByName,
             certifiedCorrectByTitle: data.signatories.certifiedCorrectByTitle || initialSignatoriesConfig.certifiedCorrectByTitle,
             approvedByName: data.signatories.approvedByName || initialSignatoriesConfig.approvedByName,
@@ -574,19 +576,19 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                         1. Certified Correct by (Inventory Committee)
                       </span>
                       <p className="text-[11px] text-slate-500">
-                        Naglalaman ng 2 Committee Members at 1 Chairperson para sa physical inventory verification.
+                        Naglalaman ng 3 Committee Members at 1 Chairperson para sa physical inventory verification.
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                      3 Committee Columns
+                      4 Committee Columns
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Member 1 */}
                     <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
                       <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                        Member 1 (e.g. Supply Officer)
+                        Member 1 (Supply Officer)
                       </span>
                       <input
                         type="text"
@@ -607,7 +609,7 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                     {/* Member 2 */}
                     <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
                       <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                        Member 2 (e.g. Budget Officer)
+                        Member 2 (Budget Officer)
                       </span>
                       <input
                         type="text"
@@ -621,6 +623,27 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
                         value={signatories.member2Title || ''}
                         onChange={(e) => setSignatories({ ...signatories, member2Title: e.target.value })}
                         placeholder="Budget Officer"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
+                      />
+                    </div>
+
+                    {/* Member 3 */}
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                        Member 3 (Committee Member)
+                      </span>
+                      <input
+                        type="text"
+                        value={signatories.member3Name || ''}
+                        onChange={(e) => setSignatories({ ...signatories, member3Name: e.target.value })}
+                        placeholder="e.g. JENELYN N. EDEN"
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
+                      />
+                      <input
+                        type="text"
+                        value={signatories.member3Title || ''}
+                        onChange={(e) => setSignatories({ ...signatories, member3Title: e.target.value })}
+                        placeholder="Supply Section Representative"
                         className="w-full px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
                       />
                     </div>

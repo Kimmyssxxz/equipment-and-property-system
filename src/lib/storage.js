@@ -14,6 +14,8 @@ export const initialSignatoriesConfig = {
   member1Title: 'Supply Accountable Officer',
   member2Name: 'GLORIA C. PERIDO',
   member2Title: 'Budget Officer',
+  member3Name: 'JENELYN N. EDEN',
+  member3Title: 'Supply Section Representative',
   certifiedCorrectByName: 'MA. CARLA G. FELIPE, RN',
   certifiedCorrectByTitle: 'Chief, Admin',
 
@@ -30,8 +32,6 @@ export const initialSignatoriesConfig = {
   preparedByTitle: 'Supply Accountable Officer',
   teamLeaderName: 'GLORIA C. PERIDO',
   teamLeaderTitle: 'Budget Officer',
-  member3Name: '',
-  member3Title: '',
   member4Name: '',
   member4Title: '',
   member5Name: '',
