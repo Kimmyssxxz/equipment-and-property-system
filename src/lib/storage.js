@@ -64,18 +64,34 @@ const baseStorageManager = {
   getActiveUser: () => {
     if (typeof window === 'undefined') {
       return {
+        username: 'edolotallas',
         name: 'Elmer G. Dolotallas',
+        fullName: 'Elmer G. Dolotallas',
         role: 'Admin',
         position: 'Supply Officer / Admin',
         initials: 'ED',
       };
     }
     try {
-      const item = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER);
-      if (item) return JSON.parse(item);
+      const item = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER) || localStorage.getItem('nfsti_user_session');
+      if (item) {
+        const parsed = JSON.parse(item);
+        if (parsed) {
+          if (!parsed.username) {
+            if (parsed.name?.toLowerCase().includes('queenie') || parsed.fullName?.toLowerCase().includes('queenie')) {
+              parsed.username = 'queenie_ppsc';
+            } else {
+              parsed.username = 'edolotallas';
+            }
+          }
+          return parsed;
+        }
+      }
     } catch (e) {}
     return {
+      username: 'edolotallas',
       name: 'Elmer G. Dolotallas',
+      fullName: 'Elmer G. Dolotallas',
       role: 'Admin',
       position: 'Supply Officer / Admin',
       initials: 'ED',
@@ -141,3 +157,36 @@ export const StorageManager = new Proxy(baseStorageManager, {
     };
   },
 });
+
+/**
+ * Universal authenticated & scoped fetch wrapper for client components
+ */
+export async function authFetch(url, options = {}) {
+  let activeUser = null;
+  if (typeof window !== 'undefined') {
+    activeUser = StorageManager.getActiveUser();
+  }
+  const username = activeUser?.username || '';
+
+  let finalUrl = url;
+  if (username) {
+    const separator = finalUrl.includes('?') ? '&' : '?';
+    if (!finalUrl.includes('username=') && !finalUrl.includes('user=')) {
+      finalUrl = `${finalUrl}${separator}username=${encodeURIComponent(username)}`;
+    }
+  }
+
+  const headers = {
+    ...(options.headers || {}),
+  };
+  if (username) {
+    headers['x-user-username'] = username;
+  }
+
+  return fetch(finalUrl, {
+    ...options,
+    headers,
+    credentials: options.credentials || 'include',
+  });
+}
+

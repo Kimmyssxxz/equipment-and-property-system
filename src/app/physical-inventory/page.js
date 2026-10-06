@@ -41,7 +41,7 @@ import {
   Database,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 
 const CameraQRScanner = dynamic(() => import('@/components/CameraQRScanner'), {
@@ -185,19 +185,22 @@ export default function PhysicalInventoryPage() {
       setProperties(props);
       setAssignmentsHistory(asgns);
 
-      // Fetch all entities concurrently from API endpoints
+      // Fetch all entities concurrently from API endpoints (User-Scoped)
       let loadedSessions = [];
       let loadedCounts = [];
 
       try {
+        const activeUser = StorageManager.getActiveUser();
+        const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
         const [sessRes, cntsRes, propsRes, asgnRes, empRes, offRes, catRes] = await Promise.all([
-          fetch('/api/inventory-sessions', { cache: 'no-store' }),
-          fetch('/api/physical-counts', { cache: 'no-store' }),
-          fetch('/api/properties', { cache: 'no-store' }),
-          fetch('/api/assignments', { cache: 'no-store' }),
-          fetch('/api/personnel', { cache: 'no-store' }),
-          fetch('/api/offices', { cache: 'no-store' }),
-          fetch('/api/categories', { cache: 'no-store' }),
+          authFetch('/api/inventory-sessions', { cache: 'no-store' }),
+          authFetch('/api/physical-counts', { cache: 'no-store' }),
+          authFetch('/api/properties', { cache: 'no-store' }),
+          authFetch('/api/assignments', { cache: 'no-store' }),
+          authFetch('/api/personnel', { cache: 'no-store' }),
+          authFetch('/api/offices', { cache: 'no-store' }),
+          authFetch('/api/categories', { cache: 'no-store' }),
         ]);
 
         const [sessData, cntsData, propsData, asgnData, empData, offData, catData] = await Promise.all([
@@ -213,41 +216,72 @@ export default function PhysicalInventoryPage() {
         if (catData.success && Array.isArray(catData.categories)) {
           setCategories(catData.categories);
           StorageManager.saveCategories(catData.categories);
+        } else {
+          setCategories([]);
         }
 
         if (offData.success && Array.isArray(offData.offices)) {
-          setOffices(offData.offices);
-          StorageManager.saveOffices(offData.offices);
+          const userOffs = offData.offices.filter(
+            (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
+          setOffices(userOffs);
+          StorageManager.saveOffices(userOffs);
+        } else {
+          setOffices([]);
         }
 
         if (empData.success && (Array.isArray(empData.personnel) || Array.isArray(empData.employees))) {
-          const empArr = empData.personnel || empData.employees;
+          const empArr = (empData.personnel || empData.employees).filter(
+            (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
           setEmployees(empArr);
           StorageManager.saveEmployees(empArr);
+        } else {
+          setEmployees([]);
         }
 
         if (asgnData.success && Array.isArray(asgnData.assignments)) {
-          setAssignmentsHistory(asgnData.assignments);
-          StorageManager.saveAssignmentsHistory(asgnData.assignments);
+          const userAsgns = asgnData.assignments.filter(
+            (a) =>
+              (a.transferredBy || a.encodedBy || 'edolotallas').toLowerCase().includes(currentUsername) ||
+              (a.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
+          setAssignmentsHistory(userAsgns);
+          StorageManager.saveAssignmentsHistory(userAsgns);
+        } else {
+          setAssignmentsHistory([]);
         }
 
         if (sessRes.ok && sessData.success && Array.isArray(sessData.sessions)) {
           setDbConnected(true);
-          loadedSessions = sessData.sessions;
-          StorageManager.saveInventorySessions?.(sessData.sessions);
+          loadedSessions = sessData.sessions.filter((s) => {
+            const invP = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || '').toLowerCase();
+            if (currentUsername === 'queenie_ppsc') return invP.includes('queenie');
+            if (currentUsername === 'edolotallas') return !invP.includes('queenie');
+            return invP.includes(currentUsername);
+          });
+          StorageManager.saveInventorySessions?.(loadedSessions);
         } else {
-          loadedSessions = StorageManager.getInventorySessions();
+          loadedSessions = [];
         }
 
         if (cntsRes.ok && cntsData.success && Array.isArray(cntsData.counts)) {
-          loadedCounts = cntsData.counts;
-          StorageManager.savePhysicalCounts?.(cntsData.counts);
+          loadedCounts = cntsData.counts.filter((c) => {
+            const cntP = (c.countedBy || '').toLowerCase();
+            if (currentUsername === 'queenie_ppsc') return cntP.includes('queenie');
+            if (currentUsername === 'edolotallas') return !cntP.includes('queenie');
+            return cntP.includes(currentUsername);
+          });
+          StorageManager.savePhysicalCounts?.(loadedCounts);
         } else {
-          loadedCounts = StorageManager.getPhysicalCounts();
+          loadedCounts = [];
         }
 
-        if (propsRes.ok && propsData.success && Array.isArray(propsData.properties) && propsData.properties.length > 0) {
-          const apiProps = propsData.properties.map((p) => ({
+        if (propsRes.ok && propsData.success && Array.isArray(propsData.properties)) {
+          const userProps = propsData.properties.filter(
+            (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
+          const apiProps = userProps.map((p) => ({
             ...p,
             propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
             article: p.article || p.name || 'Equipment Item',
@@ -258,19 +292,21 @@ export default function PhysicalInventoryPage() {
           }));
           setProperties(apiProps);
           StorageManager.saveProperties(apiProps);
+        } else {
+          setProperties([]);
         }
       } catch (apiErr) {
-        console.warn('API fetch notice, using local cache:', apiErr);
-        loadedSessions = StorageManager.getInventorySessions();
-        loadedCounts = StorageManager.getPhysicalCounts();
+        console.warn('API fetch notice:', apiErr);
+        loadedSessions = [];
+        loadedCounts = [];
       }
 
       setSessions(loadedSessions);
       setAllCounts(loadedCounts);
     } catch (e) {
       console.error('Error loading inventory data:', e);
-      setSessions(StorageManager.getInventorySessions());
-      setAllCounts(StorageManager.getPhysicalCounts());
+      setSessions([]);
+      setAllCounts([]);
     } finally {
       setLoading(false);
     }

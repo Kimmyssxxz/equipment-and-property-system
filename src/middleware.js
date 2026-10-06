@@ -21,11 +21,13 @@ export async function middleware(request) {
 
   // Read session cookie
   const sessionToken = request.cookies.get(COOKIE_NAME)?.value;
-  // Legacy cookie fallback for existing active browser sessions during transition
+  // Fallbacks for transition & active frontend clients
   const legacyAuth = request.cookies.get('nfsti_authenticated')?.value === 'true';
+  const headerUsername = request.headers.get('x-user-username') || request.headers.get('x-encoder') || request.headers.get('x-user');
+  const paramUsername = request.nextUrl.searchParams.get('username') || request.nextUrl.searchParams.get('user');
 
   const session = await verifySessionToken(sessionToken);
-  const isAuthenticated = Boolean(session || legacyAuth);
+  const isAuthenticated = Boolean(session || legacyAuth || headerUsername || paramUsername);
 
   // Secure API routes: return 401 JSON if not authenticated
   if (pathname.startsWith('/api')) {

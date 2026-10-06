@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import {
+  getSessionUser,
+  attachEncoderToRemarks,
+  extractEncoderFromRemarks,
+  cleanRemarksForDisplay,
+} from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,8 +13,8 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch all offices from the Database
-export async function GET() {
+// GET: Fetch all offices from the Database (User-Scoped)
+export async function GET(request) {
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -27,6 +33,19 @@ export async function GET() {
         { error: 'Failed to initialize database client.', offices: [] },
         { status: 500 }
       );
+    }
+
+    const sessionUser = await getSessionUser(request);
+    let targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
+    let allowAll = false;
+
+    if (request && request.url) {
+      try {
+        const { searchParams } = new URL(request.url);
+        const uParam = searchParams.get('username') || searchParams.get('user');
+        if (uParam) targetUsername = uParam.toLowerCase().trim();
+        if (searchParams.get('all') === 'true') allowAll = true;
+      } catch (e) {}
     }
 
     const { data, error } = await supabase
@@ -53,7 +72,23 @@ export async function GET() {
       return NextResponse.json({ error: error.message, offices: [] }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, offices: data || [] }, { status: 200 });
+    let rawList = data || [];
+
+    // Filter offices by the logged in admin/encoder unless all=true
+    if (!allowAll && targetUsername) {
+      rawList = rawList.filter((off) => {
+        const encoder = extractEncoderFromRemarks(off.notes);
+        return encoder === targetUsername;
+      });
+    }
+
+    const formattedList = rawList.map((off) => ({
+      ...off,
+      notes: cleanRemarksForDisplay(off.notes),
+      encodedBy: extractEncoderFromRemarks(off.notes),
+    }));
+
+    return NextResponse.json({ success: true, offices: formattedList }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, offices: [] }, { status: 500 });
   }
@@ -80,14 +115,19 @@ export async function POST(request) {
       );
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const trimmedCode = code.trim().toUpperCase();
     const trimmedName = name.trim();
     const trimmedHead = head ? head.trim() : '';
     const trimmedEmail = email ? email.trim() : null;
     const trimmedPhone = phone ? phone.trim() : null;
     const trimmedFloor = floor ? floor.trim() : null;
-    const trimmedNotes = notes ? notes.trim() : null;
+    const trimmedNotes = notes ? notes.trim() : '';
     const officeStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+    const encodedNotes = attachEncoderToRemarks(trimmedNotes, activeUsername);
 
     // Check if code or name already exists
     const { data: existing, error: checkError } = await supabase
@@ -134,7 +174,7 @@ export async function POST(request) {
       email: trimmedEmail,
       phone: trimmedPhone,
       floor: trimmedFloor,
-      notes: trimmedNotes,
+      notes: encodedNotes,
       status: officeStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -150,8 +190,14 @@ export async function POST(request) {
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
+    const returnedOff = {
+      ...(data || newOffice),
+      notes: cleanRemarksForDisplay(encodedNotes),
+      encodedBy: activeUsername,
+    };
+
     return NextResponse.json(
-      { success: true, office: data || newOffice },
+      { success: true, office: returnedOff },
       { status: 201 }
     );
   } catch (err) {
@@ -180,14 +226,27 @@ export async function PUT(request) {
       );
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const trimmedCode = code.trim().toUpperCase();
     const trimmedName = name.trim();
     const trimmedHead = head ? head.trim() : '';
     const trimmedEmail = email ? email.trim() : null;
     const trimmedPhone = phone ? phone.trim() : null;
     const trimmedFloor = floor ? floor.trim() : null;
-    const trimmedNotes = notes ? notes.trim() : null;
+    const trimmedNotes = notes ? notes.trim() : '';
     const officeStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+    // Fetch existing office to preserve original encoder tag
+    const { data: currentOff } = await supabase
+      .from('offices')
+      .select('notes')
+      .eq('id', id)
+      .maybeSingle();
+
+    const originalEncoder = currentOff ? extractEncoderFromRemarks(currentOff.notes) : activeUsername;
+    const encodedNotes = attachEncoderToRemarks(trimmedNotes, originalEncoder);
 
     // Check collision with other offices (excluding this id)
     const { data: existing } = await supabase
@@ -222,7 +281,7 @@ export async function PUT(request) {
         email: trimmedEmail,
         phone: trimmedPhone,
         floor: trimmedFloor,
-        notes: trimmedNotes,
+        notes: encodedNotes,
         status: officeStatus,
         updatedAt: new Date().toISOString(),
       })
@@ -234,7 +293,13 @@ export async function PUT(request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, office: data }, { status: 200 });
+    const returned = {
+      ...data,
+      notes: cleanRemarksForDisplay(data.notes),
+      encodedBy: originalEncoder,
+    };
+
+    return NextResponse.json({ success: true, office: returned }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

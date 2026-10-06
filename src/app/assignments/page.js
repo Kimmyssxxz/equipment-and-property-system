@@ -35,7 +35,7 @@ import {
   Send,
   QrCode,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 
 async function parseJsonSafely(res) {
@@ -109,18 +109,21 @@ function AssignmentsContent() {
   const [isReassignSubmitting, setIsReassignSubmitting] = useState(false);
 
 
-  // Live Database Fetch
+  // Live Database Fetch (User-Scoped)
   const loadData = async () => {
     setLoading(true);
     setIsTableMissing(false);
     try {
+      const activeUser = StorageManager.getActiveUser();
+      const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
       // 1. Fetch concurrently from API endpoints
       const [asgnRes, propRes, empRes, offRes, catRes] = await Promise.all([
-        fetch('/api/assignments', { cache: 'no-store' }),
-        fetch('/api/properties', { cache: 'no-store' }),
-        fetch('/api/personnel', { cache: 'no-store' }),
-        fetch('/api/offices', { cache: 'no-store' }),
-        fetch('/api/categories', { cache: 'no-store' }),
+        authFetch('/api/assignments', { cache: 'no-store' }),
+        authFetch('/api/properties', { cache: 'no-store' }),
+        authFetch('/api/personnel', { cache: 'no-store' }),
+        authFetch('/api/offices', { cache: 'no-store' }),
+        authFetch('/api/categories', { cache: 'no-store' }),
       ]);
 
       const asgnData = await parseJsonSafely(asgnRes);
@@ -139,51 +142,61 @@ function AssignmentsContent() {
         setCategories(catData.categories);
         StorageManager.saveCategories(catData.categories);
       } else {
-        setCategories(StorageManager.getCategories() || []);
+        setCategories([]);
       }
 
       // Personnel / Employees
       if (empData.success && Array.isArray(empData.employees)) {
-        loadedEmps = empData.employees;
-        setEmployees(empData.employees);
-        StorageManager.saveEmployees(empData.employees);
+        loadedEmps = empData.employees.filter(
+          (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setEmployees(loadedEmps);
+        StorageManager.saveEmployees(loadedEmps);
       } else {
-        loadedEmps = StorageManager.getEmployees() || [];
+        loadedEmps = [];
         setEmployees(loadedEmps);
       }
 
       // Offices
       if (offData.success && Array.isArray(offData.offices)) {
-        loadedOffs = offData.offices;
-        setOffices(offData.offices);
-        StorageManager.saveOffices(offData.offices);
+        loadedOffs = offData.offices.filter(
+          (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setOffices(loadedOffs);
+        StorageManager.saveOffices(loadedOffs);
       } else {
-        loadedOffs = StorageManager.getOffices() || [];
+        loadedOffs = [];
         setOffices(loadedOffs);
       }
 
       // Properties
       if (propData.success && Array.isArray(propData.properties)) {
-        loadedProps = propData.properties;
-        setProperties(propData.properties);
-        StorageManager.saveProperties(propData.properties);
+        loadedProps = propData.properties.filter(
+          (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setProperties(loadedProps);
+        StorageManager.saveProperties(loadedProps);
       } else {
-        loadedProps = StorageManager.getProperties() || [];
+        loadedProps = [];
         setProperties(loadedProps);
       }
 
       // Assignments History
       if (asgnData.tableMissing) {
         setIsTableMissing(true);
-        loadedHistory = StorageManager.getAssignmentsHistory() || [];
+        loadedHistory = [];
         setHistory(loadedHistory);
       } else if (asgnData.success && Array.isArray(asgnData.assignments)) {
         setDbConnected(true);
-        loadedHistory = asgnData.assignments;
-        setHistory(asgnData.assignments);
-        StorageManager.saveAssignmentsHistory(asgnData.assignments);
+        loadedHistory = asgnData.assignments.filter(
+          (a) =>
+            (a.transferredBy || a.encodedBy || 'edolotallas').toLowerCase().includes(currentUsername) ||
+            (a.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setHistory(loadedHistory);
+        StorageManager.saveAssignmentsHistory(loadedHistory);
       } else {
-        loadedHistory = StorageManager.getAssignmentsHistory() || [];
+        loadedHistory = [];
         setHistory(loadedHistory);
       }
 

@@ -28,7 +28,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 function SidebarContent({ totalItems = 0 }) {
   const router = useRouter();
@@ -92,67 +92,65 @@ function SidebarContent({ totalItems = 0 }) {
 
     const refreshCounts = async () => {
       try {
-        const props = StorageManager.getProperties() || [];
-        const emps = StorageManager.getEmployees() || [];
-        const physicalCounts = StorageManager.getPhysicalCounts() || [];
-        const reps = StorageManager.getReports() || [];
         const user = StorageManager.getActiveUser();
+        const currentUsername = (user?.username || 'edolotallas').toLowerCase().trim();
 
-        let catsCount = (StorageManager.getCategories() || []).length;
-        let offsCount = (StorageManager.getOffices() || []).length;
-        let empsCount = (StorageManager.getEmployees() || []).length;
-        let liveProps = StorageManager.getProperties() || [];
+        let catsCount = 0;
+        let offsCount = 0;
+        let empsCount = 0;
+        let liveProps = [];
 
         // Fetch live database counts
         try {
           const [catRes, offRes, empRes, propRes] = await Promise.all([
-            fetch('/api/categories', { cache: 'no-store' }),
-            fetch('/api/offices', { cache: 'no-store' }),
-            fetch('/api/personnel', { cache: 'no-store' }),
-            fetch('/api/properties', { cache: 'no-store' }),
+            authFetch('/api/categories', { cache: 'no-store' }),
+            authFetch('/api/offices', { cache: 'no-store' }),
+            authFetch('/api/personnel', { cache: 'no-store' }),
+            authFetch('/api/properties', { cache: 'no-store' }),
           ]);
           if (catRes.ok) {
             try {
-              const catText = await catRes.text();
-              const catData = JSON.parse(catText);
+              const catData = await catRes.json();
               if (catData.success && Array.isArray(catData.categories)) {
                 catsCount = catData.categories.length;
-                StorageManager.saveCategories(catData.categories);
               }
             } catch (e) {}
           }
           if (offRes.ok) {
             try {
-              const offText = await offRes.text();
-              const offData = JSON.parse(offText);
+              const offData = await offRes.json();
               if (offData.success && Array.isArray(offData.offices)) {
-                offsCount = offData.offices.length;
-                StorageManager.saveOffices(offData.offices);
+                const userOffs = offData.offices.filter(
+                  (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+                );
+                offsCount = userOffs.length;
               }
             } catch (e) {}
           }
           if (empRes.ok) {
             try {
-              const empText = await empRes.text();
-              const empData = JSON.parse(empText);
-              if (empData.success && Array.isArray(empData.employees)) {
-                empsCount = empData.employees.length;
-                StorageManager.saveEmployees(empData.employees);
+              const empData = await empRes.json();
+              const emps = empData.employees || empData.personnel;
+              if (empData.success && Array.isArray(emps)) {
+                const userEmps = emps.filter(
+                  (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+                );
+                empsCount = userEmps.length;
               }
             } catch (e) {}
           }
           if (propRes.ok) {
             try {
-              const propText = await propRes.text();
-              const propData = JSON.parse(propText);
+              const propData = await propRes.json();
               if (propData.success && Array.isArray(propData.properties)) {
-                liveProps = propData.properties;
-                StorageManager.saveProperties(propData.properties);
+                liveProps = propData.properties.filter(
+                  (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+                );
               }
             } catch (e) {}
           }
         } catch (apiErr) {
-          // fallback to local storage
+          // fallback
         }
 
         const pending = physicalCounts.filter((c) => c.status === 'PENDING').length;

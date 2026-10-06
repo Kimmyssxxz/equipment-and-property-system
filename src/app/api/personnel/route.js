@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import {
+  getSessionUser,
+  attachEncoderToRemarks,
+  extractEncoderFromRemarks,
+  cleanRemarksForDisplay,
+} from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,8 +13,8 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch all employees / personnel from the Database
-export async function GET() {
+// GET: Fetch all employees / personnel from the Database (User-Scoped)
+export async function GET(request) {
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -29,10 +35,34 @@ export async function GET() {
       );
     }
 
-    const { data, error } = await supabase
+    const sessionUser = await getSessionUser(request);
+    let targetUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
+    let allowAll = false;
+
+    if (request && request.url) {
+      try {
+        const { searchParams } = new URL(request.url);
+        const uParam = searchParams.get('username') || searchParams.get('user');
+        if (uParam) targetUsername = uParam.toLowerCase().trim();
+        if (searchParams.get('all') === 'true') allowAll = true;
+      } catch (e) {}
+    }
+
+    let { data, error } = await supabase
       .from('employees')
       .select('*, offices(id, code, name)')
       .order('name', { ascending: true });
+
+    if (error) {
+      const fallback = await supabase
+        .from('employees')
+        .select('*')
+        .order('name', { ascending: true });
+      if (!fallback.error) {
+        data = fallback.data;
+        error = null;
+      }
+    }
 
     if (error) {
       if (
@@ -53,7 +83,23 @@ export async function GET() {
       return NextResponse.json({ error: error.message, employees: [] }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, employees: data || [] }, { status: 200 });
+    let rawList = data || [];
+
+    // Filter employees by the logged in admin/encoder unless all=true
+    if (!allowAll && targetUsername) {
+      rawList = rawList.filter((emp) => {
+        const encoder = extractEncoderFromRemarks(emp.email);
+        return encoder === targetUsername;
+      });
+    }
+
+    const formattedList = rawList.map((emp) => ({
+      ...emp,
+      email: cleanRemarksForDisplay(emp.email),
+      encodedBy: extractEncoderFromRemarks(emp.email),
+    }));
+
+    return NextResponse.json({ success: true, employees: formattedList }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message, employees: [] }, { status: 500 });
   }
@@ -80,14 +126,19 @@ export async function POST(request) {
       );
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const trimmedEmpId = employeeId.trim().toUpperCase();
     const trimmedName = name.trim();
     const trimmedPos = position.trim();
     const trimmedOfficeId = officeId.trim();
-    const trimmedEmail = email ? email.trim() : null;
+    const trimmedEmail = email ? email.trim() : '';
     const trimmedPhone = phone ? phone.trim() : null;
     const empStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const parsedAssumedDate = assumedDate ? new Date(assumedDate).toISOString() : new Date().toISOString();
+
+    const encodedEmail = attachEncoderToRemarks(trimmedEmail, activeUsername);
 
     // Check if employeeId or name already exists
     const { data: existing, error: checkError } = await supabase
@@ -132,7 +183,7 @@ export async function POST(request) {
       name: trimmedName,
       position: trimmedPos,
       officeId: trimmedOfficeId,
-      email: trimmedEmail,
+      email: encodedEmail,
       phone: trimmedPhone,
       status: empStatus,
       assumedDate: parsedAssumedDate,
@@ -150,8 +201,14 @@ export async function POST(request) {
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
+    const returnedEmp = {
+      ...(data || newEmployee),
+      email: cleanRemarksForDisplay(encodedEmail),
+      encodedBy: activeUsername,
+    };
+
     return NextResponse.json(
-      { success: true, employee: data || newEmployee },
+      { success: true, employee: returnedEmp },
       { status: 201 }
     );
   } catch (err) {
@@ -180,14 +237,27 @@ export async function PUT(request) {
       );
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const trimmedEmpId = employeeId.trim().toUpperCase();
     const trimmedName = name.trim();
     const trimmedPos = position.trim();
     const trimmedOfficeId = officeId.trim();
-    const trimmedEmail = email ? email.trim() : null;
+    const trimmedEmail = email ? email.trim() : '';
     const trimmedPhone = phone ? phone.trim() : null;
     const empStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const parsedAssumedDate = assumedDate ? new Date(assumedDate).toISOString() : undefined;
+
+    // Fetch existing employee to preserve original encoder tag
+    const { data: currentEmp } = await supabase
+      .from('employees')
+      .select('email')
+      .eq('id', id)
+      .maybeSingle();
+
+    const originalEncoder = currentEmp ? extractEncoderFromRemarks(currentEmp.email) : activeUsername;
+    const encodedEmail = attachEncoderToRemarks(trimmedEmail, originalEncoder);
 
     // Check conflict with other employees (excluding current id)
     const { data: existing } = await supabase
@@ -218,7 +288,7 @@ export async function PUT(request) {
       name: trimmedName,
       position: trimmedPos,
       officeId: trimmedOfficeId,
-      email: trimmedEmail,
+      email: encodedEmail,
       phone: trimmedPhone,
       status: empStatus,
       updatedAt: new Date().toISOString(),
@@ -239,7 +309,13 @@ export async function PUT(request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, employee: data }, { status: 200 });
+    const returned = {
+      ...data,
+      email: cleanRemarksForDisplay(data.email),
+      encodedBy: originalEncoder,
+    };
+
+    return NextResponse.json({ success: true, employee: returned }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

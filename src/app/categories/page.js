@@ -31,7 +31,7 @@ import {
   ExternalLink,
   Database,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 async function parseJsonSafely(res) {
   try {
@@ -83,12 +83,15 @@ export default function CategoriesPage() {
     setLoading(true);
     setIsTableMissing(false);
     try {
+      const activeUser = StorageManager.getActiveUser();
+      const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
       // Fetch live categories, properties, personnel, and offices concurrently
       const [catRes, propRes, empRes, offRes] = await Promise.all([
-        fetch('/api/categories', { cache: 'no-store' }),
-        fetch('/api/properties', { cache: 'no-store' }),
-        fetch('/api/personnel', { cache: 'no-store' }),
-        fetch('/api/offices', { cache: 'no-store' }),
+        authFetch('/api/categories', { cache: 'no-store' }),
+        authFetch('/api/properties', { cache: 'no-store' }),
+        authFetch('/api/personnel', { cache: 'no-store' }),
+        authFetch('/api/offices', { cache: 'no-store' }),
       ]);
 
       const catData = await parseJsonSafely(catRes);
@@ -107,28 +110,40 @@ export default function CategoriesPage() {
       }
 
       if (propData.success && Array.isArray(propData.properties)) {
-        setProperties(propData.properties);
-        StorageManager.saveProperties(propData.properties);
+        const userProps = propData.properties.filter(
+          (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setProperties(userProps);
+        StorageManager.saveProperties(userProps);
       } else {
-        setProperties(StorageManager.getProperties() || []);
+        setProperties([]);
       }
 
       if (empData.success && Array.isArray(empData.employees)) {
-        setEmployees(empData.employees);
-        StorageManager.saveEmployees(empData.employees);
+        const userEmps = empData.employees.filter(
+          (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setEmployees(userEmps);
+        StorageManager.saveEmployees(userEmps);
       } else {
-        setEmployees(StorageManager.getEmployees() || []);
+        setEmployees([]);
       }
 
       if (offData.success && Array.isArray(offData.offices)) {
-        setOffices(offData.offices);
-        StorageManager.saveOffices(offData.offices);
+        const userOffs = offData.offices.filter(
+          (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setOffices(userOffs);
+        StorageManager.saveOffices(userOffs);
       } else {
-        setOffices(StorageManager.getOffices() || []);
+        setOffices([]);
       }
     } catch (e) {
       console.error('Failed to load categories data:', e);
       setCategories([]);
+      setProperties([]);
+      setEmployees([]);
+      setOffices([]);
     } finally {
       setLoading(false);
     }

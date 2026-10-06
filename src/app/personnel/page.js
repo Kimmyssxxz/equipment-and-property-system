@@ -32,7 +32,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 async function parseJsonSafely(res) {
   try {
@@ -89,19 +89,22 @@ export default function PersonnelPage() {
 
   const [assignmentsHistory, setAssignmentsHistory] = useState([]);
 
-  // Load live data from database
+  // Load live data from database (User-Scoped)
   const loadData = async () => {
     setLoading(true);
     setIsTableMissing(false);
     try {
+      const activeUser = StorageManager.getActiveUser();
+      const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
       setCounts(StorageManager.getPhysicalCounts() || []);
 
       // Fetch live employees, offices, properties, and assignments concurrently
       const [empRes, offRes, propRes, asgnRes] = await Promise.all([
-        fetch('/api/personnel', { cache: 'no-store' }),
-        fetch('/api/offices', { cache: 'no-store' }),
-        fetch('/api/properties', { cache: 'no-store' }),
-        fetch('/api/assignments', { cache: 'no-store' }),
+        authFetch('/api/personnel', { cache: 'no-store' }),
+        authFetch('/api/offices', { cache: 'no-store' }),
+        authFetch('/api/properties', { cache: 'no-store' }),
+        authFetch('/api/assignments', { cache: 'no-store' }),
       ]);
 
       const empData = await parseJsonSafely(empRes);
@@ -110,41 +113,55 @@ export default function PersonnelPage() {
       const asgnData = await parseJsonSafely(asgnRes);
 
       if (offData.success && Array.isArray(offData.offices)) {
-        setOffices(offData.offices);
-        StorageManager.saveOffices(offData.offices);
+        const userOffices = offData.offices.filter(
+          (off) => (off.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setOffices(userOffices);
+        StorageManager.saveOffices(userOffices);
       } else {
-        setOffices(StorageManager.getOffices() || []);
+        setOffices([]);
       }
 
       if (empData.tableMissing) {
         setIsTableMissing(true);
         setEmployees([]);
       } else if (empData.success && Array.isArray(empData.employees)) {
-        setEmployees(empData.employees);
-        StorageManager.saveEmployees(empData.employees);
+        const userEmployees = empData.employees.filter(
+          (emp) => (emp.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setEmployees(userEmployees);
+        StorageManager.saveEmployees(userEmployees);
       } else {
-        setEmployees(StorageManager.getEmployees() || []);
+        setEmployees([]);
       }
 
       if (propData.success && Array.isArray(propData.properties)) {
-        setProperties(propData.properties);
-        StorageManager.saveProperties(propData.properties);
+        const userProps = propData.properties.filter(
+          (prop) => (prop.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setProperties(userProps);
+        StorageManager.saveProperties(userProps);
       } else {
-        setProperties(StorageManager.getProperties() || []);
+        setProperties([]);
       }
 
       if (asgnData.success && Array.isArray(asgnData.assignments)) {
-        setAssignmentsHistory(asgnData.assignments);
-        StorageManager.saveAssignmentsHistory(asgnData.assignments);
+        const userAsgns = asgnData.assignments.filter(
+          (asgn) =>
+            (asgn.transferredBy || asgn.encodedBy || 'edolotallas').toLowerCase().includes(currentUsername) ||
+            (asgn.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setAssignmentsHistory(userAsgns);
+        StorageManager.saveAssignmentsHistory(userAsgns);
       } else {
-        setAssignmentsHistory(StorageManager.getAssignmentsHistory() || []);
+        setAssignmentsHistory([]);
       }
     } catch (err) {
       console.error('Failed to load personnel data:', err);
-      setEmployees(StorageManager.getEmployees() || []);
-      setOffices(StorageManager.getOffices() || []);
-      setProperties(StorageManager.getProperties() || []);
-      setAssignmentsHistory(StorageManager.getAssignmentsHistory() || []);
+      setEmployees([]);
+      setOffices([]);
+      setProperties([]);
+      setAssignmentsHistory([]);
     } finally {
       setLoading(false);
     }
@@ -352,7 +369,7 @@ export default function PersonnelPage() {
         assumedDate: formData.assumedDate || new Date().toISOString(),
       };
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -401,7 +418,7 @@ export default function PersonnelPage() {
 
     if (confirm(confirmMsg)) {
       try {
-        const res = await fetch(`/api/personnel?id=${encodeURIComponent(emp.id)}`, {
+        const res = await authFetch(`/api/personnel?id=${encodeURIComponent(emp.id)}`, {
           method: 'DELETE',
         });
         const data = await parseJsonSafely(res);

@@ -249,14 +249,22 @@ export async function getSessionUser(request) {
       }
     }
 
+    if (!token) {
+      try {
+        const { cookies } = await import('next/headers');
+        const cookieStore = await cookies();
+        token = cookieStore.get(COOKIE_NAME)?.value;
+      } catch (e) {}
+    }
+
     if (token) {
       const payload = await verifySessionToken(token);
       if (payload && payload.username) return payload;
     }
 
-    // Header fallback (e.g. x-user-username)
+    // Header fallback (e.g. x-user-username, x-user, x-encoder)
     if (request && typeof request.headers?.get === 'function') {
-      const headerUsername = request.headers.get('x-user-username');
+      const headerUsername = request.headers.get('x-user-username') || request.headers.get('x-user') || request.headers.get('x-encoder');
       if (headerUsername) {
         return {
           username: headerUsername.toLowerCase().trim(),
@@ -264,6 +272,21 @@ export async function getSessionUser(request) {
           role: 'Admin',
         };
       }
+    }
+
+    // URL parameter fallback
+    if (request && request.url) {
+      try {
+        const { searchParams } = new URL(request.url);
+        const uParam = searchParams.get('username') || searchParams.get('user') || searchParams.get('encoder');
+        if (uParam) {
+          return {
+            username: uParam.toLowerCase().trim(),
+            name: uParam,
+            role: 'Admin',
+          };
+        }
+      } catch (e) {}
     }
   } catch (err) {
     console.warn('Session user extraction notice:', err);

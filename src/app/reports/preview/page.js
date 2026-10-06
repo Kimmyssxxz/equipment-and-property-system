@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Layers,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 function ReportPreviewContent() {
   const router = useRouter();
@@ -35,7 +35,7 @@ function ReportPreviewContent() {
 
   const safeFetchJson = async (url, options = {}) => {
     try {
-      const res = await fetch(url, options);
+      const res = await authFetch(url, options);
       const text = await res.text();
       if (!text || text.trim().startsWith('<')) {
         return { ok: false, status: res.status, data: null };
@@ -49,6 +49,9 @@ function ReportPreviewContent() {
   useEffect(() => {
     const fetchReportData = async () => {
       try {
+        const activeUser = StorageManager.getActiveUser();
+        const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
         const [setRes, propRes, empRes, offRes, catRes] = await Promise.all([
           safeFetchJson('/api/settings'),
           safeFetchJson('/api/properties'),
@@ -58,9 +61,25 @@ function ReportPreviewContent() {
         ]);
 
         if (setRes.data?.settings) setSettings(setRes.data.settings);
-        if (propRes.data?.properties) setProperties(propRes.data.properties);
-        if (empRes.data?.personnel) setEmployees(empRes.data.personnel);
-        if (offRes.data?.offices) setOffices(offRes.data.offices);
+        if (propRes.data?.properties) {
+          const userProps = propRes.data.properties.filter(
+            (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
+          setProperties(userProps);
+        }
+        if (empRes.data?.personnel || empRes.data?.employees) {
+          const rawEmps = empRes.data?.personnel || empRes.data?.employees || [];
+          const userEmps = rawEmps.filter(
+            (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
+          setEmployees(userEmps);
+        }
+        if (offRes.data?.offices) {
+          const userOffs = offRes.data.offices.filter(
+            (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+          );
+          setOffices(userOffs);
+        }
         if (catRes.data?.categories) setCategories(catRes.data.categories);
 
         let target = null;

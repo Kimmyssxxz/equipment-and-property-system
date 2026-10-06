@@ -33,7 +33,7 @@ import {
   Check,
   TrendingUp,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 async function parseJsonSafely(res) {
   try {
@@ -138,19 +138,22 @@ export default function PropertiesPage() {
     message: '',
   });
 
-  // Live Database Fetch
+  // Live Database Fetch (User-Scoped)
   const loadData = async () => {
     setLoading(true);
     setIsTableMissing(false);
     try {
+      const activeUser = StorageManager.getActiveUser();
+      const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
       setAssignmentsHistory(StorageManager.getAssignmentsHistory() || []);
       setCounts(StorageManager.getPhysicalCounts() || []);
 
       const [propRes, catRes, offRes, empRes] = await Promise.all([
-        fetch('/api/properties', { cache: 'no-store' }),
-        fetch('/api/categories', { cache: 'no-store' }),
-        fetch('/api/offices', { cache: 'no-store' }),
-        fetch('/api/personnel', { cache: 'no-store' }),
+        authFetch('/api/properties', { cache: 'no-store' }),
+        authFetch('/api/categories', { cache: 'no-store' }),
+        authFetch('/api/offices', { cache: 'no-store' }),
+        authFetch('/api/personnel', { cache: 'no-store' }),
       ]);
 
       const propData = await parseJsonSafely(propRes);
@@ -162,38 +165,47 @@ export default function PropertiesPage() {
         setCategories(catData.categories);
         StorageManager.saveCategories(catData.categories);
       } else {
-        setCategories(StorageManager.getCategories() || []);
+        setCategories([]);
       }
 
       if (offData.success && Array.isArray(offData.offices)) {
-        setOffices(offData.offices);
-        StorageManager.saveOffices(offData.offices);
+        const userOffs = offData.offices.filter(
+          (off) => (off.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setOffices(userOffs);
+        StorageManager.saveOffices(userOffs);
       } else {
-        setOffices(StorageManager.getOffices() || []);
+        setOffices([]);
       }
 
       if (empData.success && Array.isArray(empData.employees)) {
-        setEmployees(empData.employees);
-        StorageManager.saveEmployees(empData.employees);
+        const userEmps = empData.employees.filter(
+          (emp) => (emp.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setEmployees(userEmps);
+        StorageManager.saveEmployees(userEmps);
       } else {
-        setEmployees(StorageManager.getEmployees() || []);
+        setEmployees([]);
       }
 
       if (propData.tableMissing) {
         setIsTableMissing(true);
         setProperties([]);
       } else if (propData.success && Array.isArray(propData.properties)) {
-        setProperties(propData.properties);
-        StorageManager.saveProperties(propData.properties);
+        const userProps = propData.properties.filter(
+          (prop) => (prop.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setProperties(userProps);
+        StorageManager.saveProperties(userProps);
       } else {
-        setProperties(StorageManager.getProperties() || []);
+        setProperties([]);
       }
     } catch (e) {
       console.error('Failed to load properties:', e);
-      setProperties(StorageManager.getProperties() || []);
-      setCategories(StorageManager.getCategories() || []);
-      setOffices(StorageManager.getOffices() || []);
-      setEmployees(StorageManager.getEmployees() || []);
+      setProperties([]);
+      setCategories([]);
+      setOffices([]);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -366,7 +378,7 @@ export default function PropertiesPage() {
         status: formData.status,
       };
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -410,7 +422,7 @@ export default function PropertiesPage() {
   const handleDeleteProperty = async (p) => {
     if (confirm(`Are you sure you want to delete property "${p.propertyNumber} - ${p.article}"?`)) {
       try {
-        const res = await fetch(`/api/properties?id=${encodeURIComponent(p.id)}`, {
+        const res = await authFetch(`/api/properties?id=${encodeURIComponent(p.id)}`, {
           method: 'DELETE',
         });
         const data = await parseJsonSafely(res);

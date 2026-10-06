@@ -36,7 +36,7 @@ import {
   Database,
   Check,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 // Official Government Physical Inventory Report Standards
 const REPORT_TYPES = {
@@ -158,7 +158,7 @@ function ReportsContent() {
 
   const safeFetchJson = async (url, options = {}) => {
     try {
-      const res = await fetch(url, options);
+      const res = await authFetch(url, options);
       const text = await res.text();
       if (!text || text.trim().startsWith('<')) {
         return { ok: false, status: res.status, data: null };
@@ -171,6 +171,9 @@ function ReportsContent() {
 
   const loadData = async () => {
     try {
+      const activeUser = StorageManager.getActiveUser();
+      const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
       const [empRes, offRes, catRes, propRes, repRes, sessRes, sigRes] = await Promise.all([
         safeFetchJson('/api/personnel'),
         safeFetchJson('/api/offices'),
@@ -181,13 +184,29 @@ function ReportsContent() {
         safeFetchJson('/api/settings'),
       ]);
 
-      const emps = empRes.data?.personnel || empRes.data?.employees || [];
-      const offs = offRes.data?.offices || [];
+      const rawEmps = empRes.data?.personnel || empRes.data?.employees || [];
+      const rawOffs = offRes.data?.offices || [];
       const cats = catRes.data?.categories || [];
-      const props = propRes.data?.properties || [];
-      const reps = repRes.data?.reports || [];
-      const sessList = sessRes.data?.sessions || [];
+      const rawProps = propRes.data?.properties || [];
+      const rawReps = repRes.data?.reports || [];
+      const rawSess = sessRes.data?.sessions || [];
       const sigs = sigRes.data?.signatories;
+
+      const emps = rawEmps.filter((e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername);
+      const offs = rawOffs.filter((o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername);
+      const props = rawProps.filter((p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername);
+      const reps = rawReps.filter((r) => {
+        const genBy = (r.generatedBy || '').toLowerCase();
+        if (currentUsername === 'queenie_ppsc') return genBy.includes('queenie');
+        if (currentUsername === 'edolotallas') return !genBy.includes('queenie');
+        return genBy.includes(currentUsername);
+      });
+      const sessList = rawSess.filter((s) => {
+        const invP = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || '').toLowerCase();
+        if (currentUsername === 'queenie_ppsc') return invP.includes('queenie');
+        if (currentUsername === 'edolotallas') return !invP.includes('queenie');
+        return invP.includes(currentUsername);
+      });
 
       setEmployees(emps);
       setOffices(offs);
@@ -203,12 +222,18 @@ function ReportsContent() {
       // Set initial selections
       if (emps.length > 0 && !accountableOfficerId) {
         setAccountableOfficerId(preselectedOfficerId || emps[0].id);
+      } else if (emps.length === 0) {
+        setAccountableOfficerId('');
       }
       if (offs.length > 0 && !officeId) {
         setOfficeId(offs[0].id);
+      } else if (offs.length === 0) {
+        setOfficeId('');
       }
       if (sessList.length > 0 && !inventorySessionId) {
         setInventorySessionId(preselectedSessionId || sessList[0].id);
+      } else if (sessList.length === 0) {
+        setInventorySessionId('');
       }
     } catch (e) {
       console.error('Error loading reports data:', e);

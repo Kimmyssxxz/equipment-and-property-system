@@ -24,7 +24,7 @@ import {
   Clock,
   RefreshCw,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch } from '@/lib/storage';
 
 export default function DashboardPage() {
   const [isDataLoading, setIsDataLoading] = useState(true);
@@ -38,31 +38,63 @@ export default function DashboardPage() {
   const loadBackendDashboardData = async () => {
     try {
       setIsDataLoading(true);
+      const activeUser = StorageManager.getActiveUser();
+      const currentUsername = (activeUser?.username || 'edolotallas').toLowerCase().trim();
+
       const [propRes, empRes, offRes, catRes, countRes] = await Promise.allSettled([
-        fetch('/api/properties').then((r) => r.json()),
-        fetch('/api/personnel').then((r) => r.json()),
-        fetch('/api/offices').then((r) => r.json()),
-        fetch('/api/categories').then((r) => r.json()),
-        fetch('/api/physical-counts').then((r) => r.json()),
+        authFetch('/api/properties').then((r) => r.json()),
+        authFetch('/api/personnel').then((r) => r.json()),
+        authFetch('/api/offices').then((r) => r.json()),
+        authFetch('/api/categories').then((r) => r.json()),
+        authFetch('/api/physical-counts').then((r) => r.json()),
       ]);
 
-      if (propRes.status === 'fulfilled' && propRes.value?.properties) {
-        setProperties(propRes.value.properties);
+      if (propRes.status === 'fulfilled' && Array.isArray(propRes.value?.properties)) {
+        const userProps = propRes.value.properties.filter(
+          (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setProperties(userProps);
+      } else {
+        setProperties([]);
       }
-      if (empRes.status === 'fulfilled' && (empRes.value?.personnel || empRes.value?.employees)) {
-        setEmployees(empRes.value.personnel || empRes.value.employees || []);
+
+      if (empRes.status === 'fulfilled') {
+        const emps = empRes.value?.personnel || empRes.value?.employees || [];
+        const userEmps = emps.filter(
+          (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setEmployees(userEmps);
+      } else {
+        setEmployees([]);
       }
-      if (offRes.status === 'fulfilled' && offRes.value?.offices) {
-        setOffices(offRes.value.offices);
+
+      if (offRes.status === 'fulfilled' && Array.isArray(offRes.value?.offices)) {
+        const userOffs = offRes.value.offices.filter(
+          (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
+        );
+        setOffices(userOffs);
+      } else {
+        setOffices([]);
       }
-      if (catRes.status === 'fulfilled' && catRes.value?.categories) {
+
+      if (catRes.status === 'fulfilled' && Array.isArray(catRes.value?.categories)) {
         setCategories(catRes.value.categories);
+      } else {
+        setCategories([]);
       }
-      if (countRes.status === 'fulfilled' && countRes.value?.counts) {
+
+      if (countRes.status === 'fulfilled' && Array.isArray(countRes.value?.counts)) {
         setCounts(countRes.value.counts);
+      } else {
+        setCounts([]);
       }
     } catch (e) {
       console.error('Failed to load live backend data:', e);
+      setProperties([]);
+      setEmployees([]);
+      setOffices([]);
+      setCategories([]);
+      setCounts([]);
     } finally {
       setIsDataLoading(false);
     }
