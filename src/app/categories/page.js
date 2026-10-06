@@ -110,31 +110,22 @@ export default function CategoriesPage() {
       }
 
       if (propData.success && Array.isArray(propData.properties)) {
-        const userProps = propData.properties.filter(
-          (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setProperties(userProps);
-        StorageManager.saveProperties(userProps);
+        setProperties(propData.properties);
+        StorageManager.saveProperties(propData.properties);
       } else {
         setProperties([]);
       }
 
       if (empData.success && Array.isArray(empData.employees)) {
-        const userEmps = empData.employees.filter(
-          (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setEmployees(userEmps);
-        StorageManager.saveEmployees(userEmps);
+        setEmployees(empData.employees);
+        StorageManager.saveEmployees(empData.employees);
       } else {
         setEmployees([]);
       }
 
       if (offData.success && Array.isArray(offData.offices)) {
-        const userOffs = offData.offices.filter(
-          (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setOffices(userOffs);
-        StorageManager.saveOffices(userOffs);
+        setOffices(offData.offices);
+        StorageManager.saveOffices(offData.offices);
       } else {
         setOffices([]);
       }

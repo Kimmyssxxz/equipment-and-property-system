@@ -295,12 +295,11 @@ export async function getSessionUser(request) {
 }
 
 /**
- * Encoder Tag Helpers for Properties
+ * Creator & Remarks Helpers for Properties and Assets
  */
 export function attachEncoderToRemarks(remarks, username) {
-  const cleanRem = cleanRemarksForDisplay(remarks);
-  const cleanUser = (username || 'edolotallas').toLowerCase().trim();
-  return cleanRem ? `${cleanRem} [Encoder:${cleanUser}]` : `[Encoder:${cleanUser}]`;
+  // No longer pollute remarks with [Encoder:...] tags since Queenie & Elmer are full Admins
+  return cleanRemarksForDisplay(remarks);
 }
 
 export function extractEncoderFromRemarks(remarks) {
@@ -309,7 +308,7 @@ export function extractEncoderFromRemarks(remarks) {
   if (match && match[1]) {
     return match[1].toLowerCase().trim();
   }
-  return 'edolotallas'; // Default fallback for all initial 93 properties
+  return 'edolotallas';
 }
 
 export function cleanRemarksForDisplay(remarks) {
@@ -318,10 +317,8 @@ export function cleanRemarksForDisplay(remarks) {
 }
 
 export function isPropertyOwnedByUser(property, user) {
-  if (!user || !user.username) return true;
-  const currentUsername = user.username.toLowerCase().trim();
-  const encoder = extractEncoderFromRemarks(property?.remarks);
-  return encoder === currentUsername;
+  // Queenie PPSC and Elmer Dolotallas are full Admins with full administrative access to all records
+  return true;
 }
 
 export { COOKIE_NAME };

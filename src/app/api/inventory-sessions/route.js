@@ -63,18 +63,6 @@ export async function GET(request) {
 
     let filteredSessions = rawSessions || [];
 
-    if (targetUsername) {
-      filteredSessions = filteredSessions.filter((s) => {
-        const invPerson = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || s.remarks || '').toLowerCase();
-        if (targetUsername === 'queenie_ppsc') {
-          return invPerson.includes('queenie');
-        } else if (targetUsername === 'edolotallas') {
-          return !invPerson.includes('queenie');
-        }
-        return invPerson.includes(targetUsername);
-      });
-    }
-
     // Parallel fetch lookups
     const [empRes, offRes] = await Promise.all([
       supabase.from('employees').select('id, name, employeeId, position'),
@@ -86,6 +74,7 @@ export async function GET(request) {
 
     const formatted = filteredSessions.map((s) => {
       const invPerson = s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || 'All Personnel';
+      const creator = s.createdBy || s.created_by || 'edolotallas';
 
       const cleanAsOf = s.asOfDate
         ? (String(s.asOfDate).includes('T') ? String(s.asOfDate).slice(0, 10) : String(s.asOfDate))
@@ -107,6 +96,8 @@ export async function GET(request) {
         categoryFilter: s.categoryFilter || 'ALL',
         status: s.status || 'IN_PROGRESS',
         remarks: s.remarks || '',
+        createdBy: creator,
+        encodedBy: creator,
         finalizedAt: s.finalizedAt,
         finalizedBy: s.finalizedBy,
         createdAt: s.createdAt,
@@ -156,6 +147,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Database client not initialized.' }, { status: 500 });
     }
 
+    const sessionUser = await getSessionUser(request);
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
     const cleanCode = sessionCode.trim().toUpperCase();
     const cleanTitle = title.trim();
 
@@ -191,13 +185,29 @@ export async function POST(request) {
       categoryFilter: categoryFilter || 'ALL',
       status: 'IN_PROGRESS',
       remarks: remarks || '',
+      createdBy: activeUsername,
     };
 
-    const { data: insertedSession, error: insertError } = await supabase
+    let insertedSession = null;
+    let { data: insData, error: insertError } = await supabase
       .from('inventory_sessions')
       .insert([sessionPayload])
       .select()
       .single();
+
+    if (insertError && (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"'))) {
+      const fallbackSession = { ...sessionPayload };
+      delete fallbackSession.createdBy;
+      const retry = await supabase
+        .from('inventory_sessions')
+        .insert([fallbackSession])
+        .select()
+        .single();
+      insertedSession = retry.data;
+      insertError = retry.error;
+    } else {
+      insertedSession = insData;
+    }
 
     if (insertError) {
       if (

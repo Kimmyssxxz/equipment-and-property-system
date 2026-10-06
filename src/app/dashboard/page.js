@@ -50,29 +50,20 @@ export default function DashboardPage() {
       ]);
 
       if (propRes.status === 'fulfilled' && Array.isArray(propRes.value?.properties)) {
-        const userProps = propRes.value.properties.filter(
-          (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setProperties(userProps);
+        setProperties(propRes.value.properties);
       } else {
         setProperties([]);
       }
 
       if (empRes.status === 'fulfilled') {
         const emps = empRes.value?.personnel || empRes.value?.employees || [];
-        const userEmps = emps.filter(
-          (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setEmployees(userEmps);
+        setEmployees(emps);
       } else {
         setEmployees([]);
       }
 
       if (offRes.status === 'fulfilled' && Array.isArray(offRes.value?.offices)) {
-        const userOffs = offRes.value.offices.filter(
-          (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setOffices(userOffs);
+        setOffices(offRes.value.offices);
       } else {
         setOffices([]);
       }

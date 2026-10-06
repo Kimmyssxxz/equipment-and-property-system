@@ -195,21 +195,11 @@ function ReportsContent() {
       const rawSess = sessRes.data?.sessions || [];
       const sigs = sigRes.data?.signatories;
 
-      const emps = rawEmps.filter((e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername);
-      const offs = rawOffs.filter((o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername);
-      const props = rawProps.filter((p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername);
-      const reps = rawReps.filter((r) => {
-        const genBy = (r.generatedBy || '').toLowerCase();
-        if (currentUsername === 'queenie_ppsc') return genBy.includes('queenie');
-        if (currentUsername === 'edolotallas') return !genBy.includes('queenie');
-        return genBy.includes(currentUsername);
-      });
-      const sessList = rawSess.filter((s) => {
-        const invP = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || '').toLowerCase();
-        if (currentUsername === 'queenie_ppsc') return invP.includes('queenie');
-        if (currentUsername === 'edolotallas') return !invP.includes('queenie');
-        return invP.includes(currentUsername);
-      });
+      const emps = rawEmps;
+      const offs = rawOffs;
+      const props = rawProps;
+      const reps = rawReps;
+      const sessList = rawSess;
 
       setEmployees(emps);
       setOffices(offs);

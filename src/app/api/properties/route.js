@@ -84,20 +84,16 @@ export async function GET(request) {
 
     let rawList = data || [];
 
-    // Filter properties based on the logged-in user / encoder
-    if (targetUsername) {
-      rawList = rawList.filter((p) => {
-        const encoder = extractEncoderFromRemarks(p.remarks);
-        return encoder === targetUsername;
-      });
-    }
-
-    // Clean remarks for display so that [Encoder:...] tags are stripped
-    const formattedList = rawList.map((p) => ({
-      ...p,
-      remarks: cleanRemarksForDisplay(p.remarks),
-      encodedBy: extractEncoderFromRemarks(p.remarks),
-    }));
+    // Clean remarks for display so that [Encoder:...] tags are stripped and createdBy is set
+    const formattedList = rawList.map((p) => {
+      const creator = p.createdBy || p.created_by || extractEncoderFromRemarks(p.remarks) || 'edolotallas';
+      return {
+        ...p,
+        remarks: cleanRemarksForDisplay(p.remarks),
+        createdBy: creator,
+        encodedBy: creator,
+      };
+    });
 
     return NextResponse.json({ success: true, properties: formattedList }, { status: 200 });
   } catch (err) {
@@ -179,7 +175,7 @@ export async function POST(request) {
       );
     }
 
-    const remarksWithEncoder = attachEncoderToRemarks(remarks, activeUsername);
+    const cleanRemarks = cleanRemarksForDisplay(remarks);
 
     const newId = 'prop_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
     const newProperty = {
@@ -195,7 +191,8 @@ export async function POST(request) {
       poNumber: poNumber ? poNumber.trim() : null,
       poDate: poDate ? new Date(poDate).toISOString() : null,
       serialNumber: cleanSerialNumber,
-      remarks: remarksWithEncoder,
+      remarks: cleanRemarks,
+      createdBy: activeUsername,
       status: propStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -213,7 +210,8 @@ export async function POST(request) {
 
     const returnedProp = {
       ...(data || newProperty),
-      remarks: cleanRemarksForDisplay(remarks),
+      remarks: cleanRemarks,
+      createdBy: activeUsername,
       encodedBy: activeUsername,
     };
 
@@ -287,15 +285,15 @@ export async function PUT(request) {
       );
     }
 
-    // Fetch existing item to preserve original encoder tag if any
+    // Fetch existing item to preserve original createdBy
     const { data: currentProp } = await supabase
       .from('properties')
-      .select('remarks')
+      .select('remarks, createdBy')
       .eq('id', id)
       .maybeSingle();
 
-    const originalEncoder = currentProp ? extractEncoderFromRemarks(currentProp.remarks) : activeUsername;
-    const remarksWithEncoder = attachEncoderToRemarks(remarks, originalEncoder);
+    const originalCreator = currentProp?.createdBy || (currentProp ? extractEncoderFromRemarks(currentProp.remarks) : activeUsername);
+    const cleanRemarks = cleanRemarksForDisplay(remarks);
 
     const updatePayload = {
       propertyNumber: trimmedPropNo,
@@ -307,7 +305,8 @@ export async function PUT(request) {
       quantityPerCard: numQty,
       poNumber: poNumber ? poNumber.trim() : null,
       serialNumber: cleanSerialNumber,
-      remarks: remarksWithEncoder,
+      remarks: cleanRemarks,
+      createdBy: originalCreator,
       status: propStatus,
       updatedAt: new Date().toISOString(),
     };
@@ -332,8 +331,9 @@ export async function PUT(request) {
 
     const returned = {
       ...data,
-      remarks: cleanRemarksForDisplay(data.remarks),
-      encodedBy: originalEncoder,
+      remarks: cleanRemarks,
+      createdBy: originalCreator,
+      encodedBy: originalCreator,
     };
 
     return NextResponse.json({ success: true, property: returned }, { status: 200 });

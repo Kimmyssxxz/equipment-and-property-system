@@ -169,21 +169,15 @@ export default function PropertiesPage() {
       }
 
       if (offData.success && Array.isArray(offData.offices)) {
-        const userOffs = offData.offices.filter(
-          (off) => (off.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setOffices(userOffs);
-        StorageManager.saveOffices(userOffs);
+        setOffices(offData.offices);
+        StorageManager.saveOffices(offData.offices);
       } else {
         setOffices([]);
       }
 
       if (empData.success && Array.isArray(empData.employees)) {
-        const userEmps = empData.employees.filter(
-          (emp) => (emp.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setEmployees(userEmps);
-        StorageManager.saveEmployees(userEmps);
+        setEmployees(empData.employees);
+        StorageManager.saveEmployees(empData.employees);
       } else {
         setEmployees([]);
       }
@@ -192,11 +186,8 @@ export default function PropertiesPage() {
         setIsTableMissing(true);
         setProperties([]);
       } else if (propData.success && Array.isArray(propData.properties)) {
-        const userProps = propData.properties.filter(
-          (prop) => (prop.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setProperties(userProps);
-        StorageManager.saveProperties(userProps);
+        setProperties(propData.properties);
+        StorageManager.saveProperties(propData.properties);
       } else {
         setProperties([]);
       }

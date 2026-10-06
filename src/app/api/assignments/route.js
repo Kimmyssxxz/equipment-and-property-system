@@ -81,22 +81,6 @@ export async function GET(request) {
 
     let filteredAssignments = assignments || [];
 
-    // Filter assignments by active logged in user
-    if (targetUsername) {
-      filteredAssignments = filteredAssignments.filter((item) => {
-        const prop = propMap.get(item.propertyId) || {};
-        const propEncoder = extractEncoderFromRemarks(prop.remarks);
-        const transBy = (item.transferredBy || '').toLowerCase();
-
-        if (targetUsername === 'queenie_ppsc') {
-          return propEncoder === 'queenie_ppsc' || transBy.includes('queenie');
-        } else if (targetUsername === 'edolotallas') {
-          return propEncoder === 'edolotallas' || (!transBy.includes('queenie') && propEncoder !== 'queenie_ppsc');
-        }
-        return propEncoder === targetUsername || transBy.includes(targetUsername);
-      });
-    }
-
     // 3. Format fields cleanly for recorded transfers
     const formatted = filteredAssignments.map((item) => {
       const prop = propMap.get(item.propertyId) || {};
@@ -108,6 +92,8 @@ export async function GET(request) {
       const cleanDate = item.assignmentDate
         ? (item.assignmentDate.includes('T') ? item.assignmentDate.slice(0, 10) : item.assignmentDate)
         : new Date(item.createdAt || Date.now()).toISOString().slice(0, 10);
+
+      const creator = item.createdBy || item.created_by || 'edolotallas';
 
       return {
         id: item.id,
@@ -140,6 +126,8 @@ export async function GET(request) {
         assignmentDate: cleanDate,
         remarks: item.remarks || 'Official transfer of property accountability',
         transferredBy: item.transferredBy || 'System Admin',
+        createdBy: creator,
+        encodedBy: creator,
         isActive: item.isActive !== false,
         createdAt: item.createdAt,
       };
@@ -147,17 +135,8 @@ export async function GET(request) {
 
     // 4. Synthesize initial registration records for all assigned properties that don't have an explicit transfer record
     const recordedPropIds = new Set(formatted.map((a) => a.propertyId));
-    let userScopedProps = allProps;
-    if (targetUsername) {
-      userScopedProps = allProps.filter((p) => {
-        const propEncoder = extractEncoderFromRemarks(p.remarks);
-        if (targetUsername === 'queenie_ppsc') return propEncoder === 'queenie_ppsc';
-        if (targetUsername === 'edolotallas') return propEncoder === 'edolotallas' || propEncoder !== 'queenie_ppsc';
-        return propEncoder === targetUsername;
-      });
-    }
 
-    const initialAssignments = userScopedProps
+    const initialAssignments = allProps
       .filter((p) => (p.accountablePersonId || p.officeId) && !recordedPropIds.has(p.id))
       .map((p) => {
         const emp = empMap.get(p.accountablePersonId) || {};
@@ -310,6 +289,7 @@ export async function POST(request) {
 
     const sessionUser = await getSessionUser(request);
     const activeUserName = sessionUser?.fullName ? `${sessionUser.fullName} (${sessionUser.role || 'Admin'})` : (sessionUser?.username || 'System Admin');
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
 
     let newRecord = {
       id: newAsgnId,
@@ -321,15 +301,31 @@ export async function POST(request) {
       assignmentDate: parsedDate,
       remarks: remarks ? remarks.trim() : 'Official transfer of property accountability',
       transferredBy: transferredBy ? transferredBy.trim() : activeUserName,
+      createdBy: activeUsername,
       isActive: true,
       createdAt: new Date().toISOString(),
     };
 
-    const { data: insertedAsgn, error: insertError } = await supabase
+    let insertedAsgn = null;
+    let { data: asgnData, error: insertError } = await supabase
       .from('property_assignments')
       .insert([newRecord])
       .select('*')
       .single();
+
+    if (insertError && (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"'))) {
+      const fallbackRecord = { ...newRecord };
+      delete fallbackRecord.createdBy;
+      const retry = await supabase
+        .from('property_assignments')
+        .insert([fallbackRecord])
+        .select('*')
+        .single();
+      insertedAsgn = retry.data;
+      insertError = retry.error;
+    } else {
+      insertedAsgn = asgnData;
+    }
 
     if (insertError) {
       if (

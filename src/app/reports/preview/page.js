@@ -64,23 +64,14 @@ function ReportPreviewContent() {
         if (setRes.data?.settings) setSettings(setRes.data.settings);
         if (setRes.data?.signatories) setApiSignatories(setRes.data.signatories);
         if (propRes.data?.properties) {
-          const userProps = propRes.data.properties.filter(
-            (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
-          setProperties(userProps);
+          setProperties(propRes.data.properties);
         }
         if (empRes.data?.personnel || empRes.data?.employees) {
           const rawEmps = empRes.data?.personnel || empRes.data?.employees || [];
-          const userEmps = rawEmps.filter(
-            (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
-          setEmployees(userEmps);
+          setEmployees(rawEmps);
         }
         if (offRes.data?.offices) {
-          const userOffs = offRes.data.offices.filter(
-            (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
-          setOffices(userOffs);
+          setOffices(offRes.data.offices);
         }
         if (catRes.data?.categories) setCategories(catRes.data.categories);
 

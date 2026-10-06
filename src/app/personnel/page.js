@@ -113,11 +113,8 @@ export default function PersonnelPage() {
       const asgnData = await parseJsonSafely(asgnRes);
 
       if (offData.success && Array.isArray(offData.offices)) {
-        const userOffices = offData.offices.filter(
-          (off) => (off.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setOffices(userOffices);
-        StorageManager.saveOffices(userOffices);
+        setOffices(offData.offices);
+        StorageManager.saveOffices(offData.offices);
       } else {
         setOffices([]);
       }
@@ -126,33 +123,22 @@ export default function PersonnelPage() {
         setIsTableMissing(true);
         setEmployees([]);
       } else if (empData.success && Array.isArray(empData.employees)) {
-        const userEmployees = empData.employees.filter(
-          (emp) => (emp.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setEmployees(userEmployees);
-        StorageManager.saveEmployees(userEmployees);
+        setEmployees(empData.employees);
+        StorageManager.saveEmployees(empData.employees);
       } else {
         setEmployees([]);
       }
 
       if (propData.success && Array.isArray(propData.properties)) {
-        const userProps = propData.properties.filter(
-          (prop) => (prop.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setProperties(userProps);
-        StorageManager.saveProperties(userProps);
+        setProperties(propData.properties);
+        StorageManager.saveProperties(propData.properties);
       } else {
         setProperties([]);
       }
 
       if (asgnData.success && Array.isArray(asgnData.assignments)) {
-        const userAsgns = asgnData.assignments.filter(
-          (asgn) =>
-            (asgn.transferredBy || asgn.encodedBy || 'edolotallas').toLowerCase().includes(currentUsername) ||
-            (asgn.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-        );
-        setAssignmentsHistory(userAsgns);
-        StorageManager.saveAssignmentsHistory(userAsgns);
+        setAssignmentsHistory(asgnData.assignments);
+        StorageManager.saveAssignmentsHistory(asgnData.assignments);
       } else {
         setAssignmentsHistory([]);
       }

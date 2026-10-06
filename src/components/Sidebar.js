@@ -152,10 +152,7 @@ function SidebarContent({ totalItems = 0 }) {
             try {
               const offData = await offRes.json();
               if (offData.success && Array.isArray(offData.offices)) {
-                const userOffs = offData.offices.filter(
-                  (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-                );
-                offsCount = userOffs.length;
+                offsCount = offData.offices.length;
               }
             } catch (e) {}
           }
@@ -164,10 +161,7 @@ function SidebarContent({ totalItems = 0 }) {
               const empData = await empRes.json();
               const emps = empData.employees || empData.personnel;
               if (empData.success && Array.isArray(emps)) {
-                const userEmps = emps.filter(
-                  (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-                );
-                empsCount = userEmps.length;
+                empsCount = emps.length;
               }
             } catch (e) {}
           }
@@ -175,9 +169,7 @@ function SidebarContent({ totalItems = 0 }) {
             try {
               const propData = await propRes.json();
               if (propData.success && Array.isArray(propData.properties)) {
-                liveProps = propData.properties.filter(
-                  (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-                );
+                liveProps = propData.properties;
               }
             } catch (e) {}
           }

@@ -221,19 +221,14 @@ export default function PhysicalInventoryPage() {
         }
 
         if (offData.success && Array.isArray(offData.offices)) {
-          const userOffs = offData.offices.filter(
-            (o) => (o.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
-          setOffices(userOffs);
-          StorageManager.saveOffices(userOffs);
+          setOffices(offData.offices);
+          StorageManager.saveOffices(offData.offices);
         } else {
           setOffices([]);
         }
 
         if (empData.success && (Array.isArray(empData.personnel) || Array.isArray(empData.employees))) {
-          const empArr = (empData.personnel || empData.employees).filter(
-            (e) => (e.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
+          const empArr = empData.personnel || empData.employees;
           setEmployees(empArr);
           StorageManager.saveEmployees(empArr);
         } else {
@@ -241,47 +236,29 @@ export default function PhysicalInventoryPage() {
         }
 
         if (asgnData.success && Array.isArray(asgnData.assignments)) {
-          const userAsgns = asgnData.assignments.filter(
-            (a) =>
-              (a.transferredBy || a.encodedBy || 'edolotallas').toLowerCase().includes(currentUsername) ||
-              (a.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
-          setAssignmentsHistory(userAsgns);
-          StorageManager.saveAssignmentsHistory(userAsgns);
+          setAssignmentsHistory(asgnData.assignments);
+          StorageManager.saveAssignmentsHistory(asgnData.assignments);
         } else {
           setAssignmentsHistory([]);
         }
 
         if (sessRes.ok && sessData.success && Array.isArray(sessData.sessions)) {
           setDbConnected(true);
-          loadedSessions = sessData.sessions.filter((s) => {
-            const invP = (s.inventoryPerson || s.accountableOfficerName || s.finalizedBy || '').toLowerCase();
-            if (currentUsername === 'queenie_ppsc') return invP.includes('queenie');
-            if (currentUsername === 'edolotallas') return !invP.includes('queenie');
-            return invP.includes(currentUsername);
-          });
+          loadedSessions = sessData.sessions;
           StorageManager.saveInventorySessions?.(loadedSessions);
         } else {
           loadedSessions = [];
         }
 
         if (cntsRes.ok && cntsData.success && Array.isArray(cntsData.counts)) {
-          loadedCounts = cntsData.counts.filter((c) => {
-            const cntP = (c.countedBy || '').toLowerCase();
-            if (currentUsername === 'queenie_ppsc') return cntP.includes('queenie');
-            if (currentUsername === 'edolotallas') return !cntP.includes('queenie');
-            return cntP.includes(currentUsername);
-          });
+          loadedCounts = cntsData.counts;
           StorageManager.savePhysicalCounts?.(loadedCounts);
         } else {
           loadedCounts = [];
         }
 
         if (propsRes.ok && propsData.success && Array.isArray(propsData.properties)) {
-          const userProps = propsData.properties.filter(
-            (p) => (p.encodedBy || 'edolotallas').toLowerCase().trim() === currentUsername
-          );
-          const apiProps = userProps.map((p) => ({
+          const apiProps = propsData.properties.map((p) => ({
             ...p,
             propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
             article: p.article || p.name || 'Equipment Item',

@@ -85,19 +85,15 @@ export async function GET(request) {
 
     let rawList = data || [];
 
-    // Filter employees by the logged in admin/encoder unless all=true
-    if (!allowAll && targetUsername) {
-      rawList = rawList.filter((emp) => {
-        const encoder = extractEncoderFromRemarks(emp.email);
-        return encoder === targetUsername;
-      });
-    }
-
-    const formattedList = rawList.map((emp) => ({
-      ...emp,
-      email: cleanRemarksForDisplay(emp.email),
-      encodedBy: extractEncoderFromRemarks(emp.email),
-    }));
+    const formattedList = rawList.map((emp) => {
+      const creator = emp.createdBy || emp.created_by || extractEncoderFromRemarks(emp.email) || 'edolotallas';
+      return {
+        ...emp,
+        email: cleanRemarksForDisplay(emp.email),
+        createdBy: creator,
+        encodedBy: creator,
+      };
+    });
 
     return NextResponse.json({ success: true, employees: formattedList }, { status: 200 });
   } catch (err) {
@@ -175,7 +171,6 @@ export async function POST(request) {
       }
     }
 
-    // Generate unique ID
     const newId = 'emp_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
     const newEmployee = {
       id: newId,
@@ -183,27 +178,46 @@ export async function POST(request) {
       name: trimmedName,
       position: trimmedPos,
       officeId: trimmedOfficeId,
-      email: encodedEmail,
+      email: trimmedEmail,
       phone: trimmedPhone,
       status: empStatus,
       assumedDate: parsedAssumedDate,
+      createdBy: activeUsername,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    const { data, error: insertError } = await supabase
+    let insertedData = null;
+    let { data, error: insertError } = await supabase
       .from('employees')
       .insert([newEmployee])
       .select('*, offices(id, code, name)')
       .single();
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 400 });
+      if (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"')) {
+        const fallbackEmployee = { ...newEmployee };
+        delete fallbackEmployee.createdBy;
+        const retry = await supabase
+          .from('employees')
+          .insert([fallbackEmployee])
+          .select('*, offices(id, code, name)')
+          .single();
+        if (retry.error) {
+          return NextResponse.json({ error: retry.error.message }, { status: 400 });
+        }
+        insertedData = retry.data;
+      } else {
+        return NextResponse.json({ error: insertError.message }, { status: 400 });
+      }
+    } else {
+      insertedData = data;
     }
 
     const returnedEmp = {
-      ...(data || newEmployee),
-      email: cleanRemarksForDisplay(encodedEmail),
+      ...(insertedData || newEmployee),
+      email: cleanRemarksForDisplay(trimmedEmail),
+      createdBy: activeUsername,
       encodedBy: activeUsername,
     };
 
@@ -249,15 +263,14 @@ export async function PUT(request) {
     const empStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const parsedAssumedDate = assumedDate ? new Date(assumedDate).toISOString() : undefined;
 
-    // Fetch existing employee to preserve original encoder tag
+    // Fetch existing employee to preserve creator
     const { data: currentEmp } = await supabase
       .from('employees')
-      .select('email')
+      .select('email, createdBy, created_by')
       .eq('id', id)
       .maybeSingle();
 
-    const originalEncoder = currentEmp ? extractEncoderFromRemarks(currentEmp.email) : activeUsername;
-    const encodedEmail = attachEncoderToRemarks(trimmedEmail, originalEncoder);
+    const originalCreator = currentEmp?.createdBy || currentEmp?.created_by || (currentEmp ? extractEncoderFromRemarks(currentEmp.email) : activeUsername);
 
     // Check conflict with other employees (excluding current id)
     const { data: existing } = await supabase
@@ -288,7 +301,7 @@ export async function PUT(request) {
       name: trimmedName,
       position: trimmedPos,
       officeId: trimmedOfficeId,
-      email: encodedEmail,
+      email: trimmedEmail,
       phone: trimmedPhone,
       status: empStatus,
       updatedAt: new Date().toISOString(),
@@ -312,7 +325,8 @@ export async function PUT(request) {
     const returned = {
       ...data,
       email: cleanRemarksForDisplay(data.email),
-      encodedBy: originalEncoder,
+      createdBy: originalCreator,
+      encodedBy: originalCreator,
     };
 
     return NextResponse.json({ success: true, employee: returned }, { status: 200 });

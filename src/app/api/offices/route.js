@@ -74,19 +74,15 @@ export async function GET(request) {
 
     let rawList = data || [];
 
-    // Filter offices by the logged in admin/encoder unless all=true
-    if (!allowAll && targetUsername) {
-      rawList = rawList.filter((off) => {
-        const encoder = extractEncoderFromRemarks(off.notes);
-        return encoder === targetUsername;
-      });
-    }
-
-    const formattedList = rawList.map((off) => ({
-      ...off,
-      notes: cleanRemarksForDisplay(off.notes),
-      encodedBy: extractEncoderFromRemarks(off.notes),
-    }));
+    const formattedList = rawList.map((off) => {
+      const creator = off.createdBy || off.created_by || extractEncoderFromRemarks(off.notes) || 'edolotallas';
+      return {
+        ...off,
+        notes: cleanRemarksForDisplay(off.notes),
+        createdBy: creator,
+        encodedBy: creator,
+      };
+    });
 
     return NextResponse.json({ success: true, offices: formattedList }, { status: 200 });
   } catch (err) {
@@ -126,8 +122,6 @@ export async function POST(request) {
     const trimmedFloor = floor ? floor.trim() : null;
     const trimmedNotes = notes ? notes.trim() : '';
     const officeStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
-
-    const encodedNotes = attachEncoderToRemarks(trimmedNotes, activeUsername);
 
     // Check if code or name already exists
     const { data: existing, error: checkError } = await supabase
@@ -174,25 +168,44 @@ export async function POST(request) {
       email: trimmedEmail,
       phone: trimmedPhone,
       floor: trimmedFloor,
-      notes: encodedNotes,
+      notes: trimmedNotes,
       status: officeStatus,
+      createdBy: activeUsername,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    const { data, error: insertError } = await supabase
+    let insertedData = null;
+    let { data, error: insertError } = await supabase
       .from('offices')
       .insert([newOffice])
       .select()
       .single();
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 400 });
+      if (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"')) {
+        const fallbackOffice = { ...newOffice };
+        delete fallbackOffice.createdBy;
+        const retry = await supabase
+          .from('offices')
+          .insert([fallbackOffice])
+          .select()
+          .single();
+        if (retry.error) {
+          return NextResponse.json({ error: retry.error.message }, { status: 400 });
+        }
+        insertedData = retry.data;
+      } else {
+        return NextResponse.json({ error: insertError.message }, { status: 400 });
+      }
+    } else {
+      insertedData = data;
     }
 
     const returnedOff = {
-      ...(data || newOffice),
-      notes: cleanRemarksForDisplay(encodedNotes),
+      ...(insertedData || newOffice),
+      notes: cleanRemarksForDisplay(trimmedNotes),
+      createdBy: activeUsername,
       encodedBy: activeUsername,
     };
 
@@ -238,15 +251,14 @@ export async function PUT(request) {
     const trimmedNotes = notes ? notes.trim() : '';
     const officeStatus = status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
 
-    // Fetch existing office to preserve original encoder tag
+    // Fetch existing office to preserve creator
     const { data: currentOff } = await supabase
       .from('offices')
-      .select('notes')
+      .select('notes, createdBy, created_by')
       .eq('id', id)
       .maybeSingle();
 
-    const originalEncoder = currentOff ? extractEncoderFromRemarks(currentOff.notes) : activeUsername;
-    const encodedNotes = attachEncoderToRemarks(trimmedNotes, originalEncoder);
+    const originalCreator = currentOff?.createdBy || currentOff?.created_by || (currentOff ? extractEncoderFromRemarks(currentOff.notes) : activeUsername);
 
     // Check collision with other offices (excluding this id)
     const { data: existing } = await supabase
@@ -281,7 +293,7 @@ export async function PUT(request) {
         email: trimmedEmail,
         phone: trimmedPhone,
         floor: trimmedFloor,
-        notes: encodedNotes,
+        notes: trimmedNotes,
         status: officeStatus,
         updatedAt: new Date().toISOString(),
       })
@@ -296,7 +308,8 @@ export async function PUT(request) {
     const returned = {
       ...data,
       notes: cleanRemarksForDisplay(data.notes),
-      encodedBy: originalEncoder,
+      createdBy: originalCreator,
+      encodedBy: originalCreator,
     };
 
     return NextResponse.json({ success: true, office: returned }, { status: 200 });

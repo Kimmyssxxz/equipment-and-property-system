@@ -41,9 +41,15 @@ export async function POST(request) {
       );
     }
 
-    const isInitialAdminInput =
-      trimmedUsername.toLowerCase() === 'edolotallas' &&
+    const lowerUsername = trimmedUsername.toLowerCase();
+    const isEdolotallasInitial =
+      lowerUsername === 'edolotallas' &&
       password === 'NFSTISupply123';
+    const isQueenieInitial =
+      lowerUsername === 'queenie_ppsc' &&
+      (password === 'NFSTISupply123' || password === 'QueeniePPSC2026!' || password === 'PPSCAdmin2026' || password === 'password123');
+
+    const isInitialAdminInput = isEdolotallasInitial || isQueenieInitial;
 
     let dbUser = null;
     const supabase = isSupabaseConfigured() ? getClient() : null;
@@ -52,8 +58,8 @@ export async function POST(request) {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('username', trimmedUsername)
-        .single();
+        .ilike('username', trimmedUsername)
+        .maybeSingle();
 
       if (!error && data) {
         dbUser = data;
@@ -62,22 +68,20 @@ export async function POST(request) {
       // Auto-seed admin user in Supabase with PBKDF2 hashed password if missing
       if (!dbUser && isInitialAdminInput) {
         try {
-          const hashedPassword = await hashPassword('NFSTISupply123');
+          const hashedPassword = await hashPassword(password);
+          const isQueenie = lowerUsername === 'queenie_ppsc';
+          const seedUser = {
+            id: isQueenie ? 'usr-admin-queenie' : 'usr-admin-1',
+            username: isQueenie ? 'queenie_ppsc' : 'edolotallas',
+            email: isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com',
+            fullName: isQueenie ? 'Queenie PPSC' : 'Elmer G. Dolotallas',
+            password: hashedPassword,
+            role: 'Admin',
+          };
+
           const { data: newUser } = await supabase
             .from('users')
-            .upsert(
-              [
-                {
-                  id: 'usr-admin-1',
-                  username: 'edolotallas',
-                  email: 'supplyoffice1996@gmail.com',
-                  fullName: 'Elmer G. Dolotallas',
-                  password: hashedPassword,
-                  role: 'Admin',
-                },
-              ],
-              { onConflict: 'username' }
-            )
+            .upsert([seedUser], { onConflict: 'username' })
             .select()
             .single();
 
@@ -110,14 +114,15 @@ export async function POST(request) {
     }
 
     if (isValidPassword) {
+      const isQueenie = lowerUsername.includes('queenie');
       const userPayload = {
-        id: dbUser?.id || 'usr-admin-1',
-        username: trimmedUsername,
-        fullName: dbUser?.fullName || 'Elmer G. Dolotallas',
-        name: dbUser?.fullName || 'Elmer G. Dolotallas',
+        id: dbUser?.id || (isQueenie ? 'usr-admin-queenie' : 'usr-admin-1'),
+        username: dbUser?.username || trimmedUsername,
+        fullName: dbUser?.fullName || (isQueenie ? 'Queenie PPSC' : 'Elmer G. Dolotallas'),
+        name: dbUser?.fullName || (isQueenie ? 'Queenie PPSC' : 'Elmer G. Dolotallas'),
         role: dbUser?.role || 'Admin',
-        position: 'Supply Officer / Admin',
-        initials: 'ED',
+        position: isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin',
+        initials: isQueenie ? 'QP' : 'ED',
       };
 
       // Create signed JWT session token

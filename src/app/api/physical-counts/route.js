@@ -60,29 +60,12 @@ export async function GET(request) {
 
     const propMap = new Map((properties || []).map((p) => [p.id, p]));
 
-    let filteredCounts = rawCounts || [];
-
-    // Filter counts based on the active logged in user
-    if (targetUsername) {
-      filteredCounts = filteredCounts.filter((c) => {
-        const prop = propMap.get(c.propertyId) || {};
-        const propEncoder = extractEncoderFromRemarks(prop.remarks);
-        const countUser = (c.countedBy || '').toLowerCase();
-
-        if (targetUsername === 'queenie_ppsc') {
-          return propEncoder === 'queenie_ppsc' || countUser.includes('queenie');
-        } else if (targetUsername === 'edolotallas') {
-          return propEncoder === 'edolotallas' && !countUser.includes('queenie');
-        }
-        return propEncoder === targetUsername || countUser.includes(targetUsername);
-      });
-    }
-
     const formatted = filteredCounts.map((c) => {
       const prop = propMap.get(c.propertyId) || {};
       const expected = c.quantityPerCard || prop.quantityPerCard || 1;
       const actual = c.physicalCount;
       const diff = actual !== null && actual !== undefined ? actual - expected : null;
+      const creator = c.createdBy || c.created_by || 'edolotallas';
 
       let stat = c.status || 'PENDING';
       if (actual !== null && actual !== undefined) {
@@ -106,6 +89,8 @@ export async function GET(request) {
         difference: diff,
         status: stat,
         remarks: c.remarks || '',
+        createdBy: creator,
+        encodedBy: creator,
         countedAt: c.countedAt,
         countedBy: c.countedBy,
         createdAt: c.createdAt,
@@ -237,6 +222,9 @@ export async function POST(request) {
       }
       finalCount = updated;
     } else {
+      const sessionUser = await getSessionUser(request);
+      const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
+
       const newCountPayload = {
         id: `cnt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         sessionId,
@@ -248,13 +236,26 @@ export async function POST(request) {
         remarks: remarks || 'Scanned from property sticker',
         countedAt: new Date().toISOString(),
         countedBy: finalCountedBy,
+        createdBy: activeUsername,
       };
 
-      const { data: inserted, error: insertError } = await supabase
+      let { data: inserted, error: insertError } = await supabase
         .from('physical_counts')
         .insert([newCountPayload])
         .select()
         .single();
+
+      if (insertError && (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"'))) {
+        const fallbackCount = { ...newCountPayload };
+        delete fallbackCount.createdBy;
+        const retry = await supabase
+          .from('physical_counts')
+          .insert([fallbackCount])
+          .select()
+          .single();
+        inserted = retry.data;
+        insertError = retry.error;
+      }
 
       if (insertError) {
         return NextResponse.json({ error: insertError.message }, { status: 400 });

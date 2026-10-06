@@ -74,19 +74,6 @@ export async function GET(request) {
 
     let filteredReports = rawReports || [];
 
-    // Filter reports based on active user
-    if (targetUsername) {
-      filteredReports = filteredReports.filter((r) => {
-        const genBy = (r.generatedBy || '').toLowerCase();
-        if (targetUsername === 'queenie_ppsc') {
-          return genBy.includes('queenie');
-        } else if (targetUsername === 'edolotallas') {
-          return !genBy.includes('queenie');
-        }
-        return genBy.includes(targetUsername);
-      });
-    }
-
     // 2. Fetch lookup records in parallel for robust in-memory relation mapping
     const [empRes, offRes, sessRes] = await Promise.all([
       supabase.from('employees').select('id, name, employeeId, position, assumedDate'),
@@ -125,6 +112,8 @@ export async function GET(request) {
         ? (String(r.asOfDate).includes('T') ? String(r.asOfDate).slice(0, 10) : String(r.asOfDate))
         : '2026-12-31';
 
+      const creator = r.createdBy || r.created_by || 'edolotallas';
+
       return {
         id: r.id,
         reportNumber: r.reportNumber,
@@ -141,6 +130,8 @@ export async function GET(request) {
         inventorySessionCode: sess ? sess.sessionCode : r.inventorySessionCode || 'DIRECT-GEN',
         generatedDate: r.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         generatedBy: r.generatedBy || 'Admin',
+        createdBy: creator,
+        encodedBy: creator,
         status: r.status || 'FINALIZED',
         signatories: r.signatories || {},
         itemsCount: items.length,
@@ -253,6 +244,7 @@ export async function POST(request) {
 
     const sessionUser = await getSessionUser(request);
     const activeUserName = sessionUser?.fullName || sessionUser?.username || 'Admin';
+    const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
 
     const reportPayload = {
       id: id || `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -264,6 +256,7 @@ export async function POST(request) {
       officeId: validOffId,
       inventorySessionId: validSessId,
       generatedBy: generatedBy || activeUserName,
+      createdBy: activeUsername,
       status: status || 'FINALIZED',
       signatories: {
         ...(signatories || {}),
@@ -273,11 +266,26 @@ export async function POST(request) {
       snapshotData: finalItems,
     };
 
-    const { data: insertedReport, error: insertError } = await supabase
+    let insertedReport = null;
+    let { data, error: insertError } = await supabase
       .from('reports')
       .insert([reportPayload])
       .select()
       .single();
+
+    if (insertError && (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"'))) {
+      const fallbackReport = { ...reportPayload };
+      delete fallbackReport.createdBy;
+      const retry = await supabase
+        .from('reports')
+        .insert([fallbackReport])
+        .select()
+        .single();
+      insertedReport = retry.data;
+      insertError = retry.error;
+    } else {
+      insertedReport = data;
+    }
 
     if (insertError) {
       console.warn('Report database insert warning/error:', insertError);
