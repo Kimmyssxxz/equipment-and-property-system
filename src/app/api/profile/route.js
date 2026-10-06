@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { getSessionUser, hashPassword } from '@/lib/auth';
 
 function getClient() {
   const service = getServiceSupabase();
@@ -7,23 +8,47 @@ function getClient() {
   return getSupabaseClient();
 }
 
-// GET: Fetch Admin Profile
+// GET: Fetch Admin Profile for the active user
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const username = searchParams.get('username') || 'edolotallas';
+    const sessionUser = await getSessionUser(request);
+    let username = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : null;
+
+    if (request && request.url) {
+      try {
+        const { searchParams } = new URL(request.url);
+        const uParam = searchParams.get('username') || searchParams.get('user');
+        if (uParam) username = uParam.toLowerCase().trim();
+      } catch (e) {}
+    }
+
+    if (!username) {
+      username = 'edolotallas';
+    }
+
+    const isQueenie = username.includes('queenie');
+
+    const defaultProfile = isQueenie
+      ? {
+          username: 'queenie_ppsc',
+          fullName: 'Queenie PPSC',
+          email: 'queenie.ppsc@gmail.com',
+          position: 'Property & Supply Admin',
+          password: 'NFSTISupply123',
+        }
+      : {
+          username: 'edolotallas',
+          fullName: 'Elmer G. Dolotallas',
+          email: 'supplyoffice1996@gmail.com',
+          position: 'Supply Officer / Admin',
+          password: 'NFSTISupply123',
+        };
 
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
         {
           success: true,
-          profile: {
-            username: 'edolotallas',
-            fullName: 'Elmer G. Dolotallas',
-            email: 'supplyoffice1996@gmail.com',
-            position: 'Supply Officer / Admin',
-            password: 'NFSTISupply123',
-          },
+          profile: defaultProfile,
         },
         { status: 200 }
       );
@@ -37,23 +62,27 @@ export async function GET(request) {
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('username', username)
-      .single();
+      .ilike('username', username)
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       console.warn('Profile fetch notice:', error.message);
     }
 
+    const userProfile = user
+      ? {
+          username: user.username,
+          fullName: user.fullName || defaultProfile.fullName,
+          email: user.email || defaultProfile.email,
+          position: user.position || defaultProfile.position,
+          password: user.password ? '••••••••••••' : defaultProfile.password,
+        }
+      : defaultProfile;
+
     return NextResponse.json(
       {
         success: true,
-        profile: user || {
-          username: 'edolotallas',
-          fullName: 'Elmer G. Dolotallas',
-          email: 'supplyoffice1996@gmail.com',
-          position: 'Supply Officer / Admin',
-          password: 'NFSTISupply123',
-        },
+        profile: userProfile,
       },
       { status: 200 }
     );
@@ -75,15 +104,33 @@ export async function POST(request) {
       );
     }
 
+    const cleanUsername = username.trim().toLowerCase();
+    const isQueenie = cleanUsername.includes('queenie');
+
     if (isSupabaseConfigured()) {
       const supabase = getClient();
       if (supabase) {
+        // Fetch existing user to get id
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id, password')
+          .ilike('username', cleanUsername)
+          .maybeSingle();
+
+        const userId = existingUser?.id || (isQueenie ? 'usr-admin-queenie' : 'usr-admin-1');
+        
+        let finalPassword = existingUser?.password || 'NFSTISupply123';
+        if (password && password !== '••••••••••••') {
+          finalPassword = await hashPassword(password.trim());
+        }
+
         const payload = {
-          id: 'usr-admin-1',
-          username: username.trim(),
+          id: userId,
+          username: cleanUsername,
           fullName: fullName.trim(),
-          email: email ? email.trim() : 'supplyoffice1996@gmail.com',
-          password: password ? password.trim() : 'NFSTISupply123',
+          email: email ? email.trim() : (isQueenie ? 'queenie.ppsc@gmail.com' : 'supplyoffice1996@gmail.com'),
+          password: finalPassword,
+          position: position ? position.trim() : (isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin'),
           role: 'Admin',
         };
 
@@ -105,11 +152,11 @@ export async function POST(request) {
         success: true,
         message: 'Profile settings and credentials saved to Supabase successfully',
         profile: {
-          username: username.trim(),
+          username: cleanUsername,
           fullName: fullName.trim(),
           email: email ? email.trim() : '',
-          position: position || 'Supply Officer / Admin',
-          password: password || 'NFSTISupply123',
+          position: position || (isQueenie ? 'Property & Supply Admin' : 'Supply Officer / Admin'),
+          password: '••••••••••••',
         },
       },
       { status: 200 }

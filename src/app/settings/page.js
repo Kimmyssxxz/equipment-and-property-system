@@ -33,7 +33,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { StorageManager } from '@/lib/storage';
+import { StorageManager, authFetch, initialSignatoriesConfig } from '@/lib/storage';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('ORG'); // ORG, REPORT, USERS, AUDIT, DATABASE
@@ -200,10 +200,16 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
     }
 
     try {
-      const profRes = await fetch('/api/profile');
+      const activeUser = StorageManager.getActiveUser();
+      const isQueenie =
+        (activeUser?.username || '').toLowerCase().includes('queenie') ||
+        (activeUser?.name || '').toLowerCase().includes('queenie') ||
+        (activeUser?.fullName || '').toLowerCase().includes('queenie');
+      const currentUsername = isQueenie ? (activeUser?.username || 'queenie_ppsc') : (activeUser?.username || 'edolotallas');
+      const profRes = await authFetch(`/api/profile?username=${encodeURIComponent(currentUsername)}`);
       const profData = await profRes.json();
       if (profRes.ok && profData.success && profData.profile) {
-        setProfile((prev) => ({ ...prev, ...profData.profile }));
+        setProfile(profData.profile);
       }
     } catch (profErr) {
       console.warn('Fallback for profile fetch:', profErr);
@@ -325,12 +331,37 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
     }
   };
 
-  const [profile, setProfile] = useState({
-    username: 'edolotallas',
-    fullName: 'Elmer G. Dolotallas',
-    position: 'Supply Officer / Admin',
-    email: 'supplyoffice1996@gmail.com',
-    password: 'NFSTISupply123',
+  const [profile, setProfile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const active = StorageManager.getActiveUser();
+      const isQueenie =
+        (active?.username || '').toLowerCase().includes('queenie') ||
+        (active?.name || '').toLowerCase().includes('queenie') ||
+        (active?.fullName || '').toLowerCase().includes('queenie');
+      if (isQueenie) {
+        return {
+          username: active?.username || 'queenie_ppsc',
+          fullName: active?.fullName || active?.name || 'Queenie PPSC',
+          position: active?.position || 'Property & Supply Admin',
+          email: active?.email || 'queenie.ppsc@gmail.com',
+          password: '••••••••••••',
+        };
+      }
+      return {
+        username: active?.username || 'edolotallas',
+        fullName: active?.fullName || active?.name || 'Elmer G. Dolotallas',
+        position: active?.position || 'Supply Officer / Admin',
+        email: active?.email || 'supplyoffice1996@gmail.com',
+        password: '••••••••••••',
+      };
+    }
+    return {
+      username: 'edolotallas',
+      fullName: 'Elmer G. Dolotallas',
+      position: 'Supply Officer / Admin',
+      email: 'supplyoffice1996@gmail.com',
+      password: '••••••••••••',
+    };
   });
   const [showProfilePassword, setShowProfilePassword] = useState(false);
 
@@ -339,7 +370,7 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch('/api/profile', {
+      const res = await authFetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
@@ -348,10 +379,13 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
       if (res.ok && data.success) {
         StorageManager.setActiveUser({
           ...StorageManager.getActiveUser(),
+          username: profile.username,
           name: profile.fullName,
           fullName: profile.fullName,
           position: profile.position,
+          email: profile.email,
         });
+        window.dispatchEvent(new Event('storage'));
         setNotification({
           title: 'Profile Settings Saved to Supabase!',
           message: 'Admin account profile, credentials, and password updated successfully.',
@@ -367,7 +401,7 @@ DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabas
           isOpen: true,
           type: 'failed',
           title: 'Profile Update Notice',
-          message: data.error || 'Profile details updated locally.',
+          message: data?.error || 'Profile details updated locally.',
         });
       }
     } catch (err) {
