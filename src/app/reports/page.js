@@ -309,7 +309,7 @@ function ReportsContent() {
       let items = [];
       if (selectedTypeId !== 'rspi' && session && inventorySessionId !== 'DIRECT_CATALOG') {
         try {
-          const countRes = await fetch(`/api/physical-counts?sessionId=${session.id}`);
+          const countRes = await authFetch(`/api/physical-counts?sessionId=${session.id}`);
           const countData = await countRes.json();
           if (countRes.ok && Array.isArray(countData.counts)) {
             // ONLY include items that have actually been physically scanned / counted in this inventory session!

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
@@ -483,7 +483,7 @@ export default function PhysicalInventoryPage() {
     }
 
     try {
-      const res = await fetch('/api/inventory-sessions', {
+      const res = await authFetch('/api/inventory-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sessionFormData),
@@ -540,7 +540,7 @@ export default function PhysicalInventoryPage() {
       return;
     }
     try {
-      const res = await fetch('/api/inventory-sessions', {
+      const res = await authFetch('/api/inventory-sessions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editSessionFormData),
@@ -589,7 +589,7 @@ export default function PhysicalInventoryPage() {
 
       // 1. Post Scan to Backend Supabase API
       try {
-        const res = await fetch('/api/physical-counts', {
+        const res = await authFetch('/api/physical-counts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -660,13 +660,14 @@ export default function PhysicalInventoryPage() {
   const handleQuickMatch = async (item) => {
     try {
       try {
-        await fetch('/api/physical-counts', {
+        await authFetch('/api/physical-counts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sessionId: item.sessionId || activeSessionId,
-            countId: item.id,
-            propertyId: item.propertyId,
+            countId: item.id && !item.id.startsWith('pending-') && !item.id.startsWith('temp-') ? item.id : undefined,
+            propertyId: item.propertyId || item.id,
+            scannedCode: item.propertyNumber,
             physicalCount: item.quantityPerCard || 1,
             remarks: item.remarks || 'Verified in good physical condition',
             countedBy: 'Admin',
@@ -715,7 +716,7 @@ export default function PhysicalInventoryPage() {
     try {
       if (deleteType === 'session') {
         try {
-          await fetch(`/api/inventory-sessions?id=${itemToDelete.id}`, { method: 'DELETE' });
+          await authFetch(`/api/inventory-sessions?id=${itemToDelete.id}`, { method: 'DELETE' });
         } catch (e) {}
 
         if (activeSessionId === itemToDelete.id) {
@@ -731,7 +732,7 @@ export default function PhysicalInventoryPage() {
         });
       } else if (deleteType === 'reset-count') {
         try {
-          await fetch(`/api/physical-counts?countId=${itemToDelete.id}`, { method: 'DELETE' });
+          await authFetch(`/api/physical-counts?countId=${itemToDelete.id}`, { method: 'DELETE' });
         } catch (e) {}
 
         StorageManager.resetPhysicalCount?.({ countId: itemToDelete.id });
@@ -918,19 +919,21 @@ export default function PhysicalInventoryPage() {
 
     try {
       const finalRemarks = verifyRemarks.trim() || 'In good working condition';
+      const activeUser = StorageManager.getActiveUser();
+      const currentUserName = activeUser?.fullName || activeUser?.username || 'Admin';
 
       // 1. Post to /api/physical-counts in Supabase
-      const res = await fetch('/api/physical-counts', {
+      const res = await authFetch('/api/physical-counts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId: targetSessionId,
-          countId: itemForVerification.id && !itemForVerification.id.startsWith('temp-') ? itemForVerification.id : undefined,
+          countId: itemForVerification.id && !itemForVerification.id.startsWith('temp-') && !itemForVerification.id.startsWith('pending-') ? itemForVerification.id : undefined,
           propertyId: itemForVerification.propertyId || itemForVerification.id,
           scannedCode: itemForVerification.propertyNumber,
           physicalCount: verifyCount,
           remarks: finalRemarks,
-          countedBy: 'Admin',
+          countedBy: currentUserName,
         }),
       });
 
@@ -1021,9 +1024,57 @@ export default function PhysicalInventoryPage() {
 
   // Active Session Details
   const currentActiveSession = sessions.find((s) => s.id === activeSessionId);
-  const activeSessionCounts = currentActiveSession
-    ? allCounts.filter((c) => c.sessionId === currentActiveSession.id)
-    : [];
+  
+  // Combine recorded session counts + any registered properties belonging to this session
+  const activeSessionCounts = useMemo(() => {
+    if (!currentActiveSession) return [];
+
+    const recordedCounts = allCounts.filter((c) => c.sessionId === currentActiveSession.id);
+    const recordedPropKeys = new Set(
+      recordedCounts.map((c) => {
+        const pid = c.propertyId ? String(c.propertyId).toLowerCase() : '';
+        const pno = c.propertyNumber ? String(c.propertyNumber).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+        return pid || pno;
+      }).filter(Boolean)
+    );
+
+    // Matching master properties for this session
+    const matchingProps = properties.filter((p) => {
+      if (currentActiveSession.categoryFilter && currentActiveSession.categoryFilter !== 'ALL') {
+        const pCat = p.categoryId || p.category_id;
+        if (pCat !== currentActiveSession.categoryFilter) return false;
+      }
+      return true;
+    });
+
+    const unrecordedProps = matchingProps
+      .filter((p) => {
+        const pid = p.id ? String(p.id).toLowerCase() : '';
+        const pno = p.propertyNumber ? String(p.propertyNumber).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+        return !recordedPropKeys.has(pid) && (!pno || !recordedPropKeys.has(pno));
+      })
+      .map((p) => ({
+        id: 'pending-' + p.id,
+        sessionId: currentActiveSession.id,
+        propertyId: p.id,
+        propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
+        article: p.article || p.name || 'Equipment Item',
+        description: p.description || '',
+        categoryId: p.categoryId || p.category_id,
+        unit: p.unit || 'unit',
+        unitValue: p.unitValue || p.unit_value || p.cost || 0,
+        quantityPerCard: p.quantityPerCard || p.quantity_per_card || p.quantity || 1,
+        physicalCount: null,
+        difference: null,
+        status: 'PENDING',
+        remarks: '',
+        accountableOfficerName: p.accountablePersonName || p.accountable_person_name || p.accountableOfficer || '',
+        officeName: p.officeName || p.office_name || p.office || '',
+        createdBy: p.createdBy || p.created_by,
+      }));
+
+    return [...recordedCounts, ...unrecordedProps];
+  }, [currentActiveSession, allCounts, properties]);
 
   // Active Session Stats
   const totalItems = activeSessionCounts.length;

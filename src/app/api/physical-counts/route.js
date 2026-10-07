@@ -56,16 +56,16 @@ export async function GET(request) {
     // Parallel fetch master properties
     const { data: properties } = await supabase
       .from('properties')
-      .select('id, propertyNumber, article, description, categoryId, unit, unitValue, quantityPerCard, remarks');
+      .select('id, propertyNumber, article, description, categoryId, unit, unitValue, quantityPerCard, remarks, createdBy, created_by');
 
     const propMap = new Map((properties || []).map((p) => [p.id, p]));
 
-    const formatted = filteredCounts.map((c) => {
+    const formatted = (rawCounts || []).map((c) => {
       const prop = propMap.get(c.propertyId) || {};
       const expected = c.quantityPerCard || prop.quantityPerCard || 1;
       const actual = c.physicalCount;
       const diff = actual !== null && actual !== undefined ? actual - expected : null;
-      const creator = c.createdBy || c.created_by || 'edolotallas';
+      const creator = c.createdBy || c.created_by || prop.createdBy || prop.created_by || 'edolotallas';
 
       let stat = c.status || 'PENDING';
       if (actual !== null && actual !== undefined) {
@@ -110,7 +110,7 @@ export async function GET(request) {
         } else if (targetUsername === 'edolotallas') {
           return (propCreator === 'edolotallas' || (!propCreator.includes('queenie') && propCreator !== 'queenie_ppsc')) && !countUser.includes('queenie');
         }
-        return propCreator === targetUsername || countUser.includes(targetUsername);
+        return true;
       });
     }
 
