@@ -116,7 +116,7 @@ export async function GET(request) {
         } else if (targetUsername === 'edolotallas') {
           return (creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc')) && !invPerson.includes('queenie');
         }
-        return creator === targetUsername || invPerson.includes(targetUsername);
+        return true;
       });
     }
 

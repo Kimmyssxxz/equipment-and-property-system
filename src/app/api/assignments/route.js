@@ -205,7 +205,7 @@ export async function GET(request) {
         } else if (targetUsername === 'edolotallas') {
           return (propCreator === 'edolotallas' || (!propCreator.includes('queenie') && propCreator !== 'queenie_ppsc')) && !transBy.includes('queenie');
         }
-        return propCreator === targetUsername || transBy.includes(targetUsername);
+        return true;
       });
     }
 

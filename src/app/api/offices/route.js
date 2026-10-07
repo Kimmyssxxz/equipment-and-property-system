@@ -93,7 +93,7 @@ export async function GET(request) {
         } else if (targetUsername === 'edolotallas') {
           return creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc');
         }
-        return creator === targetUsername;
+        return true;
       });
     }
 
