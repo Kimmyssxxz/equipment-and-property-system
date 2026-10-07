@@ -165,7 +165,11 @@ export async function GET(request) {
     let filtered = formatted;
     if (targetUsername) {
       filtered = formatted.filter((c) => {
-        const prop = propMap.get(c.propertyId) || {};
+        const prop =
+          (c.propertyId ? propMap.get(String(c.propertyId)) : null) ||
+          (c.propertyId ? propMap.get(String(c.propertyId).toLowerCase()) : null) ||
+          (c.propertyNumber ? propMap.get(String(c.propertyNumber)) : null) ||
+          {};
         const propCreator = (prop.createdBy || prop.created_by || extractEncoderFromRemarks(prop.remarks) || 'edolotallas').toLowerCase().trim();
         const countUser = (c.countedBy || c.createdBy || '').toLowerCase().trim();
 

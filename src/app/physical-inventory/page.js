@@ -220,57 +220,45 @@ export default function PhysicalInventoryPage() {
           setCategories([]);
         }
 
-        const isOwner = (item) => {
-          const creator = (item.createdBy || item.encodedBy || '').toLowerCase().trim();
-          const person = (item.inventoryPerson || item.accountableOfficerName || item.finalizedBy || item.countedBy || item.transferredBy || '').toLowerCase().trim();
-          if (currentUsername === 'queenie_ppsc') return creator === 'queenie_ppsc' || creator.includes('queenie') || person.includes('queenie');
-          if (currentUsername === 'edolotallas') return (creator === 'edolotallas' || (!creator.includes('queenie') && creator !== 'queenie_ppsc')) && !person.includes('queenie');
-          return creator === currentUsername || person.includes(currentUsername);
-        };
-
         if (offData.success && Array.isArray(offData.offices)) {
-          const userOffs = offData.offices.filter(isOwner);
-          setOffices(userOffs);
-          StorageManager.saveOffices(userOffs);
+          setOffices(offData.offices);
+          StorageManager.saveOffices(offData.offices);
         } else {
           setOffices([]);
         }
 
         if (empData.success && (Array.isArray(empData.personnel) || Array.isArray(empData.employees))) {
           const rawEmps = empData.personnel || empData.employees;
-          const userEmps = rawEmps.filter(isOwner);
-          setEmployees(userEmps);
-          StorageManager.saveEmployees(userEmps);
+          setEmployees(rawEmps);
+          StorageManager.saveEmployees(rawEmps);
         } else {
           setEmployees([]);
         }
 
         if (asgnData.success && Array.isArray(asgnData.assignments)) {
-          const userAsgns = asgnData.assignments.filter(isOwner);
-          setAssignmentsHistory(userAsgns);
-          StorageManager.saveAssignmentsHistory(userAsgns);
+          setAssignmentsHistory(asgnData.assignments);
+          StorageManager.saveAssignmentsHistory(asgnData.assignments);
         } else {
           setAssignmentsHistory([]);
         }
 
         if (sessRes.ok && sessData.success && Array.isArray(sessData.sessions)) {
           setDbConnected(true);
-          loadedSessions = sessData.sessions.filter(isOwner);
+          loadedSessions = sessData.sessions;
           StorageManager.saveInventorySessions?.(loadedSessions);
         } else {
           loadedSessions = [];
         }
 
         if (cntsRes.ok && cntsData.success && Array.isArray(cntsData.counts)) {
-          loadedCounts = cntsData.counts.filter(isOwner);
+          loadedCounts = cntsData.counts;
           StorageManager.savePhysicalCounts?.(loadedCounts);
         } else {
           loadedCounts = [];
         }
 
         if (propsRes.ok && propsData.success && Array.isArray(propsData.properties)) {
-          const userProps = propsData.properties.filter(isOwner);
-          const apiProps = userProps.map((p) => ({
+          const apiProps = propsData.properties.map((p) => ({
             ...p,
             propertyNumber: p.propertyNumber || p.property_number || p.propertyNo || p.id,
             article: p.article || p.name || 'Equipment Item',
@@ -949,6 +937,7 @@ export default function PhysicalInventoryPage() {
       });
 
       playScanBeep();
+      setActiveSessionId(targetSessionId);
       await loadData();
 
       const savedCountId = data?.count?.id || itemForVerification.id;
@@ -986,6 +975,11 @@ export default function PhysicalInventoryPage() {
   // Open Scanner for active session or generally
   const openScanner = (sessionId = null, e = null) => {
     if (e) e.stopPropagation();
+    if (sessionId) {
+      setActiveSessionId(sessionId);
+    } else if (!activeSessionId && sessions.length > 0) {
+      setActiveSessionId(sessions[0].id);
+    }
     setBarcodeInput('');
     setScannedItem(null);
     setIsScannerOpen(true);
@@ -1023,17 +1017,39 @@ export default function PhysicalInventoryPage() {
   );
 
   // Active Session Details
-  const currentActiveSession = sessions.find((s) => s.id === activeSessionId);
+  const currentActiveSession = sessions.find((s) => s.id === activeSessionId || s.sessionCode === activeSessionId);
   
+  // Helper to check if a count item has been physically verified/counted
+  const isCountedItem = (c) => {
+    if (!c) return false;
+    const hasCount = c.physicalCount !== null && c.physicalCount !== undefined && c.physicalCount !== '';
+    const hasCountSnake = c.physical_count !== null && c.physical_count !== undefined && c.physical_count !== '';
+    const notPending = c.status && String(c.status).toUpperCase() !== 'PENDING';
+    return hasCount || hasCountSnake || notPending;
+  };
+
   // Combine recorded session counts + any registered properties belonging to this session
   const activeSessionCounts = useMemo(() => {
     if (!currentActiveSession) return [];
 
-    const recordedRaw = allCounts.filter((c) => c.sessionId === currentActiveSession.id);
+    const actSessId = currentActiveSession.id ? String(currentActiveSession.id).toLowerCase().trim() : '';
+    const actSessCode = currentActiveSession.sessionCode ? String(currentActiveSession.sessionCode).toLowerCase().trim() : '';
+
+    // 1. Find all recorded counts matching this session (by session ID or session Code, or if there's only 1 session)
+    const recordedRaw = allCounts.filter((c) => {
+      const cSessId = c.sessionId || c.session_id;
+      if (!cSessId) return sessions.length === 1;
+      const cSessIdStr = String(cSessId).toLowerCase().trim();
+      return (
+        cSessIdStr === actSessId ||
+        (actSessCode && cSessIdStr === actSessCode) ||
+        (cSessIdStr.replace(/[^a-z0-9]/g, '') === actSessId.replace(/[^a-z0-9]/g, ''))
+      );
+    });
 
     const enrichedRecorded = recordedRaw.map((c) => {
-      const cPropId = c.propertyId ? String(c.propertyId).toLowerCase().trim() : '';
-      const cPropNum = c.propertyNumber ? String(c.propertyNumber).toLowerCase().trim() : '';
+      const cPropId = c.propertyId ? String(c.propertyId).toLowerCase().trim() : (c.property_id ? String(c.property_id).toLowerCase().trim() : '');
+      const cPropNum = c.propertyNumber ? String(c.propertyNumber).toLowerCase().trim() : (c.property_number ? String(c.property_number).toLowerCase().trim() : '');
       const cPropNumClean = cPropNum.replace(/[^a-z0-9]/g, '');
 
       // Lookup in properties masterlist
@@ -1049,7 +1065,7 @@ export default function PhysicalInventoryPage() {
       const pNumber =
         (c.propertyNumber && c.propertyNumber !== 'N/A' && c.propertyNumber !== 'Asset')
           ? c.propertyNumber
-          : (prop?.propertyNumber || prop?.property_number || prop?.propertyNo || c.scannedCode || 'N/A');
+          : (prop?.propertyNumber || prop?.property_number || prop?.propertyNo || c.scannedCode || c.scanned_code || 'N/A');
 
       const article =
         (c.article && c.article !== 'Asset' && c.article !== 'Equipment Item')
@@ -1057,12 +1073,15 @@ export default function PhysicalInventoryPage() {
           : (prop?.article || prop?.name || prop?.title || c.article || 'Equipment Item');
 
       const description = c.description || prop?.description || '';
-      const categoryId = c.categoryId || prop?.categoryId || prop?.category_id;
+      const categoryId = c.categoryId || c.category_id || prop?.categoryId || prop?.category_id;
       const unit = c.unit || prop?.unit || 'unit';
       const unitValue = c.unitValue || prop?.unitValue || prop?.unit_value || 0;
-      const expected = c.quantityPerCard || prop?.quantityPerCard || prop?.quantity_per_card || 1;
-      const actual = c.physicalCount;
-      const diff = actual !== null && actual !== undefined ? actual - expected : null;
+      const expected = c.quantityPerCard || c.quantity_per_card || prop?.quantityPerCard || prop?.quantity_per_card || 1;
+      const isCounted = isCountedItem(c);
+      const actual = isCounted ? (c.physicalCount !== null && c.physicalCount !== undefined ? c.physicalCount : (c.physical_count !== null && c.physical_count !== undefined ? c.physical_count : expected)) : null;
+      const diff = actual !== null ? actual - expected : null;
+
+      let stat = c.status || (isCounted ? (diff === 0 ? 'OK' : diff < 0 ? 'SHORTAGE' : 'OVERAGE') : 'PENDING');
 
       return {
         ...c,
@@ -1073,7 +1092,9 @@ export default function PhysicalInventoryPage() {
         unit,
         unitValue,
         quantityPerCard: expected,
+        physicalCount: actual,
         difference: diff,
+        status: stat,
         accountableOfficerName: c.accountableOfficerName || prop?.accountablePersonName || prop?.accountable_person_name || prop?.accountableOfficer || '',
         officeName: c.officeName || prop?.officeName || prop?.office_name || prop?.office || '',
       };
@@ -1081,7 +1102,7 @@ export default function PhysicalInventoryPage() {
 
     const recordedPropKeys = new Set(
       enrichedRecorded.map((c) => {
-        const pid = c.propertyId ? String(c.propertyId).toLowerCase() : '';
+        const pid = c.propertyId ? String(c.propertyId).toLowerCase() : (c.property_id ? String(c.property_id).toLowerCase() : '');
         const pno = c.propertyNumber ? String(c.propertyNumber).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
         return pid || pno;
       }).filter(Boolean)
@@ -1123,38 +1144,38 @@ export default function PhysicalInventoryPage() {
       }));
 
     return [...enrichedRecorded, ...unrecordedProps];
-  }, [currentActiveSession, allCounts, properties]);
+  }, [currentActiveSession, allCounts, properties, sessions]);
 
   // Active Session Stats
   const totalItems = activeSessionCounts.length;
-  const countedCount = activeSessionCounts.filter((c) => c.physicalCount !== null).length;
-  const pendingCount = activeSessionCounts.filter((c) => c.physicalCount === null).length;
-  const okCount = activeSessionCounts.filter((c) => c.status === 'OK' && c.physicalCount !== null).length;
-  const shortageCount = activeSessionCounts.filter((c) => c.status === 'SHORTAGE' && c.physicalCount !== null).length;
-  const overageCount = activeSessionCounts.filter((c) => c.status === 'OVERAGE' && c.physicalCount !== null).length;
+  const countedCount = activeSessionCounts.filter(isCountedItem).length;
+  const pendingCount = activeSessionCounts.filter((c) => !isCountedItem(c)).length;
+  const okCount = activeSessionCounts.filter((c) => (c.status === 'OK' || (c.difference === 0 && isCountedItem(c))) && isCountedItem(c)).length;
+  const shortageCount = activeSessionCounts.filter((c) => (c.status === 'SHORTAGE' || (c.difference < 0 && isCountedItem(c))) && isCountedItem(c)).length;
+  const overageCount = activeSessionCounts.filter((c) => (c.status === 'OVERAGE' || (c.difference > 0 && isCountedItem(c))) && isCountedItem(c)).length;
   const progressPct = totalItems > 0 ? Math.round((countedCount / totalItems) * 100) : 0;
 
   // Filtered counts for Active Session Table
   const filteredActiveCounts = activeSessionCounts.filter((c) => {
     const matchesSearch =
       !search ||
-      c.propertyNumber.toLowerCase().includes(search.toLowerCase()) ||
-      c.article.toLowerCase().includes(search.toLowerCase()) ||
+      (c.propertyNumber && c.propertyNumber.toLowerCase().includes(search.toLowerCase())) ||
+      (c.article && c.article.toLowerCase().includes(search.toLowerCase())) ||
       (c.description && c.description.toLowerCase().includes(search.toLowerCase()));
 
     let matchesTab = true;
-    if (statusTab === 'SCANNED') matchesTab = c.physicalCount !== null;
-    else if (statusTab === 'UNSCANNED') matchesTab = c.physicalCount === null;
-    else if (statusTab === 'OK') matchesTab = c.status === 'OK' && c.physicalCount !== null;
-    else if (statusTab === 'SHORTAGE') matchesTab = c.status === 'SHORTAGE' && c.physicalCount !== null;
-    else if (statusTab === 'OVERAGE') matchesTab = c.status === 'OVERAGE' && c.physicalCount !== null;
+    if (statusTab === 'SCANNED') matchesTab = isCountedItem(c);
+    else if (statusTab === 'UNSCANNED') matchesTab = !isCountedItem(c);
+    else if (statusTab === 'OK') matchesTab = isCountedItem(c) && (c.status === 'OK' || c.difference === 0);
+    else if (statusTab === 'SHORTAGE') matchesTab = isCountedItem(c) && (c.status === 'SHORTAGE' || c.difference < 0);
+    else if (statusTab === 'OVERAGE') matchesTab = isCountedItem(c) && (c.status === 'OVERAGE' || c.difference > 0);
     else if (statusTab === 'ALL') matchesTab = true;
 
     const matchesCategory =
       selectedCategoryFilter === 'ALL' ||
       (() => {
         const prop = properties.find((p) => p.id === c.propertyId || p.propertyNumber === c.propertyNumber);
-        return prop?.categoryId === selectedCategoryFilter;
+        return (prop?.categoryId || c.categoryId) === selectedCategoryFilter;
       })();
 
     return matchesSearch && matchesTab && matchesCategory;
