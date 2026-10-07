@@ -1354,11 +1354,21 @@ export default function PhysicalInventoryPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedSessions.map((session) => {
-                    const sessionCounts = allCounts.filter((c) => c.sessionId === session.id);
-                    const total = sessionCounts.length;
-                    const counted = sessionCounts.filter((c) => c.physicalCount !== null).length;
-                    const pending = sessionCounts.filter((c) => c.physicalCount === null).length;
-                    const shortages = sessionCounts.filter((c) => c.status === 'SHORTAGE' && c.physicalCount !== null).length;
+                    const sessionCounts = allCounts.filter((c) => {
+                      const cSessId = c.sessionId || c.session_id;
+                      return cSessId === session.id || cSessId === session.sessionCode;
+                    });
+                    const matchingProps = properties.filter((p) => {
+                      if (session.categoryFilter && session.categoryFilter !== 'ALL') {
+                        const pCat = p.categoryId || p.category_id;
+                        return pCat === session.categoryFilter;
+                      }
+                      return true;
+                    });
+                    const total = Math.max(matchingProps.length, sessionCounts.length);
+                    const counted = sessionCounts.filter(isCountedItem).length;
+                    const pending = Math.max(0, total - counted);
+                    const shortages = sessionCounts.filter((c) => (c.status === 'SHORTAGE' || c.difference < 0) && isCountedItem(c)).length;
                     const pct = total > 0 ? Math.round((counted / total) * 100) : 0;
 
                     return (

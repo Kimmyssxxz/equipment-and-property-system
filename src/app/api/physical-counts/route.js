@@ -104,7 +104,7 @@ export async function GET(request) {
         else if (diff > 0) stat = 'OVERAGE';
       }
 
-      const propNumber =
+      const propertyNumber =
         (prop.propertyNumber && prop.propertyNumber !== 'N/A' && prop.propertyNumber !== 'Asset')
           ? prop.propertyNumber
           : prop.property_number ||
