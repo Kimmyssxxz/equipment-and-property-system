@@ -221,34 +221,54 @@ export async function POST(request) {
     }
 
     let targetProp = null;
-    const cleanPropId = propertyId && typeof propertyId === 'string' && propertyId.startsWith('temp-')
-      ? propertyId.replace('temp-', '')
-      : propertyId;
+    const cleanPropId =
+      propertyId && typeof propertyId === 'string' && (propertyId.startsWith('temp-') || propertyId.startsWith('pending-'))
+        ? propertyId.replace(/^(temp-|pending-)/, '')
+        : propertyId;
 
     if (cleanPropId) {
       const { data } = await supabase.from('properties').select('*').eq('id', cleanPropId).maybeSingle();
       targetProp = data;
     }
-    
+
     if (!targetProp && propNumber) {
-      const { data } = await supabase
+      // First try exact / ilike match on propertyNumber or id
+      const { data: matched } = await supabase
         .from('properties')
         .select('*')
-        .or(`propertyNumber.ilike.${propNumber},property_number.ilike.${propNumber},id.eq.${propNumber}`)
+        .or(`propertyNumber.ilike.${propNumber},id.eq.${propNumber}`)
         .maybeSingle();
-      targetProp = data;
+      targetProp = matched;
+
+      // Fallback: in-memory alphanumeric match across all properties
+      if (!targetProp) {
+        const { data: allProps } = await supabase.from('properties').select('*');
+        const cleanAlpha = String(propNumber).toLowerCase().replace(/[^a-z0-9]/g, '');
+        targetProp = (allProps || []).find((p) => {
+          const pNum = (p.propertyNumber || p.id || '').toLowerCase();
+          const pNumClean = pNum.replace(/[^a-z0-9]/g, '');
+          return pNum === String(propNumber).toLowerCase() || (cleanAlpha && pNumClean === cleanAlpha);
+        });
+      }
     }
 
-    // If property not found in database, check existing physical_counts by countId
+    // 2. Check for existing physical count
     let existingCount = null;
-    if (countId) {
-      const { data } = await supabase.from('physical_counts').select('*').eq('id', countId).maybeSingle();
+    const cleanCountId =
+      countId && typeof countId === 'string' && !countId.startsWith('temp-') && !countId.startsWith('pending-')
+        ? countId
+        : null;
+
+    if (cleanCountId) {
+      const { data } = await supabase.from('physical_counts').select('*').eq('id', cleanCountId).maybeSingle();
       existingCount = data;
       if (!targetProp && existingCount?.propertyId) {
         const { data: p } = await supabase.from('properties').select('*').eq('id', existingCount.propertyId).maybeSingle();
         targetProp = p;
       }
-    } else if (targetProp) {
+    }
+
+    if (!existingCount && targetProp) {
       const { data } = await supabase
         .from('physical_counts')
         .select('*')
@@ -256,6 +276,17 @@ export async function POST(request) {
         .eq('propertyId', targetProp.id)
         .maybeSingle();
       existingCount = data;
+    }
+
+    if (!existingCount && targetProp) {
+      const { data } = await supabase
+        .from('physical_counts')
+        .select('*')
+        .eq('propertyId', targetProp.id)
+        .maybeSingle();
+      if (data) {
+        existingCount = data;
+      }
     }
 
     if (!targetProp && !existingCount) {
@@ -278,17 +309,18 @@ export async function POST(request) {
     else if (difference > 0) status = 'OVERAGE';
 
     let finalCount;
-
     const sessionUser = await getSessionUser(request);
     const activeUserName = sessionUser?.fullName || sessionUser?.username || 'Admin';
     const finalCountedBy = countedBy || activeUserName;
 
     if (existingCount) {
       const updatePayload = {
+        sessionId,
+        propertyId: targetProp ? targetProp.id : existingCount.propertyId,
         physicalCount: countVal,
         difference,
         status,
-        remarks: remarks !== undefined ? remarks : existingCount.remarks || 'Scanned from property sticker',
+        remarks: remarks !== undefined ? remarks : existingCount.remarks || 'In good working condition',
         countedAt: new Date().toISOString(),
         countedBy: finalCountedBy,
         updatedAt: new Date().toISOString(),
@@ -306,7 +338,6 @@ export async function POST(request) {
       }
       finalCount = updated;
     } else {
-      const sessionUser = await getSessionUser(request);
       const activeUsername = sessionUser?.username ? sessionUser.username.toLowerCase().trim() : 'edolotallas';
 
       const newCountPayload = {
@@ -317,7 +348,7 @@ export async function POST(request) {
         physicalCount: countVal,
         difference,
         status,
-        remarks: remarks || 'Scanned from property sticker',
+        remarks: remarks || 'In good working condition',
         countedAt: new Date().toISOString(),
         countedBy: finalCountedBy,
         createdBy: activeUsername,
@@ -329,16 +360,28 @@ export async function POST(request) {
         .select()
         .single();
 
-      if (insertError && (insertError.message?.includes('column "createdBy"') || insertError.message?.includes('column "created_by"'))) {
-        const fallbackCount = { ...newCountPayload };
-        delete fallbackCount.createdBy;
-        const retry = await supabase
+      if (insertError) {
+        // Fallback: If unique constraint on (sessionId, propertyId) was triggered, update instead
+        const { data: retryUpdate, error: retryErr } = await supabase
           .from('physical_counts')
-          .insert([fallbackCount])
+          .update({
+            physicalCount: countVal,
+            difference,
+            status,
+            remarks: remarks || 'In good working condition',
+            countedAt: new Date().toISOString(),
+            countedBy: finalCountedBy,
+            updatedAt: new Date().toISOString(),
+          })
+          .eq('sessionId', sessionId)
+          .eq('propertyId', targetProp.id)
           .select()
           .single();
-        inserted = retry.data;
-        insertError = retry.error;
+
+        if (!retryErr && retryUpdate) {
+          inserted = retryUpdate;
+          insertError = null;
+        }
       }
 
       if (insertError) {
@@ -366,7 +409,7 @@ export async function POST(request) {
       await supabase.from('audit_logs').insert([
         {
           id: `log_${Date.now()}`,
-          userName: countedBy || 'Admin',
+          userName: finalCountedBy || 'Admin',
           action: 'PHYSICAL_COUNT',
           entity: 'Physical Count',
           entityId: formatted.id,
@@ -375,7 +418,14 @@ export async function POST(request) {
       ]);
     } catch (e) {}
 
-    return NextResponse.json({ success: true, count: formatted, isNewScan: !existingCount || existingCount.physicalCount === null }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        count: formatted,
+        isNewScan: !existingCount || existingCount.physicalCount === null,
+      },
+      { status: 200 }
+    );
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

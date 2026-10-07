@@ -683,6 +683,53 @@ export default function PhysicalInventoryPage() {
     }
   };
 
+  // Row Inline Count Edit Start
+  const handleStartEdit = (item) => {
+    setEditingCountId(item.id);
+    setInputVal(item.physicalCount !== null && item.physicalCount !== undefined ? item.physicalCount : (item.quantityPerCard || 1));
+    setInputRemarks(item.remarks || '');
+  };
+
+  // Save Row Inline Count Edit directly to Supabase
+  const handleSaveCount = async (item) => {
+    try {
+      const parsedCount = parseInt(inputVal, 10);
+      const finalCount = isNaN(parsedCount) ? 1 : Math.max(0, parsedCount);
+      const targetSessionId = activeSessionId || item.sessionId || (sessions.length > 0 ? sessions[0].id : null);
+
+      const res = await authFetch('/api/physical-counts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: targetSessionId,
+          countId: item.id && !item.id.startsWith('pending-') && !item.id.startsWith('temp-') ? item.id : undefined,
+          propertyId: item.propertyId || item.id,
+          scannedCode: item.propertyNumber,
+          physicalCount: finalCount,
+          remarks: inputRemarks.trim() || item.remarks || 'In good working condition',
+          countedBy: 'Admin',
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to save count.');
+      }
+
+      setEditingCountId(null);
+      playScanBeep();
+      await loadData();
+      setLastScannedId(data.count?.id || item.id);
+      setNotification({
+        title: 'Count Saved to Database',
+        message: `Updated "${item.propertyNumber}" count to ${finalCount} unit(s).`,
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      alert(err.message || 'Error saving count.');
+    }
+  };
+
   // Reset / Delete count item -> Trigger Confirmation Modal
   const handleResetItem = (item) => {
     setDeleteConfirmModal({
@@ -925,7 +972,11 @@ export default function PhysicalInventoryPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to save count to database.');
+      }
 
       // 2. Update local storage for offline parity
       StorageManager.scanPropertyIntoSession({
@@ -933,7 +984,7 @@ export default function PhysicalInventoryPage() {
         scannedCode: itemForVerification.propertyNumber,
         physicalCount: verifyCount,
         remarks: finalRemarks,
-        countedBy: 'Admin',
+        countedBy: currentUserName,
       });
 
       playScanBeep();
