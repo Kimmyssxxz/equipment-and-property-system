@@ -170,13 +170,16 @@ export async function GET(request) {
           (c.propertyId ? propMap.get(String(c.propertyId).toLowerCase()) : null) ||
           (c.propertyNumber ? propMap.get(String(c.propertyNumber)) : null) ||
           {};
-        const propCreator = (prop.createdBy || prop.created_by || extractEncoderFromRemarks(prop.remarks) || 'edolotallas').toLowerCase().trim();
+        const propCreator = (prop.createdBy || prop.created_by || extractEncoderFromRemarks(prop.remarks) || c.createdBy || 'edolotallas').toLowerCase().trim();
         const countUser = (c.countedBy || c.createdBy || '').toLowerCase().trim();
 
+        const isQueenieProp = propCreator === 'queenie_ppsc' || propCreator.includes('queenie') || propCreator.includes('quennie');
+        const isQueenieCount = countUser.includes('queenie') || countUser.includes('quennie') || c.createdBy === 'queenie_ppsc';
+
         if (targetUsername === 'queenie_ppsc') {
-          return propCreator === 'queenie_ppsc' || propCreator.includes('queenie') || countUser.includes('queenie');
+          return isQueenieProp || isQueenieCount;
         } else if (targetUsername === 'edolotallas') {
-          return (propCreator === 'edolotallas' || (!propCreator.includes('queenie') && propCreator !== 'queenie_ppsc')) && !countUser.includes('queenie');
+          return (!isQueenieProp && !isQueenieCount) || propCreator === 'edolotallas';
         }
         return true;
       });
