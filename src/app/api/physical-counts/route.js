@@ -53,17 +53,47 @@ export async function GET(request) {
       return NextResponse.json({ error: cntError.message, counts: [] }, { status: 400 });
     }
 
-    // Parallel fetch master properties
-    const { data: properties } = await supabase
-      .from('properties')
-      .select('id, propertyNumber, article, description, categoryId, unit, unitValue, quantityPerCard, remarks, createdBy, created_by');
+    // Parallel fetch master properties for rich joins
+    const { data: properties } = await supabase.from('properties').select('*');
 
-    const propMap = new Map((properties || []).map((p) => [p.id, p]));
+    const propMap = new Map();
+    (properties || []).forEach((p) => {
+      const pId = p.id ? String(p.id).trim() : null;
+      const pNum = (p.propertyNumber || p.property_number || p.propertyNo || p.property_no || p.code || '').trim();
+      const pNumClean = pNum.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      if (pId) {
+        propMap.set(pId, p);
+        propMap.set(pId.toLowerCase(), p);
+      }
+      if (pNum) {
+        propMap.set(pNum, p);
+        propMap.set(pNum.toLowerCase(), p);
+      }
+      if (pNumClean) {
+        propMap.set(pNumClean, p);
+      }
+    });
+
+    const getProp = (c) => {
+      const cPropId = c.propertyId || c.property_id || c.propertyid;
+      const cPropNum = c.propertyNumber || c.property_number || c.scannedCode || c.scanned_code || '';
+      const cPropNumClean = String(cPropNum).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      return (
+        (cPropId ? propMap.get(String(cPropId)) : null) ||
+        (cPropId ? propMap.get(String(cPropId).toLowerCase()) : null) ||
+        (cPropNum ? propMap.get(String(cPropNum)) : null) ||
+        (cPropNum ? propMap.get(String(cPropNum).toLowerCase()) : null) ||
+        (cPropNumClean ? propMap.get(cPropNumClean) : null) ||
+        {}
+      );
+    };
 
     const formatted = (rawCounts || []).map((c) => {
-      const prop = propMap.get(c.propertyId) || {};
-      const expected = c.quantityPerCard || prop.quantityPerCard || 1;
-      const actual = c.physicalCount;
+      const prop = getProp(c);
+      const expected = c.quantityPerCard || c.quantity_per_card || prop.quantityPerCard || prop.quantity_per_card || prop.quantity || 1;
+      const actual = c.physicalCount !== undefined && c.physicalCount !== null ? c.physicalCount : c.physical_count;
       const diff = actual !== null && actual !== undefined ? actual - expected : null;
       const creator = c.createdBy || c.created_by || prop.createdBy || prop.created_by || 'edolotallas';
 
@@ -74,16 +104,50 @@ export async function GET(request) {
         else if (diff > 0) stat = 'OVERAGE';
       }
 
+      const propNumber =
+        (prop.propertyNumber && prop.propertyNumber !== 'N/A' && prop.propertyNumber !== 'Asset')
+          ? prop.propertyNumber
+          : prop.property_number ||
+            prop.propertyNo ||
+            prop.property_no ||
+            prop.code ||
+            (c.propertyNumber && c.propertyNumber !== 'N/A' && c.propertyNumber !== 'Asset' ? c.propertyNumber : '') ||
+            c.property_number ||
+            c.scannedCode ||
+            c.scanned_code ||
+            'N/A';
+
+      const article =
+        (prop.article && prop.article !== 'Asset' && prop.article !== 'Equipment Item')
+          ? prop.article
+          : prop.name ||
+            prop.title ||
+            (c.article && c.article !== 'Asset' && c.article !== 'Equipment Item' ? c.article : '') ||
+            c.name ||
+            'Equipment Item';
+
+      const description =
+        prop.description ||
+        prop.desc ||
+        c.description ||
+        '';
+
+      const categoryId =
+        prop.categoryId ||
+        prop.category_id ||
+        c.categoryId ||
+        c.category_id;
+
       return {
         id: c.id,
-        sessionId: c.sessionId,
-        propertyId: c.propertyId,
-        propertyNumber: prop.propertyNumber || c.propertyNumber || 'N/A',
-        article: prop.article || c.article || 'Asset',
-        description: prop.description || c.description || '',
-        categoryId: prop.categoryId,
-        unit: prop.unit || 'unit',
-        unitValue: prop.unitValue || 0,
+        sessionId: c.sessionId || c.session_id,
+        propertyId: c.propertyId || c.property_id || prop.id,
+        propertyNumber,
+        article,
+        description,
+        categoryId,
+        unit: prop.unit || c.unit || 'unit',
+        unitValue: prop.unitValue || prop.unit_value || c.unitValue || c.unit_value || 0,
         quantityPerCard: expected,
         physicalCount: actual,
         difference: diff,
@@ -91,10 +155,10 @@ export async function GET(request) {
         remarks: c.remarks || '',
         createdBy: creator,
         encodedBy: creator,
-        countedAt: c.countedAt,
-        countedBy: c.countedBy,
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt,
+        countedAt: c.countedAt || c.counted_at,
+        countedBy: c.countedBy || c.counted_by,
+        createdAt: c.createdAt || c.created_at,
+        updatedAt: c.updatedAt || c.updated_at,
       };
     });
 

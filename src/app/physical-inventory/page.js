@@ -1029,9 +1029,58 @@ export default function PhysicalInventoryPage() {
   const activeSessionCounts = useMemo(() => {
     if (!currentActiveSession) return [];
 
-    const recordedCounts = allCounts.filter((c) => c.sessionId === currentActiveSession.id);
+    const recordedRaw = allCounts.filter((c) => c.sessionId === currentActiveSession.id);
+
+    const enrichedRecorded = recordedRaw.map((c) => {
+      const cPropId = c.propertyId ? String(c.propertyId).toLowerCase().trim() : '';
+      const cPropNum = c.propertyNumber ? String(c.propertyNumber).toLowerCase().trim() : '';
+      const cPropNumClean = cPropNum.replace(/[^a-z0-9]/g, '');
+
+      // Lookup in properties masterlist
+      const prop = properties.find((p) => {
+        const pId = p.id ? String(p.id).toLowerCase().trim() : '';
+        if (pId && cPropId && pId === cPropId) return true;
+        const pNum = (p.propertyNumber || p.property_number || p.propertyNo || '').toLowerCase().trim();
+        const pNumClean = pNum.replace(/[^a-z0-9]/g, '');
+        if (pNum && cPropNum && (pNum === cPropNum || (pNumClean && pNumClean === cPropNumClean))) return true;
+        return false;
+      });
+
+      const pNumber =
+        (c.propertyNumber && c.propertyNumber !== 'N/A' && c.propertyNumber !== 'Asset')
+          ? c.propertyNumber
+          : (prop?.propertyNumber || prop?.property_number || prop?.propertyNo || c.scannedCode || 'N/A');
+
+      const article =
+        (c.article && c.article !== 'Asset' && c.article !== 'Equipment Item')
+          ? c.article
+          : (prop?.article || prop?.name || prop?.title || c.article || 'Equipment Item');
+
+      const description = c.description || prop?.description || '';
+      const categoryId = c.categoryId || prop?.categoryId || prop?.category_id;
+      const unit = c.unit || prop?.unit || 'unit';
+      const unitValue = c.unitValue || prop?.unitValue || prop?.unit_value || 0;
+      const expected = c.quantityPerCard || prop?.quantityPerCard || prop?.quantity_per_card || 1;
+      const actual = c.physicalCount;
+      const diff = actual !== null && actual !== undefined ? actual - expected : null;
+
+      return {
+        ...c,
+        propertyNumber: pNumber,
+        article,
+        description,
+        categoryId,
+        unit,
+        unitValue,
+        quantityPerCard: expected,
+        difference: diff,
+        accountableOfficerName: c.accountableOfficerName || prop?.accountablePersonName || prop?.accountable_person_name || prop?.accountableOfficer || '',
+        officeName: c.officeName || prop?.officeName || prop?.office_name || prop?.office || '',
+      };
+    });
+
     const recordedPropKeys = new Set(
-      recordedCounts.map((c) => {
+      enrichedRecorded.map((c) => {
         const pid = c.propertyId ? String(c.propertyId).toLowerCase() : '';
         const pno = c.propertyNumber ? String(c.propertyNumber).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
         return pid || pno;
@@ -1073,7 +1122,7 @@ export default function PhysicalInventoryPage() {
         createdBy: p.createdBy || p.created_by,
       }));
 
-    return [...recordedCounts, ...unrecordedProps];
+    return [...enrichedRecorded, ...unrecordedProps];
   }, [currentActiveSession, allCounts, properties]);
 
   // Active Session Stats
