@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { decodeQRFromImage } from '@/utils/qrDecoder';
 import {
   Camera,
   CameraOff,
@@ -11,7 +12,10 @@ import {
   CheckCircle2,
   Scan,
   Keyboard,
-  Info,
+  AlertCircle,
+  X,
+  Loader2,
+  FileImage,
 } from 'lucide-react';
 
 export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
@@ -20,6 +24,8 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
   const [errorType, setErrorType] = useState(null); // 'NOT_FOUND', 'PERMISSION_DENIED', 'UNKNOWN'
   const [isSuccessBeep, setIsSuccessBeep] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const [fileScanError, setFileScanError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const scannerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -30,6 +36,7 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
     setCameraError(null);
     setErrorType(null);
     setIsScanning(false);
+    setFileScanError(null);
 
     // Stop any running scanner first
     if (scannerRef.current) {
@@ -76,6 +83,8 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
           Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
         ],
       };
 
@@ -88,7 +97,7 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
       }
 
       if (cameraDevices && cameraDevices.length > 0) {
-        // Select back/rear camera on iPhone / iPad
+        // Select back/rear camera on iPhone / iPad / Android
         const rearCamera = cameraDevices.find(
           (d) =>
             d.label.toLowerCase().includes('back') ||
@@ -111,7 +120,6 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
         }
       }
     } catch (err) {
-      // Use console.warn to avoid triggering Next.js dev overlay on expected hardware absence
       console.warn('Camera Scanner Notice:', err);
       setIsScanning(false);
 
@@ -131,7 +139,8 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
 
   const handleScanSuccess = (decodedText) => {
     setIsSuccessBeep(true);
-    setTimeout(() => setIsSuccessBeep(false), 800);
+    setFileScanError(null);
+    setTimeout(() => setIsSuccessBeep(false), 1200);
 
     if (onScanSuccess) {
       onScanSuccess(decodedText);
@@ -142,7 +151,25 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
   useEffect(() => {
     startScanner();
 
+    // Support pasting image from clipboard (Ctrl+V)
+    const handlePaste = async (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            processImageFile(blob);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+
     return () => {
+      window.removeEventListener('paste', handlePaste);
       if (scannerRef.current) {
         try {
           if (scannerRef.current.isScanning) {
@@ -153,38 +180,71 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
     };
   }, []);
 
-  // Handle Scan from Image File upload
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
+  // Process image file through robust multi-engine decoder
+  const processImageFile = async (file) => {
     if (!file) return;
-
     setIsProcessingFile(true);
-    try {
-      let fileScanner = scannerRef.current;
-      if (!fileScanner) {
-        fileScanner = new Html5Qrcode(scannerContainerId);
-        scannerRef.current = fileScanner;
-      }
+    setFileScanError(null);
 
-      const decodedResult = await fileScanner.scanFile(file, true);
+    try {
+      const decodedResult = await decodeQRFromImage(file);
       handleScanSuccess(decodedResult);
     } catch (err) {
-      alert('Hindi nabasa ang QR code sa larawan. Siguraduhing malinaw ang QR code image.');
+      console.warn('Image QR Decode Error:', err);
+      setFileScanError(
+        err?.message ||
+          'Hindi mabasa ang QR code sa larawan. Siguraduhing malinaw, nakagitna, at maliwanag ang QR code.'
+      );
     } finally {
       setIsProcessingFile(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  // Handle Scan from Image File upload input
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processImageFile(file);
+    }
+  };
+
+  // Handle Drag & Drop
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      processImageFile(file);
+    }
+  };
+
   return (
     <div className="space-y-3.5">
-      {/* Camera Viewport Container */}
-      <div className="relative w-full rounded-2xl overflow-hidden bg-slate-950 border-2 border-emerald-500/80 shadow-inner flex flex-col items-center justify-center min-h-[290px]">
+      {/* Camera Viewport / Dropzone Container */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`relative w-full rounded-2xl overflow-hidden bg-slate-950 border-2 shadow-inner flex flex-col items-center justify-center min-h-[300px] transition-all ${
+          isDragging ? 'border-emerald-400 bg-emerald-950/40 ring-4 ring-emerald-500/20' : 'border-emerald-500/80'
+        }`}
+      >
         {/* Html5Qrcode video element mounts here */}
         <div id={scannerContainerId} className="w-full h-full overflow-hidden" />
 
         {/* Visual Target Reticle Overlay with Laser Animation */}
-        {isScanning && !cameraError && (
+        {isScanning && !cameraError && !isProcessingFile && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="w-56 h-56 border-2 border-emerald-400/90 rounded-2xl relative shadow-2xl flex flex-col justify-between p-2">
               <div className="flex justify-between">
@@ -202,8 +262,30 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
           </div>
         )}
 
+        {/* Drag & Drop Overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-emerald-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-emerald-300 z-30 animate-in fade-in">
+            <FileImage className="w-12 h-12 mb-2 animate-bounce" />
+            <p className="text-sm font-extrabold">I-drop dito ang QR code photo</p>
+          </div>
+        )}
+
+        {/* Processing Image File Loading State */}
+        {isProcessingFile && (
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center text-white z-20 space-y-3 animate-in fade-in">
+            <div className="relative">
+              <div className="w-14 h-14 rounded-full border-4 border-emerald-500/30 border-t-emerald-400 animate-spin" />
+              <Scan className="w-6 h-6 text-emerald-400 absolute inset-0 m-auto" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-xs font-black text-emerald-300">Sinusuri ang QR Code sa Larawan...</p>
+              <p className="text-[11px] text-slate-400">Gumagamit ng multi-scale & vision image decoder</p>
+            </div>
+          </div>
+        )}
+
         {/* Camera Error Message & Actionable Solution Box */}
-        {cameraError && (
+        {cameraError && !isProcessingFile && (
           <div className="p-6 text-center text-white space-y-3.5 max-w-md z-10 animate-in fade-in">
             <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
               <CameraOff className="w-6 h-6" />
@@ -219,9 +301,9 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
               </h4>
               <p className="text-[11px] text-slate-300 leading-normal">
                 {errorType === 'NOT_FOUND'
-                  ? 'Dahil Desktop PC ang gamit mo na walang nakasaksak na USB webcam, maaari kang mag-upload ng QR photo o gamitin ang Manual Input.'
+                  ? 'Dahil Desktop PC ang gamit mo na walang nakasaksak na webcam, i-upload ang QR photo o gamitin ang Manual Input.'
                   : errorType === 'INSECURE_HTTP'
-                  ? 'Haharangin ng mobile browsers (iOS Safari & Android Chrome) ang camera kapag kinokonekta via IP address (http://). Gamitin ang Upload QR Photo sa ibaba o magpatakbo ng HTTPS tunnel.'
+                  ? 'Haharangin ng mobile browsers ang camera sa HTTP IP address. Gamitin ang Upload QR Photo o magpatakbo ng HTTPS.'
                   : cameraError}
               </p>
             </div>
@@ -263,14 +345,54 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
 
         {/* Success Scan Feedback Flash */}
         {isSuccessBeep && (
-          <div className="absolute inset-0 bg-emerald-500/30 backdrop-blur-xs flex items-center justify-center z-20 animate-in fade-in">
-            <div className="px-4 py-2.5 rounded-2xl bg-white text-emerald-950 font-black text-xs shadow-2xl flex items-center gap-2 border border-emerald-300">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          <div className="absolute inset-0 bg-emerald-500/30 backdrop-blur-xs flex items-center justify-center z-30 animate-in fade-in">
+            <div className="px-5 py-3 rounded-2xl bg-white text-emerald-950 font-black text-xs shadow-2xl flex items-center gap-2.5 border border-emerald-300">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 animate-bounce" />
               <span>QR Code Successfully Detected!</span>
             </div>
           </div>
         )}
       </div>
+
+      {/* Inline File Scan Error Alert Box (No ugly browser popup) */}
+      {fileScanError && (
+        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-xs flex items-start justify-between gap-3 animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-extrabold text-rose-800">Hindi nabasa ang QR code sa larawan</p>
+              <p className="text-[11px] text-rose-700 leading-relaxed">
+                {fileScanError}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1.5">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] cursor-pointer transition-all shadow-2xs"
+                >
+                  Pumili ng ibang larawan
+                </button>
+                {onSwitchToManual && (
+                  <button
+                    type="button"
+                    onClick={onSwitchToManual}
+                    className="px-3 py-1 bg-white hover:bg-rose-100 text-rose-800 border border-rose-300 rounded-lg font-bold text-[11px] cursor-pointer transition-all"
+                  >
+                    I-type ang Property Number nang manual
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFileScanError(null)}
+            className="p-1 text-rose-400 hover:text-rose-700 rounded-lg hover:bg-rose-100 cursor-pointer transition-all"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Hidden File Input for QR Image Scan */}
       <input
@@ -285,19 +407,29 @@ export default function CameraQRScanner({ onScanSuccess, onSwitchToManual }) {
       <div className="flex items-center justify-between gap-2 p-2.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
         <div className="flex items-center gap-1.5 text-slate-700 text-[11px] font-bold">
           <Scan className="w-4 h-4 text-emerald-600" />
-          <span>QR Scanner Active</span>
+          <span>{isScanning ? 'Live Camera Active' : 'Image / QR Scanner'}</span>
         </div>
 
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isProcessingFile}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 border border-slate-200 font-bold text-xs transition-all cursor-pointer shadow-2xs"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
         >
-          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{isProcessingFile ? 'Binabasa ang file...' : 'Scan mula sa Photo File'}</span>
+          {isProcessingFile ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Binabasa ang larawan...</span>
+            </>
+          ) : (
+            <>
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>Scan mula sa Photo File (o I-paste)</span>
+            </>
+          )}
         </button>
       </div>
     </div>
   );
 }
+

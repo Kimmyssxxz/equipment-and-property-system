@@ -772,11 +772,46 @@ export default function PhysicalInventoryPage() {
   const resolveScannedProperty = (rawCode) => {
     if (!rawCode || !String(rawCode).trim()) return null;
     let code = String(rawCode).trim();
+
+    // 1. Check if payload is JSON
     if (code.startsWith('{') && code.endsWith('}')) {
       try {
         const parsed = JSON.parse(code);
-        code = parsed.propertyNumber || parsed.property_number || parsed.propertyNo || parsed.id || code;
+        code =
+          parsed.propertyNumber ||
+          parsed.property_number ||
+          parsed.propertyNo ||
+          parsed.serialNumber ||
+          parsed.serial_number ||
+          parsed.id ||
+          code;
       } catch (e) {}
+    } else if (code.startsWith('http://') || code.startsWith('https://') || code.startsWith('/')) {
+      // 2. Check if payload is a URL
+      try {
+        const urlObj = new URL(code, typeof window !== 'undefined' ? window.location.origin : 'https://dummy.org');
+        const paramCode =
+          urlObj.searchParams.get('propertyNumber') ||
+          urlObj.searchParams.get('property_number') ||
+          urlObj.searchParams.get('code') ||
+          urlObj.searchParams.get('id') ||
+          urlObj.searchParams.get('propertyNo');
+
+        if (paramCode) {
+          code = paramCode;
+        } else {
+          const segments = urlObj.pathname.split('/').filter(Boolean);
+          if (segments.length > 0) {
+            code = decodeURIComponent(segments[segments.length - 1]);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Check for labeled text (e.g. "Property No: PROP-12345" or "Property Number: ...")
+    const labelMatch = code.match(/(?:property(?:\s*no\.?|\s*number)?|prop(?:\s*no\.?)?|code|item|serial(?:\s*no\.?)?)\s*[:=]\s*([^\r\n,;]+)/i);
+    if (labelMatch && labelMatch[1]) {
+      code = labelMatch[1].trim();
     }
 
     const clean = code.toLowerCase().trim();
@@ -785,7 +820,13 @@ export default function PhysicalInventoryPage() {
     const matchesCode = (val) => {
       if (!val) return false;
       const str = String(val).toLowerCase().trim();
-      return str === clean || str.replace(/[^a-z0-9]/g, '') === cleanAlpha;
+      const strAlpha = str.replace(/[^a-z0-9]/g, '');
+      return (
+        str === clean ||
+        (cleanAlpha && strAlpha === cleanAlpha) ||
+        (cleanAlpha.length >= 5 && strAlpha.includes(cleanAlpha)) ||
+        (strAlpha.length >= 5 && cleanAlpha.includes(strAlpha))
+      );
     };
 
     // 1. Check in session active counts
@@ -793,8 +834,8 @@ export default function PhysicalInventoryPage() {
       (c) =>
         (c.sessionId === activeSessionId || !activeSessionId) &&
         (matchesCode(c.propertyNumber) ||
-         matchesCode(c.scannedCode) ||
-         matchesCode(c.propertyId))
+          matchesCode(c.scannedCode) ||
+          matchesCode(c.propertyId))
     );
     if (activeMatch) return activeMatch;
 
@@ -804,6 +845,8 @@ export default function PhysicalInventoryPage() {
         matchesCode(p.propertyNumber) ||
         matchesCode(p.property_number) ||
         matchesCode(p.propertyNo) ||
+        matchesCode(p.serialNumber) ||
+        matchesCode(p.serial_number) ||
         matchesCode(p.id)
     );
     if (propMatch) {
