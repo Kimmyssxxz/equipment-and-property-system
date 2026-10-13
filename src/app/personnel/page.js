@@ -1172,20 +1172,21 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     paginatedEmployees.map((emp) => {
                       const stats = getEmployeeStats(emp);
                       return (
-                        <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors group">
-                          {/* ID & Name (Entire Column Clickable) */}
-                          <td
-                            onClick={() => setSelectedEmployeeForDetails(emp)}
-                            className="py-3.5 px-4 cursor-pointer hover:bg-emerald-50/60 transition-colors group/cell"
-                            title="Click to view personnel details & accountability portfolio"
-                          >
-                            <div className="font-extrabold text-slate-900 group-hover/cell:text-emerald-700 transition-colors flex items-center gap-1.5">
-                              <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 group-hover/cell:scale-110 transition-transform" />
-                              <span className="underline decoration-transparent group-hover/cell:decoration-emerald-600 underline-offset-2 transition-all">
+                        <tr
+                          key={emp.id}
+                          onClick={() => setSelectedEmployeeForDetails(emp)}
+                          className="hover:bg-emerald-50/40 transition-colors group cursor-pointer"
+                          title="Click to view personnel details & accountability portfolio"
+                        >
+                          {/* ID & Name */}
+                          <td className="py-3.5 px-4">
+                            <div className="font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5">
+                              <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 group-hover:scale-110 transition-transform" />
+                              <span className="underline decoration-transparent group-hover:decoration-emerald-600 underline-offset-2 transition-all">
                                 {emp.name}
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 inline-block mt-0.5 ml-5.5 group-hover/cell:bg-emerald-100 transition-colors">
+                            <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 inline-block mt-0.5 ml-5.5 group-hover:bg-emerald-100 transition-colors">
                               {emp.employeeId}
                             </span>
                           </td>
@@ -1211,14 +1212,12 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                           {/* Assigned Properties Count & Slip Breakdown */}
                           <td className="py-3.5 px-4">
                             <div className="flex flex-col gap-1.5 items-start">
-                              <button
-                                onClick={() => setSelectedEmployeeForDetails(emp)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                title="Click to view assigned items & custody portfolio"
+                              <span
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 group-hover:bg-emerald-100 transition-colors"
                               >
                                 <Package className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>{stats.propertiesCount} {stats.propertiesCount === 1 ? 'Item' : 'Items'}</span>
-                              </button>
+                              </span>
                               {stats.propertiesCount > 0 && (
                                 <div className="flex items-center gap-1">
                                   <span
@@ -1268,7 +1267,10 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                           </td>
 
                           {/* Actions */}
-                          <td className="py-3.5 px-4 text-right">
+                          <td
+                            className="py-3.5 px-4 text-right cursor-default"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="inline-flex items-center gap-1.5">
                               {/* Quick Generate ICS (< 50k) */}
                               <button
