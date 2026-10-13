@@ -586,35 +586,33 @@ export default function PersonnelPage() {
     const emptyRowsCount = Math.max(0, minRows - usedRows);
 
     if (isICS) {
+      const icsMinRows = 16;
+      const icsEmptyRowsCount = Math.max(0, icsMinRows - selectedItems.length);
       rowsHtml = selectedItems.length > 0 ? selectedItems.map((p) => {
         const qty = getItemQty(p);
         const cost = getItemCost(p);
         const lineTotal = cost * qty;
         const descObj = formatPropertyDescription(p);
-        const usefulLife = p.estimatedUsefulLife || (cost < 15000 ? '3 years' : '5 years');
+        const cleanMain = descObj.mainDesc.trim().replace(/;$/, '');
+        const icsMainDesc = `${cleanMain.toUpperCase()};`;
+        const icsSerial = descObj.serialNo ? descObj.serialNo.toUpperCase() : '';
+        const itemNumber = p.propertyNumber || '';
+        const usefulLife = p.estimatedUsefulLife || '';
         return `
           <tr>
             <td style="text-align:center;">${qty}</td>
             <td style="text-align:center;">${(p.unit || 'UNIT').toUpperCase()}</td>
-            <td style="text-align:right;">₱${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td style="text-align:right; font-weight:bold;">₱${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td><strong>${descObj.mainDesc}</strong>${descObj.serialNo ? `<br><span style="font-size:8pt; font-family:monospace;">${descObj.serialNo}</span>` : ''}</td>
-            <td style="text-align:center; font-family:monospace; font-weight:bold;">${p.propertyNumber || 'N/A'}</td>
+            <td style="text-align:left;">₱ ${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="text-align:left; font-weight:bold;">₱ ${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td><strong>${icsMainDesc}</strong>${icsSerial ? `<br><span style="font-size:8pt; font-family:monospace; font-weight:bold;">${icsSerial}</span>` : ''}</td>
+            <td style="text-align:center; font-family:monospace;">${itemNumber}</td>
             <td style="text-align:center;">${usefulLife}</td>
           </tr>
         `;
       }).join('') : `<tr><td colspan="7" style="text-align:center; padding:15px;">No items selected</td></tr>`;
 
-      rowsHtml += `
-        <tr>
-          <td></td><td></td><td></td><td></td>
-          <td style="text-align:center; font-family:monospace; font-style:italic; font-size:8pt;">x-x-x-x- x-x-nothing follows-x-x-x-x-x</td>
-          <td></td><td></td>
-        </tr>
-      `;
-
-      for (let i = 0; i < emptyRowsCount; i++) {
-        rowsHtml += `<tr><td style="height:18px;"></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      for (let i = 0; i < icsEmptyRowsCount; i++) {
+        rowsHtml += `<tr><td style="height:19px;"></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
       }
     } else {
       // PAR format matching official NFSTI document
@@ -679,6 +677,7 @@ export default function PersonnelPage() {
               <p style="margin: 1px 0; font-size: 9pt; font-weight: bold; color: #0284c7;">Philippine Public Safety College</p>
               <p style="margin: 1px 0; font-size: 10.5pt; font-weight: bold; color: #166534; text-transform: uppercase;">NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE</p>
               <p style="margin: 1px 0; font-size: 7.5pt; color: #333;">Camp Vicente Lim, Calamba City, Laguna</p>
+              <p style="margin: 1px 0; font-size: 7pt; color: #333;">Tel No (049)827-0961 / (0928)550-0296 email: nfstippsc@yahoo.com</p>
             </td>
             <td style="border: none; width: 16%; text-align: right; vertical-align: middle;">
               ${nfstiBase64 ? '<img src="nfsti_logo.png" width="76" height="76" style="width:76px; height:76px;" alt="NFSTI" />' : ''}
@@ -699,7 +698,12 @@ export default function PersonnelPage() {
               <strong>Fund Cluster:</strong> <u>${slipModal.fundCluster || '________________________'}</u>
             </td>
             <td style="border: none; width: 40%; text-align: right; padding: 2px 0;">
-              <strong>${controlLabel}</strong> <u style="font-weight: bold; font-family: monospace;">${slipModal.controlNo}</u>
+              ${isICS ? `
+                <strong>DATED:</strong> <u style="font-weight: bold;">${formattedDate}</u><br>
+                <strong>ICS NO. :</strong> <u style="font-weight: bold; font-family: monospace;">${slipModal.controlNo}</u>
+              ` : `
+                <strong>${controlLabel}</strong> <u style="font-weight: bold; font-family: monospace;">${slipModal.controlNo}</u>
+              `}
             </td>
           </tr>
         </table>
@@ -709,13 +713,16 @@ export default function PersonnelPage() {
           <thead>
             ${isICS ? `
               <tr>
-                <th style="width: 7%;">QTY</th>
-                <th style="width: 8%;">UNIT</th>
-                <th style="width: 12%;">Unit Cost</th>
-                <th style="width: 13%;">Total Cost</th>
-                <th style="width: 34%;">DESCRIPTION</th>
-                <th style="width: 16%;">Inventory Item No.</th>
-                <th style="width: 10%;">Est. Useful Life</th>
+                <th rowspan="2" style="width: 6%; vertical-align: middle;">QTY</th>
+                <th rowspan="2" style="width: 7%; vertical-align: middle;">UNIT</th>
+                <th colspan="2" style="width: 24%; vertical-align: middle;">Amount</th>
+                <th rowspan="2" style="width: 35%; vertical-align: middle;">Description</th>
+                <th rowspan="2" style="width: 16%; vertical-align: middle;">Inventory Item Number</th>
+                <th rowspan="2" style="width: 12%; vertical-align: middle;">Estimated Useful Life</th>
+              </tr>
+              <tr>
+                <th style="width: 12%; vertical-align: middle;">Unit Cost</th>
+                <th style="width: 12%; vertical-align: middle;">Total Cost</th>
               </tr>
             ` : `
               <tr>
@@ -736,61 +743,87 @@ export default function PersonnelPage() {
         <!-- Signatures Table -->
         <table style="margin-top: -1px; width: 100%; border: 1pt solid #000;">
           <tr>
-            <td style="width: 50%; border: 1pt solid #000; padding: 6px 10px; height: 135px; vertical-align: top;">
+            <td style="width: 50%; border: 1pt solid #000; padding: 6px 10px; height: 145px; vertical-align: top;">
               <p style="margin: 0; font-weight: bold;">Received by:</p>
-              <div style="height: 25px;"></div>
-              <div style="text-align: center;">
-                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
-                  ${slipModal.receivedByName || emp.name}
-                </p>
-                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Signature Over Printed Name</p>
-                <p style="margin: 0; font-size: 7.5pt;">of End User</p>
-              </div>
-              <div style="text-align: center; margin-top: 10px;">
-                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 8.5pt;">
-                  ${slipModal.receivedByPosition || emp.position || 'End User'}
-                </p>
-                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Position / Office</p>
-              </div>
-              <div style="text-align: center; margin-top: 10px;">
-                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
-                  ${formattedDate}
-                </p>
-                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Date</p>
-              </div>
+              <div style="height: 18px;"></div>
+              
+              <table style="width: 75%; margin: 0 auto; border: none;">
+                <tr>
+                  <td style="border: none; border-bottom: 1pt solid #000; text-align: center; padding-bottom: 2px;">
+                    <strong style="text-transform: uppercase; font-size: 9pt;">${slipModal.receivedByName || emp.name}</strong>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 2px 0 0 0; font-size: 7.5pt; text-align: center;">Signature Over Printed Name</p>
+              <p style="margin: 0; font-size: 7.5pt; text-align: center;">of End User</p>
+
+              <div style="height: 8px;"></div>
+              <table style="width: 75%; margin: 0 auto; border: none;">
+                <tr>
+                  <td style="border: none; border-bottom: 1pt solid #000; text-align: center; padding-bottom: 2px;">
+                    <strong style="text-transform: uppercase; font-size: 8.5pt;">${slipModal.receivedByPosition || emp.position || 'End User'}</strong>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 2px 0 0 0; font-size: 7.5pt; text-align: center;">Position / Office</p>
+
+              <div style="height: 8px;"></div>
+              <table style="width: 75%; margin: 0 auto; border: none;">
+                <tr>
+                  <td style="border: none; border-bottom: 1pt solid #000; text-align: center; padding-bottom: 2px;">
+                    <span style="font-weight: bold; font-size: 8.5pt;">${formattedDate}</span>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 2px 0 0 0; font-size: 7.5pt; text-align: center;">Date</p>
             </td>
-            <td style="width: 50%; border: 1pt solid #000; padding: 6px 10px; height: 135px; vertical-align: top;">
-              <p style="margin: 0; font-weight: bold;">Issued from:</p>
-              <div style="height: 25px;"></div>
-              <div style="text-align: center;">
-                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
-                  ${slipModal.issuedByName ? slipModal.issuedByName : '______________________________'}
-                </p>
-                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Signature Over Printed Name of Supply and/or</p>
-                <p style="margin: 0; font-size: 7.5pt;">Property Custodian</p>
-              </div>
-              <div style="text-align: center; margin-top: 10px;">
-                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
-                  ${slipModal.issuedByPosition ? slipModal.issuedByPosition : '______________________________'}
-                </p>
-                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Position / Office</p>
-              </div>
-              <div style="text-align: center; margin-top: 10px;">
-                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
-                  ${formattedDate}
-                </p>
-                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Date</p>
-              </div>
+
+            <td style="width: 50%; border: 1pt solid #000; padding: 6px 10px; height: 145px; vertical-align: top;">
+              <p style="margin: 0; font-weight: bold;">${isICS ? 'Issued by:' : 'Issued from:'}</p>
+              <div style="height: 18px;"></div>
+
+              <table style="width: 75%; margin: 0 auto; border: none;">
+                <tr>
+                  <td style="border: none; border-bottom: 1pt solid #000; text-align: center; padding-bottom: 2px;">
+                    <strong style="text-transform: uppercase; font-size: 9pt;">${slipModal.issuedByName ? slipModal.issuedByName : '&nbsp;'}</strong>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 2px 0 0 0; font-size: 7.5pt; text-align: center;">
+                ${isICS ? 'Signature Over Printed Name' : 'Signature Over Printed Name of Supply and/or<br>Property Custodian'}
+              </p>
+
+              <div style="height: ${isICS ? '17px' : '8px'};"></div>
+              <table style="width: 75%; margin: 0 auto; border: none;">
+                <tr>
+                  <td style="border: none; border-bottom: 1pt solid #000; text-align: center; padding-bottom: 2px;">
+                    <span style="font-size: 8.5pt; font-weight: bold;">${slipModal.issuedByPosition ? slipModal.issuedByPosition : '&nbsp;'}</span>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 2px 0 0 0; font-size: 7.5pt; text-align: center;">Position / Office</p>
+
+              <div style="height: 8px;"></div>
+              <table style="width: 75%; margin: 0 auto; border: none;">
+                <tr>
+                  <td style="border: none; border-bottom: 1pt solid #000; text-align: center; padding-bottom: 2px;">
+                    <span style="font-weight: bold; font-size: 8.5pt;">${formattedDate}</span>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 2px 0 0 0; font-size: 7.5pt; text-align: center;">Date</p>
             </td>
           </tr>
         </table>
 
         <!-- Form Code Footer -->
+        ${!isICS ? `
         <div style="text-align: right; margin-top: 3px;">
           <span style="font-family: monospace; font-size: 7.5pt; font-weight: bold;">
             ${formCode}
           </span>
         </div>
+        ` : ''}
       </div>
       </body>
       </html>
@@ -2106,7 +2139,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
               <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Issued from (Supply Custodian)
+                    {isICS ? 'Issued by (Supply Custodian)' : 'Issued from (Supply Custodian)'}
                   </label>
                   <input
                     type="text"
@@ -2217,7 +2250,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                 ) : (
                   <div className="bg-white w-full max-w-4xl p-6 sm:p-10 border border-slate-300 shadow-xl text-black font-sans text-xs">
                     {/* Institutional Header with Logos matching Official Form */}
-                    <div className="flex items-center justify-between border-b border-black pb-3">
+                    <div className={`flex items-center justify-between ${isICS ? 'pb-2' : 'border-b border-black pb-3'}`}>
                       <div className="w-24 shrink-0 flex justify-start">
                         <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-20 h-20 object-contain" />
                       </div>
@@ -2230,6 +2263,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                           NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
                         </p>
                         <p className="text-[10px] text-slate-700 leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
+                        <p className="text-[9px] text-slate-700 leading-tight">Tel No (049)827-0961 / (0928)550-0296 email: nfstippsc@yahoo.com</p>
                       </div>
 
                       <div className="w-24 shrink-0 flex justify-end">
@@ -2258,10 +2292,23 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                       </div>
 
                       <div className="space-y-1 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <span className="font-semibold text-slate-800">{isICS ? 'ICS NO.:' : 'PAR NO.:'}</span>
-                          <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
-                        </div>
+                        {isICS ? (
+                          <>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="font-semibold text-slate-800">DATED:</span>
+                              <span className="font-semibold underline text-black">{formatLongDate(slipModal.issuedDate)}</span>
+                            </div>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="font-semibold text-slate-800">ICS NO. :</span>
+                              <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="font-semibold text-slate-800">PAR NO.:</span>
+                            <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -2271,13 +2318,16 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                         {isICS ? (
                           <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black">
                             <tr>
-                              <th className="border border-black p-1.5 w-[7%]">QTY</th>
-                              <th className="border border-black p-1.5 w-[8%]">UNIT</th>
-                              <th className="border border-black p-1.5 w-[12%]">Unit Cost</th>
-                              <th className="border border-black p-1.5 w-[13%]">Total Cost</th>
-                              <th className="border border-black p-1.5 w-[34%]">DESCRIPTION</th>
-                              <th className="border border-black p-1.5 w-[16%]">Inventory Item No.</th>
-                              <th className="border border-black p-1.5 w-[10%]">Est. Useful Life</th>
+                              <th rowSpan={2} className="border border-black p-1.5 w-[6%] align-middle">QTY</th>
+                              <th rowSpan={2} className="border border-black p-1.5 w-[7%] align-middle">UNIT</th>
+                              <th colSpan={2} className="border border-black p-1.5 w-[24%] align-middle text-center">Amount</th>
+                              <th rowSpan={2} className="border border-black p-1.5 w-[35%] align-middle">Description</th>
+                              <th rowSpan={2} className="border border-black p-1.5 w-[16%] align-middle">Inventory Item Number</th>
+                              <th rowSpan={2} className="border border-black p-1.5 w-[12%] align-middle">Estimated Useful Life</th>
+                            </tr>
+                            <tr>
+                              <th className="border border-black p-1 w-[12%] align-middle font-bold">Unit Cost</th>
+                              <th className="border border-black p-1 w-[12%] align-middle font-bold">Total Cost</th>
                             </tr>
                           </thead>
                         ) : (
@@ -2300,25 +2350,29 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                             const descObj = formatPropertyDescription(p);
                             const acqDate = p.acquisitionDate ? formatAcquiredDate(p.acquisitionDate) : '';
                             const amtStr = cost > 0 ? `₱ ${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-                            const usefulLife = p.estimatedUsefulLife || (cost < 15000 ? '3 years' : '5 years');
+                            const cleanMain = descObj.mainDesc.trim().replace(/;$/, '');
+                            const icsMainDesc = `${cleanMain.toUpperCase()};`;
+                            const icsSerial = descObj.serialNo ? descObj.serialNo.toUpperCase() : '';
+                            const itemNumber = p.propertyNumber || '';
+                            const usefulLife = p.estimatedUsefulLife || '';
 
                             return isICS ? (
                               <tr key={idx} className="align-top">
                                 <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
                                 <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
-                                <td className="border border-black p-1.5 text-right font-mono">
-                                  ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <td className="border border-black p-1.5 text-left font-mono">
+                                  ₱ {cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
-                                <td className="border border-black p-1.5 text-right font-mono font-bold">
-                                  ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <td className="border border-black p-1.5 text-left font-mono font-bold">
+                                  ₱ {lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 <td className="border border-black p-1.5 leading-snug">
-                                  <div className="font-bold text-slate-900">{descObj.mainDesc}</div>
-                                  {descObj.serialNo && (
-                                    <div className="text-[10px] font-mono text-slate-700 mt-0.5">{descObj.serialNo}</div>
+                                  <div className="font-bold text-slate-900">{icsMainDesc}</div>
+                                  {icsSerial && (
+                                    <div className="text-[10px] font-mono font-bold text-slate-800 mt-0.5">{icsSerial}</div>
                                   )}
                                 </td>
-                                <td className="border border-black p-1.5 text-center font-mono font-bold text-slate-900">{p.propertyNumber || 'N/A'}</td>
+                                <td className="border border-black p-1.5 text-center font-mono font-bold text-slate-900">{itemNumber}</td>
                                 <td className="border border-black p-1.5 text-center">{usefulLife}</td>
                               </tr>
                             ) : (
@@ -2338,12 +2392,23 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                             );
                           })}
 
-                          {/* Nothing Follows Row */}
-                          <tr>
-                            <td className="border border-black h-5"></td>
-                            <td className="border border-black h-5"></td>
-                            {isICS ? (
-                              <>
+                          {/* Filler and Empty Rows */}
+                          {isICS ? (
+                            Array.from({ length: Math.max(0, 16 - selectedItems.length) }).map((_, rIdx) => (
+                              <tr key={`ics-fill-${rIdx}`} className="h-5">
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                              </tr>
+                            ))
+                          ) : (
+                            <>
+                              {/* Nothing Follows Row for PAR */}
+                              <tr>
                                 <td className="border border-black h-5"></td>
                                 <td className="border border-black h-5"></td>
                                 <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-slate-600 italic">
@@ -2351,32 +2416,20 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                                 </td>
                                 <td className="border border-black h-5"></td>
                                 <td className="border border-black h-5"></td>
-                              </>
-                            ) : (
-                              <>
-                                <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-slate-600 italic">
-                                  x-x-x-x- x-x-nothing follows-x-x-x-x-x
-                                </td>
                                 <td className="border border-black h-5"></td>
-                                <td className="border border-black h-5"></td>
-                                <td className="border border-black h-5"></td>
-                              </>
-                            )}
-                          </tr>
-
-                          {/* Empty Filler Rows */}
-                          {Array.from({ length: Math.max(0, 12 - (selectedItems.length + 1)) }).map((_, rIdx) => (
-                            <tr key={`fill-${rIdx}`} className="h-5">
-                              <td className="border border-black h-5"></td>
-                              <td className="border border-black h-5"></td>
-                              <td className="border border-black h-5"></td>
-                              <td className="border border-black h-5"></td>
-                              <td className="border border-black h-5"></td>
-                              {isICS && <td className="border border-black h-5"></td>}
-                              {isICS && <td className="border border-black h-5"></td>}
-                              {!isICS && <td className="border border-black h-5"></td>}
-                            </tr>
-                          ))}
+                              </tr>
+                              {Array.from({ length: Math.max(0, 12 - (selectedItems.length + 1)) }).map((_, rIdx) => (
+                                <tr key={`par-fill-${rIdx}`} className="h-5">
+                                  <td className="border border-black h-5"></td>
+                                  <td className="border border-black h-5"></td>
+                                  <td className="border border-black h-5"></td>
+                                  <td className="border border-black h-5"></td>
+                                  <td className="border border-black h-5"></td>
+                                  <td className="border border-black h-5"></td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -2387,67 +2440,81 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                       <div className="p-3 border-r border-black flex flex-col justify-between min-h-[175px]">
                         <div>
                           <p className="font-bold text-black text-left text-[11px]">Received by:</p>
-                          <div className="h-9"></div>
-                          <div className="text-center space-y-0.5">
-                            <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                          <div className="h-6"></div>
+                          <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[18px]">
+                            <p className="font-extrabold uppercase text-black text-[12px] tracking-wide">
                               {slipModal.receivedByName || emp.name}
                             </p>
-                            <p className="text-[10px] text-black">Signature Over Printed Name</p>
-                            <p className="text-[10px] text-black">of End User</p>
                           </div>
+                          <p className="text-[10px] text-black text-center mt-0.5">Signature Over Printed Name</p>
+                          <p className="text-[10px] text-black text-center">of End User</p>
                         </div>
 
-                        <div className="mt-3 text-center space-y-0.5">
-                          <p className="font-extrabold uppercase underline text-black text-[11px]">
-                            {slipModal.receivedByPosition || emp.position || 'End User'}
-                          </p>
-                          <p className="text-[10px] text-black">Position / Office</p>
+                        <div className="mt-2 text-center">
+                          <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[18px]">
+                            <p className="font-extrabold uppercase text-black text-[11px]">
+                              {slipModal.receivedByPosition || emp.position || 'End User'}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-black mt-0.5">Position / Office</p>
                         </div>
 
-                        <div className="mt-3 text-center space-y-0.5">
-                          <p className="underline text-black font-semibold text-[11px]">
-                            {formatLongDate(slipModal.issuedDate)}
-                          </p>
-                          <p className="text-[10px] text-black">Date</p>
+                        <div className="mt-2 text-center">
+                          <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[18px]">
+                            <p className="font-semibold text-black text-[11px]">
+                              {formatLongDate(slipModal.issuedDate)}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-black mt-0.5">Date</p>
                         </div>
                       </div>
 
-                      {/* Issued from */}
+                      {/* Issued by */}
                       <div className="p-3 flex flex-col justify-between min-h-[175px]">
                         <div>
-                          <p className="font-bold text-black text-left text-[11px]">Issued from:</p>
-                          <div className="h-9"></div>
-                          <div className="text-center space-y-0.5">
-                            <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
-                              {slipModal.issuedByName ? slipModal.issuedByName : '______________________________'}
+                          <p className="font-bold text-black text-left text-[11px]">{isICS ? 'Issued by:' : 'Issued from:'}</p>
+                          <div className="h-6"></div>
+                          <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[18px]">
+                            <p className="font-extrabold uppercase text-black text-[12px] tracking-wide">
+                              {slipModal.issuedByName || ''}
                             </p>
-                            <p className="text-[10px] text-black">Signature Over Printed Name of Supply and/or</p>
-                            <p className="text-[10px] text-black">Property Custodian</p>
                           </div>
+                          <p className="text-[10px] text-black text-center mt-0.5">
+                            {isICS ? 'Signature Over Printed Name' : 'Signature Over Printed Name of Supply and/or'}
+                          </p>
+                          {!isICS && (
+                            <p className="text-[10px] text-black text-center">Property Custodian</p>
+                          )}
                         </div>
 
-                        <div className="mt-3 text-center space-y-0.5">
-                          <p className="underline text-black font-semibold text-[11px]">
-                            {slipModal.issuedByPosition ? slipModal.issuedByPosition : '______________________________'}
-                          </p>
-                          <p className="text-[10px] text-black">Position / Office</p>
+                        <div className={`text-center ${isICS ? 'mt-4' : 'mt-2'}`}>
+                          <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[18px]">
+                            <p className="font-semibold text-black text-[11px]">
+                              {slipModal.issuedByPosition || ''}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-black mt-0.5">Position / Office</p>
                         </div>
 
-                        <div className="mt-3 text-center space-y-0.5">
-                          <p className="underline text-black font-semibold text-[11px]">
-                            {formatLongDate(slipModal.issuedDate)}
-                          </p>
-                          <p className="text-[10px] text-black">Date</p>
+                        <div className="mt-2 text-center">
+                          <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[18px]">
+                            <p className="font-semibold text-black text-[11px]">
+                              {formatLongDate(slipModal.issuedDate)}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-black mt-0.5">Date</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Footer Form Code */}
-                    <div className="flex justify-end pt-1">
-                      <span className="font-mono text-[9px] text-black font-bold tracking-wider">
-                        {isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5'}
-                      </span>
-                    </div>
+                    {!isICS && (
+                      <div className="flex justify-end pt-1">
+                        <span className="font-mono text-[9px] text-black font-bold tracking-wider">
+                          PPSC-NFSTI-PAR-2018-01-F5
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2501,7 +2568,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
         return (
           <div id="printable-ics-par-document" className="hidden print:!block bg-white font-sans text-black text-[10.5px] p-6 max-w-[210mm] mx-auto">
             {/* Institutional Header with Logos */}
-            <div className="flex items-center justify-between border-b border-black pb-2">
+            <div className={`flex items-center justify-between ${isICS ? 'pb-2' : 'border-b border-black pb-2'}`}>
               <div className="w-20 shrink-0 flex justify-start">
                 <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-[72px] h-[72px] object-contain" />
               </div>
@@ -2514,6 +2581,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                   NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
                 </p>
                 <p className="text-[9.5px] text-black leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
+                <p className="text-[8.5px] text-black leading-tight">Tel No (049)827-0961 / (0928)550-0296 email: nfstippsc@yahoo.com</p>
               </div>
 
               <div className="w-20 shrink-0 flex justify-end">
@@ -2542,10 +2610,23 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
               </div>
 
               <div className="space-y-0.5 text-right">
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="font-semibold text-black">{isICS ? 'ICS NO.:' : 'PAR NO.:'}</span>
-                  <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
-                </div>
+                {isICS ? (
+                  <>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="font-semibold text-black">DATED:</span>
+                      <span className="font-semibold underline text-black">{formatLongDate(slipModal.issuedDate)}</span>
+                    </div>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="font-semibold text-black">ICS NO. :</span>
+                      <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="font-semibold text-black">PAR NO.:</span>
+                    <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2555,13 +2636,16 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                 {isICS ? (
                   <thead className="bg-slate-100 text-black text-center font-bold text-[9.5px] border-b border-black">
                     <tr>
-                      <th className="border border-black p-1 w-[7%]">QTY</th>
-                      <th className="border border-black p-1 w-[8%]">UNIT</th>
-                      <th className="border border-black p-1 w-[12%]">Unit Cost</th>
-                      <th className="border border-black p-1 w-[13%]">Total Cost</th>
-                      <th className="border border-black p-1 w-[34%]">DESCRIPTION</th>
-                      <th className="border border-black p-1 w-[16%]">Inventory Item No.</th>
-                      <th className="border border-black p-1 w-[10%]">Est. Useful Life</th>
+                      <th rowSpan={2} className="border border-black p-1 w-[6%] align-middle">QTY</th>
+                      <th rowSpan={2} className="border border-black p-1 w-[7%] align-middle">UNIT</th>
+                      <th colSpan={2} className="border border-black p-1 w-[24%] align-middle text-center">Amount</th>
+                      <th rowSpan={2} className="border border-black p-1 w-[35%] align-middle">Description</th>
+                      <th rowSpan={2} className="border border-black p-1 w-[16%] align-middle">Inventory Item Number</th>
+                      <th rowSpan={2} className="border border-black p-1 w-[12%] align-middle">Estimated Useful Life</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-0.5 w-[12%] align-middle font-bold">Unit Cost</th>
+                      <th className="border border-black p-0.5 w-[12%] align-middle font-bold">Total Cost</th>
                     </tr>
                   </thead>
                 ) : (
@@ -2584,25 +2668,29 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     const descObj = formatPropertyDescription(p);
                     const acqDate = p.acquisitionDate ? formatAcquiredDate(p.acquisitionDate) : '';
                     const amtStr = cost > 0 ? `₱ ${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
-                    const usefulLife = p.estimatedUsefulLife || (cost < 15000 ? '3 years' : '5 years');
+                    const cleanMain = descObj.mainDesc.trim().replace(/;$/, '');
+                    const icsMainDesc = `${cleanMain.toUpperCase()};`;
+                    const icsSerial = descObj.serialNo ? descObj.serialNo.toUpperCase() : '';
+                    const itemNumber = p.propertyNumber || '';
+                    const usefulLife = p.estimatedUsefulLife || '';
 
                     return isICS ? (
                       <tr key={idx} className="align-top">
                         <td className="border border-black p-1 text-center font-bold">{qty}</td>
                         <td className="border border-black p-1 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
-                        <td className="border border-black p-1 text-right font-mono">
-                          ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="border border-black p-1 text-left font-mono">
+                          ₱ {cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="border border-black p-1 text-right font-mono font-bold">
-                          ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="border border-black p-1 text-left font-mono font-bold">
+                          ₱ {lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="border border-black p-1 leading-snug">
-                          <div className="font-bold text-black">{descObj.mainDesc}</div>
-                          {descObj.serialNo && (
-                            <div className="text-[9.5px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
+                          <div className="font-bold text-black">{icsMainDesc}</div>
+                          {icsSerial && (
+                            <div className="text-[9px] font-mono font-bold text-black mt-0.5">{icsSerial}</div>
                           )}
                         </td>
-                        <td className="border border-black p-1 text-center font-mono font-bold text-black">{p.propertyNumber || 'N/A'}</td>
+                        <td className="border border-black p-1 text-center font-mono font-bold text-black">{itemNumber}</td>
                         <td className="border border-black p-1 text-center">{usefulLife}</td>
                       </tr>
                     ) : (
@@ -2622,12 +2710,23 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     );
                   })}
 
-                  {/* Nothing Follows Row */}
-                  <tr>
-                    <td className="border border-black h-4"></td>
-                    <td className="border border-black h-4"></td>
-                    {isICS ? (
-                      <>
+                  {/* Filler and Empty Rows */}
+                  {isICS ? (
+                    Array.from({ length: Math.max(0, 16 - selectedItems.length) }).map((_, rIdx) => (
+                      <tr key={`print-fill-${rIdx}`} className="h-4">
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                      </tr>
+                    ))
+                  ) : (
+                    <>
+                      {/* Nothing Follows Row for PAR */}
+                      <tr>
                         <td className="border border-black h-4"></td>
                         <td className="border border-black h-4"></td>
                         <td className="border border-black px-2 py-0.5 text-center font-mono text-[9.5px] text-black italic">
@@ -2635,32 +2734,20 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                         </td>
                         <td className="border border-black h-4"></td>
                         <td className="border border-black h-4"></td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[9.5px] text-black italic">
-                          x-x-x-x- x-x-nothing follows-x-x-x-x-x
-                        </td>
                         <td className="border border-black h-4"></td>
-                        <td className="border border-black h-4"></td>
-                        <td className="border border-black h-4"></td>
-                      </>
-                    )}
-                  </tr>
-
-                  {/* Empty Filler Rows */}
-                  {Array.from({ length: Math.max(0, 12 - (selectedItems.length + 1)) }).map((_, rIdx) => (
-                    <tr key={`print-fill-${rIdx}`} className="h-4">
-                      <td className="border border-black h-4"></td>
-                      <td className="border border-black h-4"></td>
-                      <td className="border border-black h-4"></td>
-                      <td className="border border-black h-4"></td>
-                      <td className="border border-black h-4"></td>
-                      {isICS && <td className="border border-black h-4"></td>}
-                      {isICS && <td className="border border-black h-4"></td>}
-                      {!isICS && <td className="border border-black h-4"></td>}
-                    </tr>
-                  ))}
+                      </tr>
+                      {Array.from({ length: Math.max(0, 12 - (selectedItems.length + 1)) }).map((_, rIdx) => (
+                        <tr key={`print-fill-${rIdx}`} className="h-4">
+                          <td className="border border-black h-4"></td>
+                          <td className="border border-black h-4"></td>
+                          <td className="border border-black h-4"></td>
+                          <td className="border border-black h-4"></td>
+                          <td className="border border-black h-4"></td>
+                          <td className="border border-black h-4"></td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -2668,70 +2755,84 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
             {/* Dual Signatories Block (directly attached below table) */}
             <div className="border border-black border-t-0 grid grid-cols-2 text-[10px]">
               {/* Received by */}
-              <div className="p-2.5 border-r border-black flex flex-col justify-between min-h-[140px]">
+              <div className="p-2 border-r border-black flex flex-col justify-between min-h-[140px]">
                 <div>
                   <p className="font-bold text-black text-left text-[10px]">Received by:</p>
-                  <div className="h-6"></div>
-                  <div className="text-center space-y-0.5">
-                    <p className="font-extrabold uppercase underline text-black text-[11px] tracking-wide">
+                  <div className="h-4"></div>
+                  <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[16px]">
+                    <p className="font-extrabold uppercase text-black text-[11px] tracking-wide">
                       {slipModal.receivedByName || emp.name}
                     </p>
-                    <p className="text-[9px] text-black">Signature Over Printed Name</p>
-                    <p className="text-[9px] text-black">of End User</p>
                   </div>
+                  <p className="text-[9px] text-black text-center mt-0.5">Signature Over Printed Name</p>
+                  <p className="text-[9px] text-black text-center">of End User</p>
                 </div>
 
-                <div className="mt-2 text-center space-y-0.5">
-                  <p className="font-extrabold uppercase underline text-black text-[10px]">
-                    {slipModal.receivedByPosition || emp.position || 'End User'}
-                  </p>
-                  <p className="text-[9px] text-black">Position / Office</p>
+                <div className="mt-1.5 text-center">
+                  <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[16px]">
+                    <p className="font-extrabold uppercase text-black text-[10px]">
+                      {slipModal.receivedByPosition || emp.position || 'End User'}
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-black mt-0.5">Position / Office</p>
                 </div>
 
-                <div className="mt-2 text-center space-y-0.5">
-                  <p className="underline text-black font-semibold text-[10px]">
-                    {formatLongDate(slipModal.issuedDate)}
-                  </p>
-                  <p className="text-[9px] text-black">Date</p>
+                <div className="mt-1.5 text-center">
+                  <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[16px]">
+                    <p className="font-semibold text-black text-[10px]">
+                      {formatLongDate(slipModal.issuedDate)}
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-black mt-0.5">Date</p>
                 </div>
               </div>
 
-              {/* Issued from */}
-              <div className="p-2.5 flex flex-col justify-between min-h-[140px]">
+              {/* Issued by */}
+              <div className="p-2 flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold text-black text-left text-[10px]">Issued from:</p>
-                  <div className="h-6"></div>
-                  <div className="text-center space-y-0.5">
-                    <p className="font-extrabold uppercase underline text-black text-[11px] tracking-wide">
-                      {slipModal.issuedByName ? slipModal.issuedByName : '______________________________'}
+                  <p className="font-bold text-black text-left text-[10px]">{isICS ? 'Issued by:' : 'Issued from:'}</p>
+                  <div className="h-4"></div>
+                  <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[16px]">
+                    <p className="font-extrabold uppercase text-black text-[11px] tracking-wide">
+                      {slipModal.issuedByName || ''}
                     </p>
-                    <p className="text-[9px] text-black">Signature Over Printed Name of Supply and/or</p>
-                    <p className="text-[9px] text-black">Property Custodian</p>
                   </div>
+                  <p className="text-[9px] text-black text-center mt-0.5">
+                    {isICS ? 'Signature Over Printed Name' : 'Signature Over Printed Name of Supply and/or'}
+                  </p>
+                  {!isICS && (
+                    <p className="text-[9px] text-black text-center">Property Custodian</p>
+                  )}
                 </div>
 
-                <div className="mt-2 text-center space-y-0.5">
-                  <p className="underline text-black font-semibold text-[10px]">
-                    {slipModal.issuedByPosition ? slipModal.issuedByPosition : '______________________________'}
-                  </p>
-                  <p className="text-[9px] text-black">Position / Office</p>
+                <div className={`text-center ${isICS ? 'mt-3' : 'mt-1.5'}`}>
+                  <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[16px]">
+                    <p className="font-semibold text-black text-[10px]">
+                      {slipModal.issuedByPosition || ''}
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-black mt-0.5">Position / Office</p>
                 </div>
 
-                <div className="mt-2 text-center space-y-0.5">
-                  <p className="underline text-black font-semibold text-[10px]">
-                    {formatLongDate(slipModal.issuedDate)}
-                  </p>
-                  <p className="text-[9px] text-black">Date</p>
+                <div className="mt-1.5 text-center">
+                  <div className="w-[75%] mx-auto border-b border-black pb-0.5 text-center min-h-[16px]">
+                    <p className="font-semibold text-black text-[10px]">
+                      {formatLongDate(slipModal.issuedDate)}
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-black mt-0.5">Date</p>
                 </div>
               </div>
             </div>
 
             {/* Footer Form Code */}
-            <div className="flex justify-end pt-0.5">
-              <span className="font-mono text-[8.5px] text-black font-bold tracking-wider">
-                {isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5'}
-              </span>
-            </div>
+            {!isICS && (
+              <div className="flex justify-end pt-0.5">
+                <span className="font-mono text-[8.5px] text-black font-bold tracking-wider">
+                  PPSC-NFSTI-PAR-2018-01-F5
+                </span>
+              </div>
+            )}
           </div>
         );
       })()}
