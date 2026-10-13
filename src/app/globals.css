@@ -148,8 +148,47 @@ button, input, select, textarea, optgroup {
   header,
   .no-print,
   button,
-  .print-hide {
+  .print-hide,
+  .print\:hidden,
+  .print\:\!hidden {
     display: none !important;
+  }
+
+  /* Isolate printable ICS/PAR document so background directory tables never print */
+  body:has(#printable-ics-par-document) main,
+  body:has(#printable-ics-par-document) aside,
+  body:has(#printable-ics-par-document) nav,
+  body:has(#printable-ics-par-document) header,
+  body:has(#printable-ics-par-document) .w-full.max-w-\[1540px\],
+  body:has(#printable-ics-par-document) .min-h-screen > .w-full {
+    display: none !important;
+  }
+
+  body:has(#printable-ics-par-document) {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body:has(#printable-ics-par-document) .min-h-screen {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  #printable-ics-par-document {
+    display: block !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 6mm 8mm !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   .print-only {
@@ -159,8 +198,7 @@ button, input, select, textarea, optgroup {
   /* Ensure modal printable containers display during print */
   .fixed.inset-0:has(.a4-sticker-sheet),
   .fixed.inset-0:has(#property-tag-print-area),
-  .fixed.inset-0:has(#printable-par-document),
-  .fixed.inset-0:has(#printable-ics-par-document) {
+  .fixed.inset-0:has(#printable-par-document) {
     display: block !important;
   }
 

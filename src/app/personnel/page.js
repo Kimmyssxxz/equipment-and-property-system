@@ -548,7 +548,32 @@ export default function PersonnelPage() {
     window.print();
   };
 
-  const handleExportWordSlip = () => {
+  const getBase64FromUrl = async (url) => {
+    try {
+      const response = await fetch(encodeURI(url));
+      if (!response.ok) return '';
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const res = reader.result;
+          if (typeof res === 'string') {
+            const base64 = res.split(',')[1] || '';
+            resolve(base64);
+          } else {
+            resolve('');
+          }
+        };
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error('Error fetching logo for Word export:', err);
+      return '';
+    }
+  };
+
+  const handleExportWordSlip = async () => {
     if (!slipModal.employee) return;
     const emp = slipModal.employee;
     const stats = getEmployeeStats(emp);
@@ -558,13 +583,18 @@ export default function PersonnelPage() {
       slipModal.selectedItemIds.includes(p.id || p.propertyNumber)
     );
 
+    const [ppscBase64, nfstiBase64] = await Promise.all([
+      getBase64FromUrl('/Logo_PPSC.png'),
+      getBase64FromUrl('/nfsti logo.png'),
+    ]);
+
     const docTitle = isICS ? 'INVENTORY CUSTODIAN SLIP' : 'PROPERTY ACKNOWLEDGEMENT RECEIPT';
     const formCode = isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5';
     const controlLabel = isICS ? 'ICS NO.:' : 'PAR NO.:';
     const formattedDate = formatLongDate(slipModal.issuedDate);
     
     let rowsHtml = '';
-    const minRows = 18;
+    const minRows = 12;
     const usedRows = selectedItems.length + 1; // items + nothing follows row
     const emptyRowsCount = Math.max(0, minRows - usedRows);
 
@@ -597,7 +627,7 @@ export default function PersonnelPage() {
       `;
 
       for (let i = 0; i < emptyRowsCount; i++) {
-        rowsHtml += `<tr><td style="height:20px;"></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+        rowsHtml += `<tr><td style="height:18px;"></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
       }
     } else {
       // PAR format matching official NFSTI document
@@ -631,7 +661,7 @@ export default function PersonnelPage() {
       `;
 
       for (let i = 0; i < emptyRowsCount; i++) {
-        rowsHtml += `<tr><td style="height:20px;"></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+        rowsHtml += `<tr><td style="height:18px;"></td><td></td><td></td><td></td><td></td><td></td></tr>`;
       }
     }
 
@@ -641,31 +671,41 @@ export default function PersonnelPage() {
         <meta charset='utf-8'>
         <title>${docTitle} - ${emp.name}</title>
         <style>
-          @page WordSection1 { size: 8.5in 11.0in; margin: 0.5in 0.6in; }
-          div.WordSection1 { page: WordSection1; font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+          @page WordSection1 { size: 8.5in 11.0in; margin: 0.4in 0.5in; }
+          div.WordSection1 { page: WordSection1; font-family: Arial, sans-serif; font-size: 8.5pt; color: #000; }
           table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1pt solid #000; padding: 4px 6px; font-size: 8.5pt; vertical-align: top; }
+          th, td { border: 1pt solid #000; padding: 3px 5px; font-size: 8.5pt; vertical-align: top; }
           th { background-color: #ffffff; font-weight: bold; text-align: center; }
-          .header-text { text-align: center; margin-bottom: 12px; }
-          .header-text p { margin: 1px 0; }
         </style>
       </head>
       <body>
       <div class="WordSection1">
-        <!-- Institutional Header -->
-        <div class="header-text">
-          <p style="font-size: 8.5pt;">Republic of the Philippines</p>
-          <p style="font-size: 8.5pt;">Department of the Interior and Local Government</p>
-          <p style="font-size: 9.5pt; font-weight: bold; color: #0284c7;">Philippine Public Safety College</p>
-          <p style="font-size: 11pt; font-weight: bold; color: #166534; text-transform: uppercase;">NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE</p>
-          <p style="font-size: 8pt; color: #333;">Camp Vicente Lim, Calamba City, Laguna</p>
-          <h2 style="margin: 14px 0 10px 0; font-size: 12pt; text-transform: uppercase; font-weight: bold; text-decoration: underline; text-align: center;">
-            ${docTitle}
-          </h2>
-        </div>
+        <!-- Institutional Header with Embedded Logos -->
+        <table style="width: 100%; border: none; margin-bottom: 6px;">
+          <tr>
+            <td style="border: none; width: 15%; text-align: left; vertical-align: middle;">
+              ${ppscBase64 ? '<img src="ppsc_logo.png" width="65" height="65" style="width:65px; height:65px;" alt="PPSC" />' : ''}
+            </td>
+            <td style="border: none; width: 70%; text-align: center; vertical-align: middle;">
+              <p style="margin: 1px 0; font-size: 8pt;">Republic of the Philippines</p>
+              <p style="margin: 1px 0; font-size: 8pt;">Department of the Interior and Local Government</p>
+              <p style="margin: 1px 0; font-size: 9pt; font-weight: bold; color: #0284c7;">Philippine Public Safety College</p>
+              <p style="margin: 1px 0; font-size: 10.5pt; font-weight: bold; color: #166534; text-transform: uppercase;">NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE</p>
+              <p style="margin: 1px 0; font-size: 7.5pt; color: #333;">Camp Vicente Lim, Calamba City, Laguna</p>
+            </td>
+            <td style="border: none; width: 15%; text-align: right; vertical-align: middle;">
+              ${nfstiBase64 ? '<img src="nfsti_logo.png" width="65" height="65" style="width:65px; height:65px;" alt="NFSTI" />' : ''}
+            </td>
+          </tr>
+        </table>
+
+        <!-- Document Title -->
+        <h2 style="margin: 8px 0 6px 0; font-size: 11pt; text-transform: uppercase; font-weight: bold; text-decoration: underline; text-align: center;">
+          ${docTitle}
+        </h2>
 
         <!-- Meta Table -->
-        <table style="width: 100%; border: none; margin-bottom: 6px;">
+        <table style="width: 100%; border: none; margin-bottom: 5px;">
           <tr>
             <td style="border: none; width: 60%; padding: 2px 0;">
               <strong>Entity Name :</strong> <u style="font-weight: bold; text-transform: uppercase;">${slipModal.entityName || 'NFSTI'}</u><br>
@@ -709,58 +749,58 @@ export default function PersonnelPage() {
         <!-- Signatures Table -->
         <table style="margin-top: -1px; width: 100%; border: 1pt solid #000;">
           <tr>
-            <td style="width: 50%; border: 1pt solid #000; padding: 8px 12px; height: 160px; vertical-align: top;">
+            <td style="width: 50%; border: 1pt solid #000; padding: 6px 10px; height: 135px; vertical-align: top;">
               <p style="margin: 0; font-weight: bold;">Received by:</p>
-              <div style="height: 35px;"></div>
+              <div style="height: 25px;"></div>
               <div style="text-align: center;">
-                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9.5pt;">
+                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
                   ${slipModal.receivedByName || emp.name}
                 </p>
-                <p style="margin: 2px 0 0 0; font-size: 8pt;">Signature Over Printed Name</p>
-                <p style="margin: 0; font-size: 8pt;">of End User</p>
+                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Signature Over Printed Name</p>
+                <p style="margin: 0; font-size: 7.5pt;">of End User</p>
               </div>
-              <div style="text-align: center; margin-top: 15px;">
-                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
+              <div style="text-align: center; margin-top: 10px;">
+                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 8.5pt;">
                   ${slipModal.receivedByPosition || emp.position || 'End User'}
                 </p>
-                <p style="margin: 2px 0 0 0; font-size: 8pt;">Position / Office</p>
+                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Position / Office</p>
               </div>
-              <div style="text-align: center; margin-top: 15px;">
-                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 9pt;">
+              <div style="text-align: center; margin-top: 10px;">
+                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
                   ${formattedDate}
                 </p>
-                <p style="margin: 2px 0 0 0; font-size: 8pt;">Date</p>
+                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Date</p>
               </div>
             </td>
-            <td style="width: 50%; border: 1pt solid #000; padding: 8px 12px; height: 160px; vertical-align: top;">
+            <td style="width: 50%; border: 1pt solid #000; padding: 6px 10px; height: 135px; vertical-align: top;">
               <p style="margin: 0; font-weight: bold;">Issued from:</p>
-              <div style="height: 35px;"></div>
+              <div style="height: 25px;"></div>
               <div style="text-align: center;">
-                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9.5pt;">
+                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
                   ${slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
                 </p>
-                <p style="margin: 2px 0 0 0; font-size: 8pt;">Signature Over Printed Name of Supply and/or</p>
-                <p style="margin: 0; font-size: 8pt;">Property Custodian</p>
+                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Signature Over Printed Name of Supply and/or</p>
+                <p style="margin: 0; font-size: 7.5pt;">Property Custodian</p>
               </div>
-              <div style="text-align: center; margin-top: 15px;">
-                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 9pt;">
+              <div style="text-align: center; margin-top: 10px;">
+                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
                   ${slipModal.issuedByPosition || 'Supply Accountable Officer'}
                 </p>
-                <p style="margin: 2px 0 0 0; font-size: 8pt;">Position / Office</p>
+                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Position / Office</p>
               </div>
-              <div style="text-align: center; margin-top: 15px;">
-                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 9pt;">
+              <div style="text-align: center; margin-top: 10px;">
+                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
                   ${formattedDate}
                 </p>
-                <p style="margin: 2px 0 0 0; font-size: 8pt;">Date</p>
+                <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Date</p>
               </div>
             </td>
           </tr>
         </table>
 
         <!-- Form Code Footer -->
-        <div style="text-align: right; margin-top: 4px;">
-          <span style="font-family: monospace; font-size: 8pt; font-weight: bold;">
+        <div style="text-align: right; margin-top: 3px;">
+          <span style="font-family: monospace; font-size: 7.5pt; font-weight: bold;">
             ${formCode}
           </span>
         </div>
@@ -769,7 +809,20 @@ export default function PersonnelPage() {
       </html>
     `;
 
-    const blob = new Blob(['\ufeff' + htmlDocument], { type: 'application/msword' });
+    const boundary = '----=_NextPart_000_NFSTI_PAR';
+    let mhtmlDocument = `MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary="${boundary}"\r\n\r\n--${boundary}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\nContent-Location: document.html\r\n\r\n` + htmlDocument + `\r\n\r\n`;
+
+    if (ppscBase64) {
+      mhtmlDocument += `--${boundary}\r\nContent-Type: image/png\r\nContent-Transfer-Encoding: base64\r\nContent-Location: ppsc_logo.png\r\n\r\n${ppscBase64}\r\n\r\n`;
+    }
+
+    if (nfstiBase64) {
+      mhtmlDocument += `--${boundary}\r\nContent-Type: image/png\r\nContent-Transfer-Encoding: base64\r\nContent-Location: nfsti_logo.png\r\n\r\n${nfstiBase64}\r\n\r\n`;
+    }
+
+    mhtmlDocument += `--${boundary}--\r\n`;
+
+    const blob = new Blob([mhtmlDocument], { type: 'application/msword;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -955,13 +1008,13 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
   };
 
   return (
-    <div className="min-h-screen p-2.5 sm:p-6 lg:p-8 flex justify-center items-start">
-      <div className="w-full max-w-[1540px] flex gap-5 lg:gap-6 items-start">
+    <div className="min-h-screen p-2.5 sm:p-6 lg:p-8 flex justify-center items-start print:p-0 print:m-0 print:block">
+      <div className="w-full max-w-[1540px] flex gap-5 lg:gap-6 items-start print:!hidden">
         {/* Floating Sidebar */}
         <Sidebar totalItems={properties.length} />
 
         {/* Floating Main Content Container */}
-        <main className="flex-1 min-w-0 bg-white/90 backdrop-blur-xl border border-white/80 rounded-2xl sm:rounded-[32px] shadow-2xl shadow-slate-900/10 p-4 sm:p-6 lg:p-8 flex flex-col space-y-5 sm:space-y-6 overflow-hidden">
+        <main className="flex-1 min-w-0 bg-white/90 backdrop-blur-xl border border-white/80 rounded-2xl sm:rounded-[32px] shadow-2xl shadow-slate-900/10 p-4 sm:p-6 lg:p-8 flex flex-col space-y-5 sm:space-y-6 overflow-hidden print:!hidden">
           {/* Top Navbar */}
           <Navbar pageTitle="Personnel & Accountable Officers" icon={Users} />
 
@@ -1967,7 +2020,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
         const officeAddr = settings?.officeAddress || 'Corporate 101 Bldg., Mother Ignacia Ave., Quezon City';
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs no-print">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs no-print print:!hidden">
             <div className="bg-slate-100 w-full max-w-5xl rounded-3xl border border-slate-300 shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-in fade-in zoom-in-95 duration-200">
               
               {/* Modal Top Header Bar */}
@@ -2258,7 +2311,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     {/* Institutional Header with Logos matching Official Form */}
                     <div className="flex items-center justify-between border-b border-black pb-3">
                       <div className="w-20 shrink-0 flex justify-start">
-                        <img src="/PPSC.webp" alt="PPSC Logo" className="w-16 h-16 object-contain" />
+                        <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-16 h-16 object-contain" />
                       </div>
 
                       <div className="text-center flex-1 space-y-0.5 px-2">
@@ -2404,7 +2457,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                           </tr>
 
                           {/* Empty Filler Rows */}
-                          {Array.from({ length: Math.max(0, 18 - (selectedItems.length + 1)) }).map((_, rIdx) => (
+                          {Array.from({ length: Math.max(0, 12 - (selectedItems.length + 1)) }).map((_, rIdx) => (
                             <tr key={`fill-${rIdx}`} className="h-5">
                               <td className="border border-black h-5"></td>
                               <td className="border border-black h-5"></td>
@@ -2538,38 +2591,38 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
         );
 
         return (
-          <div id="printable-ics-par-document" className="hidden print:block p-8 bg-white font-sans text-black text-xs">
+          <div id="printable-ics-par-document" className="hidden print:!block bg-white font-sans text-black text-[10.5px] p-6 max-w-[210mm] mx-auto">
             {/* Institutional Header with Logos */}
-            <div className="flex items-center justify-between border-b border-black pb-3">
-              <div className="w-20 shrink-0 flex justify-start">
-                <img src="/PPSC.webp" alt="PPSC Logo" className="w-16 h-16 object-contain" />
+            <div className="flex items-center justify-between border-b border-black pb-2">
+              <div className="w-16 shrink-0 flex justify-start">
+                <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-14 h-14 object-contain" />
               </div>
 
               <div className="text-center flex-1 space-y-0.5 px-2">
-                <p className="text-[11px] font-medium text-black leading-tight">Republic of the Philippines</p>
-                <p className="text-[11px] font-medium text-black leading-tight">Department of the Interior and Local Government</p>
-                <p className="text-[12px] font-bold text-sky-700 leading-tight">Philippine Public Safety College</p>
-                <p className="text-[13px] font-black text-emerald-900 uppercase tracking-wide leading-tight">
+                <p className="text-[10px] font-medium text-black leading-tight">Republic of the Philippines</p>
+                <p className="text-[10px] font-medium text-black leading-tight">Department of the Interior and Local Government</p>
+                <p className="text-[11px] font-bold text-sky-700 leading-tight">Philippine Public Safety College</p>
+                <p className="text-[12px] font-black text-emerald-900 uppercase tracking-wide leading-tight">
                   NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
                 </p>
-                <p className="text-[10px] text-black leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
+                <p className="text-[9.5px] text-black leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
               </div>
 
-              <div className="w-20 shrink-0 flex justify-end">
-                <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-16 h-16 object-contain" />
+              <div className="w-16 shrink-0 flex justify-end">
+                <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-14 h-14 object-contain" />
               </div>
             </div>
 
             {/* Document Title */}
-            <div className="text-center my-3">
-              <h2 className="text-base font-black uppercase tracking-wider text-black font-serif underline underline-offset-4">
+            <div className="text-center my-2">
+              <h2 className="text-sm font-black uppercase tracking-wider text-black font-serif underline underline-offset-4">
                 {isICS ? 'INVENTORY CUSTODIAN SLIP' : 'PROPERTY ACKNOWLEDGEMENT RECEIPT'}
               </h2>
             </div>
 
             {/* Meta Fields */}
-            <div className="flex items-start justify-between text-[11px] mb-2 px-1">
-              <div className="space-y-1">
+            <div className="flex items-start justify-between text-[10.5px] mb-1.5 px-0.5">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-black">Entity Name :</span>
                   <span className="font-bold underline text-black uppercase">{slipModal.entityName || 'NFSTI'}</span>
@@ -2580,7 +2633,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                 </div>
               </div>
 
-              <div className="space-y-1 text-right">
+              <div className="space-y-0.5 text-right">
                 <div className="flex items-center justify-end gap-1.5">
                   <span className="font-semibold text-black">{isICS ? 'ICS NO.:' : 'PAR NO.:'}</span>
                   <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
@@ -2590,28 +2643,28 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
 
             {/* Main Items Table */}
             <div className="border border-black overflow-hidden">
-              <table className="w-full text-left text-[11px] border-collapse border border-black">
+              <table className="w-full text-left text-[10px] border-collapse border border-black">
                 {isICS ? (
-                  <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black">
+                  <thead className="bg-slate-100 text-black text-center font-bold text-[9.5px] border-b border-black">
                     <tr>
-                      <th className="border border-black p-1.5 w-[7%]">QTY</th>
-                      <th className="border border-black p-1.5 w-[8%]">UNIT</th>
-                      <th className="border border-black p-1.5 w-[12%]">Unit Cost</th>
-                      <th className="border border-black p-1.5 w-[13%]">Total Cost</th>
-                      <th className="border border-black p-1.5 w-[34%]">DESCRIPTION</th>
-                      <th className="border border-black p-1.5 w-[16%]">Inventory Item No.</th>
-                      <th className="border border-black p-1.5 w-[10%]">Est. Useful Life</th>
+                      <th className="border border-black p-1 w-[7%]">QTY</th>
+                      <th className="border border-black p-1 w-[8%]">UNIT</th>
+                      <th className="border border-black p-1 w-[12%]">Unit Cost</th>
+                      <th className="border border-black p-1 w-[13%]">Total Cost</th>
+                      <th className="border border-black p-1 w-[34%]">DESCRIPTION</th>
+                      <th className="border border-black p-1 w-[16%]">Inventory Item No.</th>
+                      <th className="border border-black p-1 w-[10%]">Est. Useful Life</th>
                     </tr>
                   </thead>
                 ) : (
-                  <thead className="bg-slate-100 text-black text-center font-bold text-[10.5px] border-b border-black uppercase">
+                  <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black uppercase">
                     <tr>
-                      <th className="border border-black p-1.5 w-[7%]">QTY</th>
-                      <th className="border border-black p-1.5 w-[9%]">UNIT</th>
-                      <th className="border border-black p-1.5 w-[38%]">DESCRIPTION</th>
-                      <th className="border border-black p-1.5 w-[18%]">Property Number</th>
-                      <th className="border border-black p-1.5 w-[13%]">Date Acquired</th>
-                      <th className="border border-black p-1.5 w-[15%]">Amount</th>
+                      <th className="border border-black p-1 w-[7%]">QTY</th>
+                      <th className="border border-black p-1 w-[9%]">UNIT</th>
+                      <th className="border border-black p-1 w-[38%]">DESCRIPTION</th>
+                      <th className="border border-black p-1 w-[18%]">Property Number</th>
+                      <th className="border border-black p-1 w-[13%]">Date Acquired</th>
+                      <th className="border border-black p-1 w-[15%]">Amount</th>
                     </tr>
                   </thead>
                 )}
@@ -2627,77 +2680,77 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
 
                     return isICS ? (
                       <tr key={idx} className="align-top">
-                        <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
-                        <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
-                        <td className="border border-black p-1.5 text-right font-mono">
+                        <td className="border border-black p-1 text-center font-bold">{qty}</td>
+                        <td className="border border-black p-1 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
+                        <td className="border border-black p-1 text-right font-mono">
                           ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="border border-black p-1.5 text-right font-mono font-bold">
+                        <td className="border border-black p-1 text-right font-mono font-bold">
                           ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="border border-black p-1.5 leading-snug">
+                        <td className="border border-black p-1 leading-snug">
                           <div className="font-bold text-black">{descObj.mainDesc}</div>
                           {descObj.serialNo && (
-                            <div className="text-[10px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
+                            <div className="text-[9.5px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
                           )}
                         </td>
-                        <td className="border border-black p-1.5 text-center font-mono font-bold text-black">{p.propertyNumber || 'N/A'}</td>
-                        <td className="border border-black p-1.5 text-center">{usefulLife}</td>
+                        <td className="border border-black p-1 text-center font-mono font-bold text-black">{p.propertyNumber || 'N/A'}</td>
+                        <td className="border border-black p-1 text-center">{usefulLife}</td>
                       </tr>
                     ) : (
                       <tr key={idx} className="align-top">
-                        <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
-                        <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
-                        <td className="border border-black p-1.5 leading-snug text-left">
+                        <td className="border border-black p-1 text-center font-bold">{qty}</td>
+                        <td className="border border-black p-1 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
+                        <td className="border border-black p-1 leading-snug text-left">
                           <div className="font-bold text-black">{descObj.mainDesc}</div>
                           {descObj.serialNo && (
-                            <div className="text-[10px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
+                            <div className="text-[9.5px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
                           )}
                         </td>
-                        <td className="border border-black p-1.5 text-center font-mono font-bold text-black">{p.propertyNumber || ''}</td>
-                        <td className="border border-black p-1.5 text-center font-mono text-[10.5px]">{acqDate}</td>
-                        <td className="border border-black p-1.5 text-right font-mono font-bold">{amtStr}</td>
+                        <td className="border border-black p-1 text-center font-mono font-bold text-black">{p.propertyNumber || ''}</td>
+                        <td className="border border-black p-1 text-center font-mono text-[10px]">{acqDate}</td>
+                        <td className="border border-black p-1 text-right font-mono font-bold">{amtStr}</td>
                       </tr>
                     );
                   })}
 
                   {/* Nothing Follows Row */}
                   <tr>
-                    <td className="border border-black h-5"></td>
-                    <td className="border border-black h-5"></td>
+                    <td className="border border-black h-4"></td>
+                    <td className="border border-black h-4"></td>
                     {isICS ? (
                       <>
-                        <td className="border border-black h-5"></td>
-                        <td className="border border-black h-5"></td>
-                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-black italic">
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[9.5px] text-black italic">
                           x-x-x-x- x-x-nothing follows-x-x-x-x-x
                         </td>
-                        <td className="border border-black h-5"></td>
-                        <td className="border border-black h-5"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
                       </>
                     ) : (
                       <>
-                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-black italic">
+                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[9.5px] text-black italic">
                           x-x-x-x- x-x-nothing follows-x-x-x-x-x
                         </td>
-                        <td className="border border-black h-5"></td>
-                        <td className="border border-black h-5"></td>
-                        <td className="border border-black h-5"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
+                        <td className="border border-black h-4"></td>
                       </>
                     )}
                   </tr>
 
                   {/* Empty Filler Rows */}
-                  {Array.from({ length: Math.max(0, 18 - (selectedItems.length + 1)) }).map((_, rIdx) => (
-                    <tr key={`print-fill-${rIdx}`} className="h-5">
-                      <td className="border border-black h-5"></td>
-                      <td className="border border-black h-5"></td>
-                      <td className="border border-black h-5"></td>
-                      <td className="border border-black h-5"></td>
-                      <td className="border border-black h-5"></td>
-                      {isICS && <td className="border border-black h-5"></td>}
-                      {isICS && <td className="border border-black h-5"></td>}
-                      {!isICS && <td className="border border-black h-5"></td>}
+                  {Array.from({ length: Math.max(0, 12 - (selectedItems.length + 1)) }).map((_, rIdx) => (
+                    <tr key={`print-fill-${rIdx}`} className="h-4">
+                      <td className="border border-black h-4"></td>
+                      <td className="border border-black h-4"></td>
+                      <td className="border border-black h-4"></td>
+                      <td className="border border-black h-4"></td>
+                      <td className="border border-black h-4"></td>
+                      {isICS && <td className="border border-black h-4"></td>}
+                      {isICS && <td className="border border-black h-4"></td>}
+                      {!isICS && <td className="border border-black h-4"></td>}
                     </tr>
                   ))}
                 </tbody>
@@ -2705,69 +2758,69 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
             </div>
 
             {/* Dual Signatories Block (directly attached below table) */}
-            <div className="border border-black border-t-0 grid grid-cols-2 text-[11px]">
+            <div className="border border-black border-t-0 grid grid-cols-2 text-[10px]">
               {/* Received by */}
-              <div className="p-3 border-r border-black flex flex-col justify-between min-h-[175px]">
+              <div className="p-2.5 border-r border-black flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold text-black text-left text-[11px]">Received by:</p>
-                  <div className="h-9"></div>
+                  <p className="font-bold text-black text-left text-[10px]">Received by:</p>
+                  <div className="h-6"></div>
                   <div className="text-center space-y-0.5">
-                    <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                    <p className="font-extrabold uppercase underline text-black text-[11px] tracking-wide">
                       {slipModal.receivedByName || emp.name}
                     </p>
-                    <p className="text-[10px] text-black">Signature Over Printed Name</p>
-                    <p className="text-[10px] text-black">of End User</p>
+                    <p className="text-[9px] text-black">Signature Over Printed Name</p>
+                    <p className="text-[9px] text-black">of End User</p>
                   </div>
                 </div>
 
-                <div className="mt-3 text-center space-y-0.5">
-                  <p className="font-extrabold uppercase underline text-black text-[11px]">
+                <div className="mt-2 text-center space-y-0.5">
+                  <p className="font-extrabold uppercase underline text-black text-[10px]">
                     {slipModal.receivedByPosition || emp.position || 'End User'}
                   </p>
-                  <p className="text-[10px] text-black">Position / Office</p>
+                  <p className="text-[9px] text-black">Position / Office</p>
                 </div>
 
-                <div className="mt-3 text-center space-y-0.5">
-                  <p className="underline text-black font-semibold text-[11px]">
+                <div className="mt-2 text-center space-y-0.5">
+                  <p className="underline text-black font-semibold text-[10px]">
                     {formatLongDate(slipModal.issuedDate)}
                   </p>
-                  <p className="text-[10px] text-black">Date</p>
+                  <p className="text-[9px] text-black">Date</p>
                 </div>
               </div>
 
               {/* Issued from */}
-              <div className="p-3 flex flex-col justify-between min-h-[175px]">
+              <div className="p-2.5 flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold text-black text-left text-[11px]">Issued from:</p>
-                  <div className="h-9"></div>
+                  <p className="font-bold text-black text-left text-[10px]">Issued from:</p>
+                  <div className="h-6"></div>
                   <div className="text-center space-y-0.5">
-                    <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                    <p className="font-extrabold uppercase underline text-black text-[11px] tracking-wide">
                       {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
                     </p>
-                    <p className="text-[10px] text-black">Signature Over Printed Name of Supply and/or</p>
-                    <p className="text-[10px] text-black">Property Custodian</p>
+                    <p className="text-[9px] text-black">Signature Over Printed Name of Supply and/or</p>
+                    <p className="text-[9px] text-black">Property Custodian</p>
                   </div>
                 </div>
 
-                <div className="mt-3 text-center space-y-0.5">
-                  <p className="underline text-black font-semibold text-[11px]">
+                <div className="mt-2 text-center space-y-0.5">
+                  <p className="underline text-black font-semibold text-[10px]">
                     {slipModal.issuedByPosition || 'Supply Accountable Officer'}
                   </p>
-                  <p className="text-[10px] text-black">Position / Office</p>
+                  <p className="text-[9px] text-black">Position / Office</p>
                 </div>
 
-                <div className="mt-3 text-center space-y-0.5">
-                  <p className="underline text-black font-semibold text-[11px]">
+                <div className="mt-2 text-center space-y-0.5">
+                  <p className="underline text-black font-semibold text-[10px]">
                     {formatLongDate(slipModal.issuedDate)}
                   </p>
-                  <p className="text-[10px] text-black">Date</p>
+                  <p className="text-[9px] text-black">Date</p>
                 </div>
               </div>
             </div>
 
             {/* Footer Form Code */}
-            <div className="flex justify-end pt-1">
-              <span className="font-mono text-[9px] text-black font-bold tracking-wider">
+            <div className="flex justify-end pt-0.5">
+              <span className="font-mono text-[8.5px] text-black font-bold tracking-wider">
                 {isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5'}
               </span>
             </div>
