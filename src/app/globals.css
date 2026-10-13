@@ -159,7 +159,8 @@ button, input, select, textarea, optgroup {
   /* Ensure modal printable containers display during print */
   .fixed.inset-0:has(.a4-sticker-sheet),
   .fixed.inset-0:has(#property-tag-print-area),
-  .fixed.inset-0:has(#printable-par-document) {
+  .fixed.inset-0:has(#printable-par-document),
+  .fixed.inset-0:has(#printable-ics-par-document) {
     display: block !important;
   }
 
