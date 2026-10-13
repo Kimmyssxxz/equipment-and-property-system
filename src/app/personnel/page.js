@@ -1175,10 +1175,15 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                         <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors group">
                           {/* ID & Name */}
                           <td className="py-3.5 px-4">
-                            <div className="font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5">
-                              <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <button
+                              type="button"
+                              onClick={() => setSelectedEmployeeForDetails(emp)}
+                              className="text-left font-extrabold text-slate-900 hover:text-emerald-700 hover:underline transition-colors flex items-center gap-1.5 cursor-pointer group/name"
+                              title="Click to view personnel details & accountability portfolio"
+                            >
+                              <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 group-hover/name:scale-110 transition-transform" />
                               <span>{emp.name}</span>
-                            </div>
+                            </button>
                             <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 inline-block mt-0.5 ml-5.5">
                               {emp.employeeId}
                             </span>
@@ -1300,14 +1305,6 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                               >
                                 <FileText className="w-3 h-3 text-indigo-600" />
                                 <span>PAR ({stats.parCount})</span>
-                              </button>
-
-                              <button
-                                onClick={() => setSelectedEmployeeForDetails(emp)}
-                                title="View Accountable Assets Portfolio"
-                                className="p-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200 transition-colors cursor-pointer"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
                               </button>
 
                               <button
