@@ -79,14 +79,15 @@ export default function PersonnelPage() {
   // Official Custodian Slip Modal (ICS < 50k, PAR >= 50k)
   const [slipModal, setSlipModal] = useState({
     isOpen: false,
-    type: 'ICS', // 'ICS' (< ₱50k RPCSP) or 'PAR' (≥ ₱50k RPCPPE)
+    type: 'PAR', // 'ICS' (< ₱50k RPCSP) or 'PAR' (≥ ₱50k RPCPPE)
     employee: null,
     selectedItemIds: [],
     controlNo: '',
-    fundCluster: '01 - Regular Agency Fund',
+    entityName: 'NFSTI',
+    fundCluster: '',
     issuedDate: new Date().toISOString().slice(0, 10),
-    issuedByName: '',
-    issuedByPosition: 'Supply Officer / Property Custodian',
+    issuedByName: 'ELMER G. DOLOTALLAS',
+    issuedByPosition: 'Supply Accountable Officer',
     receivedByName: '',
     receivedByPosition: '',
   });
@@ -258,6 +259,72 @@ export default function PersonnelPage() {
     return isNaN(parsed) || parsed < 1 ? 1 : parsed;
   };
 
+  // Formatters for NFSTI Official Documents (PAR / ICS)
+  const formatLongDate = (d) => {
+    if (!d) return '';
+    const dateOnly = String(d).split('T')[0];
+    const parts = dateOnly.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const dt = new Date(year, month, day);
+      if (!isNaN(dt.getTime())) {
+        return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+    }
+    const dt = new Date(d);
+    if (!isNaN(dt.getTime())) {
+      return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    return String(d);
+  };
+
+  const formatAcquiredDate = (d) => {
+    if (!d) return '';
+    const dateOnly = String(d).split('T')[0];
+    const parts = dateOnly.split('-');
+    if (parts.length === 3) {
+      const year = parts[0];
+      const month = parts[1].padStart(2, '0');
+      const day = parts[2].padStart(2, '0');
+      return `${month}/${day}/${year}`;
+    }
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return String(d);
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  };
+
+  const formatPropertyDescription = (p) => {
+    if (!p) return { mainDesc: 'Equipment', serialNo: '' };
+    const parts = [];
+    if (p.article) parts.push(p.article);
+    if (p.brand && !parts.some((pt) => pt.toLowerCase().includes(p.brand.toLowerCase()))) {
+      parts.push(p.brand);
+    }
+    if (p.model && !parts.some((pt) => pt.toLowerCase().includes(p.model.toLowerCase()))) {
+      parts.push(p.model);
+    }
+    if (p.specs || p.specifications) {
+      parts.push(p.specs || p.specifications);
+    }
+    if (p.description) {
+      const cleanDesc = p.description.trim();
+      if (!parts.some((pt) => pt.toLowerCase().includes(cleanDesc.toLowerCase()))) {
+        parts.push(cleanDesc);
+      }
+    }
+    const mainDesc = parts.length > 0 ? parts.join(', ') : (p.article || p.name || 'Equipment');
+    const sn = p.serialNumber || p.serial_number || p.sn || '';
+    return {
+      mainDesc,
+      serialNo: sn ? `SN: ${sn}` : '',
+    };
+  };
+
   const totalValuation = properties.reduce(
     (sum, p) => sum + getItemCost(p) * getItemQty(p),
     0
@@ -379,7 +446,7 @@ export default function PersonnelPage() {
   };
 
   // Open Custodian Slip Modal (ICS / PAR)
-  const openGenerateSlipModal = (emp, requestedType = 'ICS') => {
+  const openGenerateSlipModal = (emp, requestedType = 'PAR') => {
     if (!emp) return;
     const stats = getEmployeeStats(emp);
     
@@ -392,9 +459,15 @@ export default function PersonnelPage() {
     }
 
     const targetItems = targetType === 'ICS' ? stats.icsProperties : stats.parProperties;
-    const year = new Date().getFullYear();
-    const cleanId = String(emp.employeeId || '001').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0') || '0001';
-    const autoControlNo = `${targetType}-${year}-${cleanId}`;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateFormatted = `${yyyy}-${mm}-${dd}`;
+    const cleanId = String(emp.employeeId || '001').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0') || '0020';
+    
+    // Exact PAR No format from official NFSTI document: 2026-10-08-0020 (YYYY-MM-DD-####)
+    const autoControlNo = targetType === 'PAR' ? `${dateFormatted}-${cleanId}` : `ICS-${dateFormatted}-${cleanId}`;
 
     const activeUser = StorageManager.getActiveUser();
     const defaultIssuedName =
@@ -407,7 +480,7 @@ export default function PersonnelPage() {
 
     const defaultIssuedPos =
       signatories?.preparedByTitle ||
-      'Supply Accountable Officer / Property Custodian';
+      'Supply Accountable Officer';
 
     setSlipModal({
       isOpen: true,
@@ -415,12 +488,13 @@ export default function PersonnelPage() {
       employee: emp,
       selectedItemIds: targetItems.map((p) => p.id || p.propertyNumber),
       controlNo: autoControlNo,
-      fundCluster: '01 - Regular Agency Fund',
-      issuedDate: new Date().toISOString().slice(0, 10),
+      entityName: 'NFSTI',
+      fundCluster: '',
+      issuedDate: dateFormatted,
       issuedByName: defaultIssuedName,
       issuedByPosition: defaultIssuedPos,
       receivedByName: emp.name || '',
-      receivedByPosition: `${emp.position || 'Accountable Officer'} - ${getOfficeName(emp.officeId)}`,
+      receivedByPosition: emp.position || 'End User',
     });
   };
 
@@ -428,13 +502,18 @@ export default function PersonnelPage() {
     if (!slipModal.employee) return;
     const stats = getEmployeeStats(slipModal.employee);
     const targetItems = newType === 'ICS' ? stats.icsProperties : stats.parProperties;
-    const year = new Date().getFullYear();
-    const cleanId = String(slipModal.employee.employeeId || '001').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0') || '0001';
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateFormatted = `${yyyy}-${mm}-${dd}`;
+    const cleanId = String(slipModal.employee.employeeId || '001').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0') || '0020';
+    const autoControlNo = newType === 'PAR' ? `${dateFormatted}-${cleanId}` : `ICS-${dateFormatted}-${cleanId}`;
     
     setSlipModal((prev) => ({
       ...prev,
       type: newType,
-      controlNo: `${newType}-${year}-${cleanId}`,
+      controlNo: autoControlNo,
       selectedItemIds: targetItems.map((p) => p.id || p.propertyNumber),
     }));
   };
@@ -479,64 +558,81 @@ export default function PersonnelPage() {
       slipModal.selectedItemIds.includes(p.id || p.propertyNumber)
     );
 
-    const orgName = settings?.orgName || 'NATIONAL FISHERIES RESEARCH AND DEVELOPMENT INSTITUTE';
-    const officeAddr = settings?.officeAddress || 'Corporate 101 Bldg., Mother Ignacia Ave., Quezon City';
     const docTitle = isICS ? 'INVENTORY CUSTODIAN SLIP' : 'PROPERTY ACKNOWLEDGEMENT RECEIPT';
-    const appendixNo = isICS ? 'Appendix 59' : 'Appendix 71';
-    const controlLabel = isICS ? 'ICS No.:' : 'PAR No.:';
+    const formCode = isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5';
+    const controlLabel = isICS ? 'ICS NO.:' : 'PAR NO.:';
+    const formattedDate = formatLongDate(slipModal.issuedDate);
     
     let rowsHtml = '';
-    let totalQty = 0;
-    let totalCost = 0;
+    const minRows = 18;
+    const usedRows = selectedItems.length + 1; // items + nothing follows row
+    const emptyRowsCount = Math.max(0, minRows - usedRows);
 
     if (isICS) {
       rowsHtml = selectedItems.length > 0 ? selectedItems.map((p) => {
         const qty = getItemQty(p);
         const cost = getItemCost(p);
         const lineTotal = cost * qty;
-        totalQty += qty;
-        totalCost += lineTotal;
-        const brandStr = p.brand ? `Brand: ${p.brand}, ` : '';
-        const modelStr = p.model ? `Model: ${p.model}, ` : '';
-        const snStr = p.serialNumber ? `SN: ${p.serialNumber}, ` : '';
-        const desc = `${p.article || 'Item'} - ${brandStr}${modelStr}${snStr}${p.description || ''}`;
+        const descObj = formatPropertyDescription(p);
         const usefulLife = p.estimatedUsefulLife || (cost < 15000 ? '3 years' : '5 years');
         return `
           <tr>
             <td style="text-align:center;">${qty}</td>
-            <td style="text-align:center;">${p.unit || 'unit'}</td>
+            <td style="text-align:center;">${(p.unit || 'UNIT').toUpperCase()}</td>
             <td style="text-align:right;">₱${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td style="text-align:right; font-weight:bold;">₱${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td>${desc}</td>
+            <td><strong>${descObj.mainDesc}</strong>${descObj.serialNo ? `<br><span style="font-size:8pt; font-family:monospace;">${descObj.serialNo}</span>` : ''}</td>
             <td style="text-align:center; font-family:monospace; font-weight:bold;">${p.propertyNumber || 'N/A'}</td>
             <td style="text-align:center;">${usefulLife}</td>
           </tr>
         `;
       }).join('') : `<tr><td colspan="7" style="text-align:center; padding:15px;">No items selected</td></tr>`;
+
+      rowsHtml += `
+        <tr>
+          <td></td><td></td><td></td><td></td>
+          <td style="text-align:center; font-family:monospace; font-style:italic; font-size:8pt;">x-x-x-x- x-x-nothing follows-x-x-x-x-x</td>
+          <td></td><td></td>
+        </tr>
+      `;
+
+      for (let i = 0; i < emptyRowsCount; i++) {
+        rowsHtml += `<tr><td style="height:20px;"></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      }
     } else {
+      // PAR format matching official NFSTI document
       rowsHtml = selectedItems.length > 0 ? selectedItems.map((p) => {
         const qty = getItemQty(p);
         const cost = getItemCost(p);
-        const lineTotal = cost * qty;
-        totalQty += qty;
-        totalCost += lineTotal;
-        const brandStr = p.brand ? `Brand: ${p.brand}, ` : '';
-        const modelStr = p.model ? `Model: ${p.model}, ` : '';
-        const snStr = p.serialNumber ? `SN: ${p.serialNumber}, ` : '';
-        const desc = `${p.article || 'Property'} - ${brandStr}${modelStr}${snStr}${p.description || ''}`;
-        const acqDate = p.acquisitionDate ? new Date(p.acquisitionDate).toLocaleDateString() : 'N/A';
+        const descObj = formatPropertyDescription(p);
+        const acqDate = p.acquisitionDate ? formatAcquiredDate(p.acquisitionDate) : '';
+        const amtStr = cost > 0 ? `₱ ${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
         return `
           <tr>
-            <td style="text-align:center;">${qty}</td>
-            <td style="text-align:center;">${p.unit || 'unit'}</td>
-            <td>${desc}</td>
-            <td style="text-align:center; font-family:monospace; font-weight:bold;">${p.propertyNumber || 'N/A'}</td>
-            <td style="text-align:center;">${acqDate}</td>
-            <td style="text-align:right;">₱${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td style="text-align:right; font-weight:bold;">₱${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="text-align:center; font-weight:bold;">${qty}</td>
+            <td style="text-align:center;">${(p.unit || 'UNIT').toUpperCase()}</td>
+            <td>
+              <strong>${descObj.mainDesc}</strong>
+              ${descObj.serialNo ? `<br><span style="font-size:8pt; font-family:monospace;">${descObj.serialNo}</span>` : ''}
+            </td>
+            <td style="text-align:center; font-family:monospace; font-weight:bold;">${p.propertyNumber || ''}</td>
+            <td style="text-align:center; font-family:monospace;">${acqDate}</td>
+            <td style="text-align:right; font-family:monospace; font-weight:bold;">${amtStr}</td>
           </tr>
         `;
-      }).join('') : `<tr><td colspan="7" style="text-align:center; padding:15px;">No items selected</td></tr>`;
+      }).join('') : `<tr><td colspan="6" style="text-align:center; padding:15px;">No items selected</td></tr>`;
+
+      rowsHtml += `
+        <tr>
+          <td></td><td></td>
+          <td style="text-align:center; font-family:monospace; font-style:italic; font-size:8pt;">x-x-x-x- x-x-nothing follows-x-x-x-x-x</td>
+          <td></td><td></td><td></td>
+        </tr>
+      `;
+
+      for (let i = 0; i < emptyRowsCount; i++) {
+        rowsHtml += `<tr><td style="height:20px;"></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      }
     }
 
     const htmlDocument = `
@@ -545,116 +641,129 @@ export default function PersonnelPage() {
         <meta charset='utf-8'>
         <title>${docTitle} - ${emp.name}</title>
         <style>
-          @page WordSection1 { size: 8.5in 11.0in; margin: 0.6in; }
-          div.WordSection1 { page: WordSection1; }
-          body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #000; }
-          table { border-collapse: collapse; width: 100%; margin-top: 8px; }
-          th, td { border: 1pt solid #000; padding: 4px 6px; font-size: 9pt; }
-          th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
-          .meta-table td { border: none; padding: 2px 4px; font-size: 9pt; }
-          .sig-table td { border: 1pt solid #000; padding: 8px; vertical-align: top; }
+          @page WordSection1 { size: 8.5in 11.0in; margin: 0.5in 0.6in; }
+          div.WordSection1 { page: WordSection1; font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1pt solid #000; padding: 4px 6px; font-size: 8.5pt; vertical-align: top; }
+          th { background-color: #ffffff; font-weight: bold; text-align: center; }
+          .header-text { text-align: center; margin-bottom: 12px; }
+          .header-text p { margin: 1px 0; }
         </style>
       </head>
       <body>
       <div class="WordSection1">
-        <div style="text-align: right; font-size: 8pt; font-style: italic;">${appendixNo}</div>
-        <div style="text-align: center; margin-bottom: 12px;">
-          <p style="margin: 0; font-size: 8.5pt; text-transform: uppercase;">Republic of the Philippines</p>
-          <h3 style="margin: 2px 0; font-size: 11pt; text-transform: uppercase;">${orgName}</h3>
-          <p style="margin: 0; font-size: 8pt; color: #444;">${officeAddr}</p>
-          <h2 style="margin: 10px 0 4px 0; font-size: 12pt; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">${docTitle}</h2>
+        <!-- Institutional Header -->
+        <div class="header-text">
+          <p style="font-size: 8.5pt;">Republic of the Philippines</p>
+          <p style="font-size: 8.5pt;">Department of the Interior and Local Government</p>
+          <p style="font-size: 9.5pt; font-weight: bold; color: #0284c7;">Philippine Public Safety College</p>
+          <p style="font-size: 11pt; font-weight: bold; color: #166534; text-transform: uppercase;">NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE</p>
+          <p style="font-size: 8pt; color: #333;">Camp Vicente Lim, Calamba City, Laguna</p>
+          <h2 style="margin: 14px 0 10px 0; font-size: 12pt; text-transform: uppercase; font-weight: bold; text-decoration: underline; text-align: center;">
+            ${docTitle}
+          </h2>
         </div>
 
-        <table class="meta-table" style="width: 100%; margin-bottom: 6px;">
+        <!-- Meta Table -->
+        <table style="width: 100%; border: none; margin-bottom: 6px;">
           <tr>
-            <td style="width: 60%;"><strong>Fund Cluster:</strong> <u>${slipModal.fundCluster || '01 - Regular Agency Fund'}</u></td>
-            <td style="width: 40%; text-align: right;"><strong>${controlLabel}</strong> <u>${slipModal.controlNo}</u></td>
-          </tr>
-          <tr>
-            <td><strong>Accountable Custodian:</strong> <u>${emp.name}</u></td>
-            <td style="text-align: right;"><strong>Date:</strong> <u>${slipModal.issuedDate}</u></td>
-          </tr>
-          <tr>
-            <td><strong>Position / Office:</strong> <u>${emp.position || 'Officer'} - ${getOfficeName(emp.officeId)}</u></td>
-            <td style="text-align: right;"><strong>Employee ID:</strong> <u>${emp.employeeId}</u></td>
+            <td style="border: none; width: 60%; padding: 2px 0;">
+              <strong>Entity Name :</strong> <u style="font-weight: bold; text-transform: uppercase;">${slipModal.entityName || 'NFSTI'}</u><br>
+              <strong>Fund Cluster:</strong> <u>${slipModal.fundCluster || '________________________'}</u>
+            </td>
+            <td style="border: none; width: 40%; text-align: right; padding: 2px 0;">
+              <strong>${controlLabel}</strong> <u style="font-weight: bold; font-family: monospace;">${slipModal.controlNo}</u>
+            </td>
           </tr>
         </table>
 
+        <!-- Main Items Table -->
         <table>
           <thead>
             ${isICS ? `
               <tr>
-                <th style="width: 6%;">Qty</th>
-                <th style="width: 7%;">Unit</th>
-                <th style="width: 14%;">Unit Cost</th>
-                <th style="width: 15%;">Total Cost</th>
-                <th style="width: 32%;">Description</th>
+                <th style="width: 7%;">QTY</th>
+                <th style="width: 8%;">UNIT</th>
+                <th style="width: 12%;">Unit Cost</th>
+                <th style="width: 13%;">Total Cost</th>
+                <th style="width: 34%;">DESCRIPTION</th>
                 <th style="width: 16%;">Inventory Item No.</th>
                 <th style="width: 10%;">Est. Useful Life</th>
               </tr>
             ` : `
               <tr>
-                <th style="width: 6%;">Qty</th>
-                <th style="width: 7%;">Unit</th>
-                <th style="width: 35%;">Description</th>
-                <th style="width: 16%;">Property Number</th>
-                <th style="width: 12%;">Date Acquired</th>
-                <th style="width: 12%;">Unit Value</th>
-                <th style="width: 12%;">Total Amount</th>
+                <th style="width: 7%;">QTY</th>
+                <th style="width: 9%;">UNIT</th>
+                <th style="width: 38%;">DESCRIPTION</th>
+                <th style="width: 18%;">Property Number</th>
+                <th style="width: 13%;">Date Acquired</th>
+                <th style="width: 15%;">Amount</th>
               </tr>
             `}
           </thead>
           <tbody>
             ${rowsHtml}
-            <tr style="font-weight: bold; background-color: #f9f9f9;">
-              <td style="text-align: center;">${totalQty}</td>
-              <td style="text-align: center;">units</td>
-              ${isICS ? `
-                <td colspan="1" style="text-align: right;">TOTAL:</td>
-                <td style="text-align: right;">₱${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td colspan="3"></td>
-              ` : `
-                <td colspan="4" style="text-align: right;">TOTAL AMOUNT:</td>
-                <td style="text-align: right;">₱${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              `}
-            </tr>
           </tbody>
         </table>
 
         <!-- Signatures Table -->
-        <table class="sig-table" style="margin-top: 15px; width: 100%;">
-          ${isICS ? `
-            <tr>
-              <td style="width: 50%;">
-                <p style="margin: 0 0 25px 0; font-size: 8.5pt;"><strong>Received from:</strong></p>
-                <p style="margin: 0; text-align: center; font-weight: bold; text-transform: uppercase; text-decoration: underline;">${slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}</p>
-                <p style="margin: 2px 0 0 0; text-align: center; font-size: 8pt; color: #333;">${slipModal.issuedByPosition || 'Supply and/or Property Custodian'}</p>
-                <p style="margin: 15px 0 0 0; font-size: 8pt;">Date: <u>${slipModal.issuedDate}</u></p>
-              </td>
-              <td style="width: 50%;">
-                <p style="margin: 0 0 25px 0; font-size: 8.5pt;"><strong>Received by:</strong></p>
-                <p style="margin: 0; text-align: center; font-weight: bold; text-transform: uppercase; text-decoration: underline;">${slipModal.receivedByName || emp.name}</p>
-                <p style="margin: 2px 0 0 0; text-align: center; font-size: 8pt; color: #333;">${slipModal.receivedByPosition || emp.position}</p>
-                <p style="margin: 15px 0 0 0; font-size: 8pt;">Date: <u>${slipModal.issuedDate}</u></p>
-              </td>
-            </tr>
-          ` : `
-            <tr>
-              <td style="width: 50%;">
-                <p style="margin: 0 0 25px 0; font-size: 8.5pt;"><strong>Received by:</strong></p>
-                <p style="margin: 0; text-align: center; font-weight: bold; text-transform: uppercase; text-decoration: underline;">${slipModal.receivedByName || emp.name}</p>
-                <p style="margin: 2px 0 0 0; text-align: center; font-size: 8pt; color: #333;">${slipModal.receivedByPosition || emp.position}</p>
-                <p style="margin: 15px 0 0 0; font-size: 8pt;">Date: <u>${slipModal.issuedDate}</u></p>
-              </td>
-              <td style="width: 50%;">
-                <p style="margin: 0 0 25px 0; font-size: 8.5pt;"><strong>Issued by:</strong></p>
-                <p style="margin: 0; text-align: center; font-weight: bold; text-transform: uppercase; text-decoration: underline;">${slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}</p>
-                <p style="margin: 2px 0 0 0; text-align: center; font-size: 8pt; color: #333;">${slipModal.issuedByPosition || 'Supply and/or Property Custodian'}</p>
-                <p style="margin: 15px 0 0 0; font-size: 8pt;">Date: <u>${slipModal.issuedDate}</u></p>
-              </td>
-            </tr>
-          `}
+        <table style="margin-top: -1px; width: 100%; border: 1pt solid #000;">
+          <tr>
+            <td style="width: 50%; border: 1pt solid #000; padding: 8px 12px; height: 160px; vertical-align: top;">
+              <p style="margin: 0; font-weight: bold;">Received by:</p>
+              <div style="height: 35px;"></div>
+              <div style="text-align: center;">
+                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9.5pt;">
+                  ${slipModal.receivedByName || emp.name}
+                </p>
+                <p style="margin: 2px 0 0 0; font-size: 8pt;">Signature Over Printed Name</p>
+                <p style="margin: 0; font-size: 8pt;">of End User</p>
+              </div>
+              <div style="text-align: center; margin-top: 15px;">
+                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
+                  ${slipModal.receivedByPosition || emp.position || 'End User'}
+                </p>
+                <p style="margin: 2px 0 0 0; font-size: 8pt;">Position / Office</p>
+              </div>
+              <div style="text-align: center; margin-top: 15px;">
+                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 9pt;">
+                  ${formattedDate}
+                </p>
+                <p style="margin: 2px 0 0 0; font-size: 8pt;">Date</p>
+              </div>
+            </td>
+            <td style="width: 50%; border: 1pt solid #000; padding: 8px 12px; height: 160px; vertical-align: top;">
+              <p style="margin: 0; font-weight: bold;">Issued from:</p>
+              <div style="height: 35px;"></div>
+              <div style="text-align: center;">
+                <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9.5pt;">
+                  ${slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
+                </p>
+                <p style="margin: 2px 0 0 0; font-size: 8pt;">Signature Over Printed Name of Supply and/or</p>
+                <p style="margin: 0; font-size: 8pt;">Property Custodian</p>
+              </div>
+              <div style="text-align: center; margin-top: 15px;">
+                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 9pt;">
+                  ${slipModal.issuedByPosition || 'Supply Accountable Officer'}
+                </p>
+                <p style="margin: 2px 0 0 0; font-size: 8pt;">Position / Office</p>
+              </div>
+              <div style="text-align: center; margin-top: 15px;">
+                <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 9pt;">
+                  ${formattedDate}
+                </p>
+                <p style="margin: 2px 0 0 0; font-size: 8pt;">Date</p>
+              </div>
+            </td>
+          </tr>
         </table>
+
+        <!-- Form Code Footer -->
+        <div style="text-align: right; margin-top: 4px;">
+          <span style="font-family: monospace; font-size: 8pt; font-weight: bold;">
+            ${formCode}
+          </span>
+        </div>
       </div>
       </body>
       </html>
@@ -1954,17 +2063,17 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
               </div>
 
               {/* Slip Metadata & Parameters Controls Form */}
-              <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+              <div className="bg-slate-50 px-6 py-2.5 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    {isICS ? 'ICS Control No.' : 'PAR Control No.'}
+                    Entity Name
                   </label>
                   <input
                     type="text"
-                    value={slipModal.controlNo}
-                    onChange={(e) => setSlipModal({ ...slipModal, controlNo: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="e.g. ICS-2026-0001"
+                    value={slipModal.entityName || ''}
+                    onChange={(e) => setSlipModal({ ...slipModal, entityName: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    placeholder="e.g. NFSTI"
                   />
                 </div>
 
@@ -1974,16 +2083,29 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                   </label>
                   <input
                     type="text"
-                    value={slipModal.fundCluster}
+                    value={slipModal.fundCluster || ''}
                     onChange={(e) => setSlipModal({ ...slipModal, fundCluster: e.target.value })}
                     className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="01 - Regular Agency Fund"
+                    placeholder="Leave blank or e.g. 01"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Slip Date
+                    {isICS ? 'ICS NO.' : 'PAR NO.'}
+                  </label>
+                  <input
+                    type="text"
+                    value={slipModal.controlNo}
+                    onChange={(e) => setSlipModal({ ...slipModal, controlNo: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    placeholder="e.g. 2026-10-08-0020"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Document Date
                   </label>
                   <input
                     type="date"
@@ -1992,30 +2114,58 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
                   />
                 </div>
+              </div>
 
+              <div className="bg-slate-50 px-6 py-2 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    {isICS ? 'Received from (Supply Officer)' : 'Issued by (Supply Officer)'}
+                    Received by (End User Name)
                   </label>
                   <input
                     type="text"
-                    value={slipModal.issuedByName}
-                    onChange={(e) => setSlipModal({ ...slipModal, issuedByName: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="Officer Name"
+                    value={slipModal.receivedByName}
+                    onChange={(e) => setSlipModal({ ...slipModal, receivedByName: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-bold uppercase text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    placeholder="e.g. PCOL. ATTY. ERCY NANETTE P MADRIAGA, DPSSG"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Supply Officer Position
+                    End User Position / Office
+                  </label>
+                  <input
+                    type="text"
+                    value={slipModal.receivedByPosition}
+                    onChange={(e) => setSlipModal({ ...slipModal, receivedByPosition: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    placeholder="e.g. DIRECTOR"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Issued from (Supply Custodian)
+                  </label>
+                  <input
+                    type="text"
+                    value={slipModal.issuedByName}
+                    onChange={(e) => setSlipModal({ ...slipModal, issuedByName: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-bold uppercase text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    placeholder="e.g. ELMER G. DOLOTALLAS"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Supply Custodian Position
                   </label>
                   <input
                     type="text"
                     value={slipModal.issuedByPosition}
                     onChange={(e) => setSlipModal({ ...slipModal, issuedByPosition: e.target.value })}
                     className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="Supply Accountable Officer"
+                    placeholder="e.g. Supply Accountable Officer"
                   />
                 </div>
               </div>
@@ -2104,100 +2254,97 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                     </button>
                   </div>
                 ) : (
-                  <div className="bg-white w-full max-w-4xl p-8 sm:p-10 border border-slate-300 shadow-xl text-black font-sans text-xs space-y-4">
-                    {/* Appendix Label */}
-                    <div className="text-right text-[10px] italic font-serif text-slate-600">
-                      {isICS ? 'Appendix 59' : 'Appendix 71'}
+                  <div className="bg-white w-full max-w-4xl p-6 sm:p-10 border border-slate-300 shadow-xl text-black font-sans text-xs">
+                    {/* Institutional Header with Logos matching Official Form */}
+                    <div className="flex items-center justify-between border-b border-black pb-3">
+                      <div className="w-20 shrink-0 flex justify-start">
+                        <img src="/PPSC.webp" alt="PPSC Logo" className="w-16 h-16 object-contain" />
+                      </div>
+
+                      <div className="text-center flex-1 space-y-0.5 px-2">
+                        <p className="text-[11px] font-medium text-slate-800 leading-tight">Republic of the Philippines</p>
+                        <p className="text-[11px] font-medium text-slate-800 leading-tight">Department of the Interior and Local Government</p>
+                        <p className="text-[12px] font-bold text-sky-600 leading-tight">Philippine Public Safety College</p>
+                        <p className="text-[13px] font-black text-emerald-800 uppercase tracking-wide leading-tight">
+                          NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
+                        </p>
+                        <p className="text-[10px] text-slate-700 leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
+                      </div>
+
+                      <div className="w-20 shrink-0 flex justify-end">
+                        <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-16 h-16 object-contain" />
+                      </div>
                     </div>
 
-                    {/* Official Republic Header */}
-                    <div className="text-center space-y-0.5 border-b border-black pb-3">
-                      <p className="text-[10px] uppercase font-bold tracking-widest text-slate-700">Republic of the Philippines</p>
-                      <h3 className="text-sm font-black uppercase tracking-wide text-slate-900">{orgName}</h3>
-                      <p className="text-[10px] text-slate-600">{officeAddr}</p>
-                      <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 pt-2 font-serif underline underline-offset-4">
+                    {/* Document Title */}
+                    <div className="text-center my-3">
+                      <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-black font-serif underline underline-offset-4">
                         {isICS ? 'INVENTORY CUSTODIAN SLIP' : 'PROPERTY ACKNOWLEDGEMENT RECEIPT'}
                       </h2>
                     </div>
 
-                    {/* Meta Fields Grid */}
-                    <div className="grid grid-cols-2 gap-4 text-[11px] pt-1">
+                    {/* Meta Fields Grid matching Photo */}
+                    <div className="flex items-start justify-between text-[11px] mb-2 px-1">
                       <div className="space-y-1">
-                        <p>
-                          <span className="font-bold text-slate-700">Fund Cluster:</span>{' '}
-                          <span className="font-semibold underline">{slipModal.fundCluster || '01 - Regular Agency Fund'}</span>
-                        </p>
-                        <p>
-                          <span className="font-bold text-slate-700">Accountable Custodian:</span>{' '}
-                          <span className="font-extrabold uppercase underline">{emp.name}</span>
-                        </p>
-                        <p>
-                          <span className="font-bold text-slate-700">Position / Office:</span>{' '}
-                          <span className="font-semibold underline">{emp.position || 'Officer'} - {getOfficeName(emp.officeId)}</span>
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-slate-800">Entity Name :</span>
+                          <span className="font-bold underline text-black uppercase">{slipModal.entityName || 'NFSTI'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-slate-800">Fund Cluster:</span>
+                          <span className="underline text-black min-w-[120px] inline-block">{slipModal.fundCluster || '________________________'}</span>
+                        </div>
                       </div>
 
                       <div className="space-y-1 text-right">
-                        <p>
-                          <span className="font-bold text-slate-700">{isICS ? 'ICS No.:' : 'PAR No.:'}</span>{' '}
-                          <span className="font-mono font-bold text-emerald-900 underline">{slipModal.controlNo}</span>
-                        </p>
-                        <p>
-                          <span className="font-bold text-slate-700">Employee ID:</span>{' '}
-                          <span className="font-mono font-semibold underline">{emp.employeeId}</span>
-                        </p>
-                        <p>
-                          <span className="font-bold text-slate-700">Date:</span>{' '}
-                          <span className="font-semibold underline">{slipModal.issuedDate}</span>
-                        </p>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="font-semibold text-slate-800">{isICS ? 'ICS NO.:' : 'PAR NO.:'}</span>
+                          <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Official Table */}
-                    <div className="border border-black overflow-hidden my-2">
-                      <table className="w-full text-left text-[11px] border-collapse">
+                    {/* Main Items Table */}
+                    <div className="border border-black overflow-hidden">
+                      <table className="w-full text-left text-[11px] border-collapse border border-black">
                         {isICS ? (
-                          /* ICS Appendix 59 Table Header */
                           <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black">
                             <tr>
-                              <th className="border border-black p-1.5 w-[6%]">Quantity</th>
-                              <th className="border border-black p-1.5 w-[7%]">Unit</th>
-                              <th className="border border-black p-1.5 w-[13%]">Unit Cost</th>
-                              <th className="border border-black p-1.5 w-[14%]">Total Cost</th>
-                              <th className="border border-black p-1.5 w-[34%]">Description</th>
+                              <th className="border border-black p-1.5 w-[7%]">QTY</th>
+                              <th className="border border-black p-1.5 w-[8%]">UNIT</th>
+                              <th className="border border-black p-1.5 w-[12%]">Unit Cost</th>
+                              <th className="border border-black p-1.5 w-[13%]">Total Cost</th>
+                              <th className="border border-black p-1.5 w-[34%]">DESCRIPTION</th>
                               <th className="border border-black p-1.5 w-[16%]">Inventory Item No.</th>
                               <th className="border border-black p-1.5 w-[10%]">Est. Useful Life</th>
                             </tr>
                           </thead>
                         ) : (
-                          /* PAR Appendix 71 Table Header */
-                          <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black">
+                          <thead className="bg-slate-100 text-black text-center font-bold text-[10.5px] border-b border-black uppercase">
                             <tr>
-                              <th className="border border-black p-1.5 w-[6%]">Quantity</th>
-                              <th className="border border-black p-1.5 w-[7%]">Unit</th>
-                              <th className="border border-black p-1.5 w-[36%]">Description</th>
-                              <th className="border border-black p-1.5 w-[16%]">Property Number</th>
-                              <th className="border border-black p-1.5 w-[11%]">Date Acquired</th>
-                              <th className="border border-black p-1.5 w-[12%]">Unit Value</th>
-                              <th className="border border-black p-1.5 w-[12%]">Total Amount</th>
+                              <th className="border border-black p-1.5 w-[7%]">QTY</th>
+                              <th className="border border-black p-1.5 w-[9%]">UNIT</th>
+                              <th className="border border-black p-1.5 w-[38%]">DESCRIPTION</th>
+                              <th className="border border-black p-1.5 w-[18%]">Property Number</th>
+                              <th className="border border-black p-1.5 w-[13%]">Date Acquired</th>
+                              <th className="border border-black p-1.5 w-[15%]">Amount</th>
                             </tr>
                           </thead>
                         )}
-                        <tbody className="divide-y divide-black">
+                        <tbody>
                           {selectedItems.map((p, idx) => {
                             const qty = getItemQty(p);
                             const cost = getItemCost(p);
                             const lineTotal = cost * qty;
-                            const brandStr = p.brand ? `Brand: ${p.brand}, ` : '';
-                            const modelStr = p.model ? `Model: ${p.model}, ` : '';
-                            const snStr = p.serialNumber ? `SN: ${p.serialNumber}, ` : '';
+                            const descObj = formatPropertyDescription(p);
+                            const acqDate = p.acquisitionDate ? formatAcquiredDate(p.acquisitionDate) : '';
+                            const amtStr = cost > 0 ? `₱ ${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
                             const usefulLife = p.estimatedUsefulLife || (cost < 15000 ? '3 years' : '5 years');
-                            const acqDate = p.acquisitionDate ? new Date(p.acquisitionDate).toLocaleDateString() : 'N/A';
 
                             return isICS ? (
                               <tr key={idx} className="align-top">
                                 <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
-                                <td className="border border-black p-1.5 text-center">{p.unit || 'unit'}</td>
+                                <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
                                 <td className="border border-black p-1.5 text-right font-mono">
                                   ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
@@ -2205,8 +2352,10 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                                   ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 <td className="border border-black p-1.5 leading-snug">
-                                  <div className="font-bold text-slate-900">{p.article}</div>
-                                  <div className="text-[10px] text-slate-600">{brandStr}{modelStr}{snStr}{p.description}</div>
+                                  <div className="font-bold text-slate-900">{descObj.mainDesc}</div>
+                                  {descObj.serialNo && (
+                                    <div className="text-[10px] font-mono text-slate-700 mt-0.5">{descObj.serialNo}</div>
+                                  )}
                                 </td>
                                 <td className="border border-black p-1.5 text-center font-mono font-bold text-slate-900">{p.propertyNumber || 'N/A'}</td>
                                 <td className="border border-black p-1.5 text-center">{usefulLife}</td>
@@ -2214,129 +2363,129 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                             ) : (
                               <tr key={idx} className="align-top">
                                 <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
-                                <td className="border border-black p-1.5 text-center">{p.unit || 'unit'}</td>
-                                <td className="border border-black p-1.5 leading-snug">
-                                  <div className="font-bold text-slate-900">{p.article}</div>
-                                  <div className="text-[10px] text-slate-600">{brandStr}{modelStr}{snStr}{p.description}</div>
+                                <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
+                                <td className="border border-black p-1.5 leading-snug text-left">
+                                  <div className="font-bold text-slate-900">{descObj.mainDesc}</div>
+                                  {descObj.serialNo && (
+                                    <div className="text-[10px] font-mono text-slate-700 mt-0.5">{descObj.serialNo}</div>
+                                  )}
                                 </td>
-                                <td className="border border-black p-1.5 text-center font-mono font-bold text-slate-900">{p.propertyNumber || 'N/A'}</td>
-                                <td className="border border-black p-1.5 text-center font-mono text-[10px]">{acqDate}</td>
-                                <td className="border border-black p-1.5 text-right font-mono">
-                                  ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </td>
-                                <td className="border border-black p-1.5 text-right font-mono font-bold">
-                                  ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </td>
+                                <td className="border border-black p-1.5 text-center font-mono font-bold text-slate-900">{p.propertyNumber || ''}</td>
+                                <td className="border border-black p-1.5 text-center font-mono text-[10.5px]">{acqDate}</td>
+                                <td className="border border-black p-1.5 text-right font-mono font-bold">{amtStr}</td>
                               </tr>
                             );
                           })}
 
-                          {/* Totals Summary Row */}
-                          <tr className="bg-slate-50 font-bold border-t border-black">
-                            <td className="border border-black p-1.5 text-center">{totalQty}</td>
-                            <td className="border border-black p-1.5 text-center">units</td>
+                          {/* Nothing Follows Row */}
+                          <tr>
+                            <td className="border border-black h-5"></td>
+                            <td className="border border-black h-5"></td>
                             {isICS ? (
                               <>
-                                <td className="border border-black p-1.5 text-right uppercase text-[10px]">TOTAL:</td>
-                                <td className="border border-black p-1.5 text-right font-mono font-bold">
-                                  ₱{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-slate-600 italic">
+                                  x-x-x-x- x-x-nothing follows-x-x-x-x-x
                                 </td>
-                                <td colSpan="3" className="border border-black p-1.5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
                               </>
                             ) : (
                               <>
-                                <td colSpan="4" className="border border-black p-1.5 text-right uppercase text-[10px]">TOTAL AMOUNT:</td>
-                                <td className="border border-black p-1.5 text-right font-mono font-bold">
-                                  ₱{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-slate-600 italic">
+                                  x-x-x-x- x-x-nothing follows-x-x-x-x-x
                                 </td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
+                                <td className="border border-black h-5"></td>
                               </>
                             )}
                           </tr>
+
+                          {/* Empty Filler Rows */}
+                          {Array.from({ length: Math.max(0, 18 - (selectedItems.length + 1)) }).map((_, rIdx) => (
+                            <tr key={`fill-${rIdx}`} className="h-5">
+                              <td className="border border-black h-5"></td>
+                              <td className="border border-black h-5"></td>
+                              <td className="border border-black h-5"></td>
+                              <td className="border border-black h-5"></td>
+                              <td className="border border-black h-5"></td>
+                              {isICS && <td className="border border-black h-5"></td>}
+                              {isICS && <td className="border border-black h-5"></td>}
+                              {!isICS && <td className="border border-black h-5"></td>}
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
 
-                    {/* Dual Signatories Block */}
-                    <div className="grid grid-cols-2 gap-0 border border-black pt-0 text-[11px] mt-4">
-                      {isICS ? (
-                        <>
-                          {/* ICS Appendix 59: Left is Received from, Right is Received by */}
-                          <div className="p-3 border-r border-black space-y-4">
-                            <p className="font-bold text-slate-800">Received from:</p>
-                            <div className="pt-6 text-center space-y-0.5">
-                              <p className="font-extrabold uppercase underline tracking-wide text-slate-900">
-                                {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
-                              </p>
-                              <p className="text-[10px] text-slate-700">Signature Over Printed Name</p>
-                              <p className="text-[10.5px] font-semibold text-slate-800 pt-1">
-                                {slipModal.issuedByPosition || 'Supply and/or Property Custodian'}
-                              </p>
-                              <p className="text-[10px] text-slate-600">Position / Office</p>
-                            </div>
-                            <div className="pt-2 text-slate-700">
-                              <span>Date: </span>
-                              <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                            </div>
+                    {/* Dual Signatories Block (directly attached below table) */}
+                    <div className="border border-black border-t-0 grid grid-cols-2 text-[11px]">
+                      {/* Received by */}
+                      <div className="p-3 border-r border-black flex flex-col justify-between min-h-[175px]">
+                        <div>
+                          <p className="font-bold text-black text-left text-[11px]">Received by:</p>
+                          <div className="h-9"></div>
+                          <div className="text-center space-y-0.5">
+                            <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                              {slipModal.receivedByName || emp.name}
+                            </p>
+                            <p className="text-[10px] text-black">Signature Over Printed Name</p>
+                            <p className="text-[10px] text-black">of End User</p>
                           </div>
+                        </div>
 
-                          <div className="p-3 space-y-4">
-                            <p className="font-bold text-slate-800">Received by:</p>
-                            <div className="pt-6 text-center space-y-0.5">
-                              <p className="font-extrabold uppercase underline tracking-wide text-slate-900">
-                                {slipModal.receivedByName || emp.name}
-                              </p>
-                              <p className="text-[10px] text-slate-700">Signature Over Printed Name</p>
-                              <p className="text-[10.5px] font-semibold text-slate-800 pt-1">
-                                {slipModal.receivedByPosition || emp.position}
-                              </p>
-                              <p className="text-[10px] text-slate-600">Position / Office</p>
-                            </div>
-                            <div className="pt-2 text-slate-700">
-                              <span>Date: </span>
-                              <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          {/* PAR Appendix 71: Left is Received by, Right is Issued by */}
-                          <div className="p-3 border-r border-black space-y-4">
-                            <p className="font-bold text-slate-800">Received by:</p>
-                            <div className="pt-6 text-center space-y-0.5">
-                              <p className="font-extrabold uppercase underline tracking-wide text-slate-900">
-                                {slipModal.receivedByName || emp.name}
-                              </p>
-                              <p className="text-[10px] text-slate-700">Signature Over Printed Name</p>
-                              <p className="text-[10.5px] font-semibold text-slate-800 pt-1">
-                                {slipModal.receivedByPosition || emp.position}
-                              </p>
-                              <p className="text-[10px] text-slate-600">Position / Office</p>
-                            </div>
-                            <div className="pt-2 text-slate-700">
-                              <span>Date: </span>
-                              <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                            </div>
-                          </div>
+                        <div className="mt-3 text-center space-y-0.5">
+                          <p className="font-extrabold uppercase underline text-black text-[11px]">
+                            {slipModal.receivedByPosition || emp.position || 'End User'}
+                          </p>
+                          <p className="text-[10px] text-black">Position / Office</p>
+                        </div>
 
-                          <div className="p-3 space-y-4">
-                            <p className="font-bold text-slate-800">Issued by:</p>
-                            <div className="pt-6 text-center space-y-0.5">
-                              <p className="font-extrabold uppercase underline tracking-wide text-slate-900">
-                                {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
-                              </p>
-                              <p className="text-[10px] text-slate-700">Signature Over Printed Name</p>
-                              <p className="text-[10.5px] font-semibold text-slate-800 pt-1">
-                                {slipModal.issuedByPosition || 'Supply and/or Property Custodian'}
-                              </p>
-                              <p className="text-[10px] text-slate-600">Position / Office</p>
-                            </div>
-                            <div className="pt-2 text-slate-700">
-                              <span>Date: </span>
-                              <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                            </div>
+                        <div className="mt-3 text-center space-y-0.5">
+                          <p className="underline text-black font-semibold text-[11px]">
+                            {formatLongDate(slipModal.issuedDate)}
+                          </p>
+                          <p className="text-[10px] text-black">Date</p>
+                        </div>
+                      </div>
+
+                      {/* Issued from */}
+                      <div className="p-3 flex flex-col justify-between min-h-[175px]">
+                        <div>
+                          <p className="font-bold text-black text-left text-[11px]">Issued from:</p>
+                          <div className="h-9"></div>
+                          <div className="text-center space-y-0.5">
+                            <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                              {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
+                            </p>
+                            <p className="text-[10px] text-black">Signature Over Printed Name of Supply and/or</p>
+                            <p className="text-[10px] text-black">Property Custodian</p>
                           </div>
-                        </>
-                      )}
+                        </div>
+
+                        <div className="mt-3 text-center space-y-0.5">
+                          <p className="underline text-black font-semibold text-[11px]">
+                            {slipModal.issuedByPosition || 'Supply Accountable Officer'}
+                          </p>
+                          <p className="text-[10px] text-black">Position / Office</p>
+                        </div>
+
+                        <div className="mt-3 text-center space-y-0.5">
+                          <p className="underline text-black font-semibold text-[11px]">
+                            {formatLongDate(slipModal.issuedDate)}
+                          </p>
+                          <p className="text-[10px] text-black">Date</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Form Code */}
+                    <div className="flex justify-end pt-1">
+                      <span className="font-mono text-[9px] text-black font-bold tracking-wider">
+                        {isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5'}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -2345,7 +2494,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
               {/* Modal Footer Controls */}
               <div className="p-4 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-slate-500">
-                  <span>Document Standard: <strong>{isICS ? 'GAM Appendix 59 (ICS)' : 'GAM Appendix 71 (PAR)'}</strong></span>
+                  <span>Standard: <strong>{isICS ? 'PPSC-NFSTI ICS (RPCSP < ₱50,000)' : 'PPSC-NFSTI-PAR-2018-01-F5 (RPCPPE ≥ ₱50,000)'}</strong></span>
                   <span className="mx-2">•</span>
                   <span>Threshold: <strong>{isICS ? '< ₱50,000' : '≥ ₱50,000'}</strong></span>
                 </div>
@@ -2388,100 +2537,98 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
           slipModal.selectedItemIds.includes(p.id || p.propertyNumber)
         );
 
-        const totalQty = selectedItems.reduce((acc, p) => acc + getItemQty(p), 0);
-        const totalAmount = selectedItems.reduce((acc, p) => acc + getItemCost(p) * getItemQty(p), 0);
-        const orgName = settings?.orgName || 'NATIONAL FISHERIES RESEARCH AND DEVELOPMENT INSTITUTE';
-        const officeAddr = settings?.officeAddress || 'Corporate 101 Bldg., Mother Ignacia Ave., Quezon City';
-
         return (
-          <div id="printable-ics-par-document" className="hidden print:block p-8 bg-white font-sans text-black text-xs space-y-4">
-            <div className="text-right text-[10px] italic font-serif text-black">
-              {isICS ? 'Appendix 59' : 'Appendix 71'}
+          <div id="printable-ics-par-document" className="hidden print:block p-8 bg-white font-sans text-black text-xs">
+            {/* Institutional Header with Logos */}
+            <div className="flex items-center justify-between border-b border-black pb-3">
+              <div className="w-20 shrink-0 flex justify-start">
+                <img src="/PPSC.webp" alt="PPSC Logo" className="w-16 h-16 object-contain" />
+              </div>
+
+              <div className="text-center flex-1 space-y-0.5 px-2">
+                <p className="text-[11px] font-medium text-black leading-tight">Republic of the Philippines</p>
+                <p className="text-[11px] font-medium text-black leading-tight">Department of the Interior and Local Government</p>
+                <p className="text-[12px] font-bold text-sky-700 leading-tight">Philippine Public Safety College</p>
+                <p className="text-[13px] font-black text-emerald-900 uppercase tracking-wide leading-tight">
+                  NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
+                </p>
+                <p className="text-[10px] text-black leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
+              </div>
+
+              <div className="w-20 shrink-0 flex justify-end">
+                <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-16 h-16 object-contain" />
+              </div>
             </div>
 
-            <div className="text-center space-y-0.5 border-b border-black pb-3">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-black">Republic of the Philippines</p>
-              <h3 className="text-sm font-black uppercase tracking-wide text-black">{orgName}</h3>
-              <p className="text-[10px] text-black">{officeAddr}</p>
-              <h2 className="text-sm font-black uppercase tracking-wider text-black pt-2 font-serif underline underline-offset-4">
+            {/* Document Title */}
+            <div className="text-center my-3">
+              <h2 className="text-base font-black uppercase tracking-wider text-black font-serif underline underline-offset-4">
                 {isICS ? 'INVENTORY CUSTODIAN SLIP' : 'PROPERTY ACKNOWLEDGEMENT RECEIPT'}
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-[11px] pt-1">
+            {/* Meta Fields */}
+            <div className="flex items-start justify-between text-[11px] mb-2 px-1">
               <div className="space-y-1">
-                <p>
-                  <span className="font-bold">Fund Cluster:</span>{' '}
-                  <span className="underline">{slipModal.fundCluster || '01 - Regular Agency Fund'}</span>
-                </p>
-                <p>
-                  <span className="font-bold">Accountable Custodian:</span>{' '}
-                  <span className="font-extrabold uppercase underline">{emp.name}</span>
-                </p>
-                <p>
-                  <span className="font-bold">Position / Office:</span>{' '}
-                  <span className="underline">{emp.position || 'Officer'} - {getOfficeName(emp.officeId)}</span>
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-black">Entity Name :</span>
+                  <span className="font-bold underline text-black uppercase">{slipModal.entityName || 'NFSTI'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-black">Fund Cluster:</span>
+                  <span className="underline text-black min-w-[120px] inline-block">{slipModal.fundCluster || '________________________'}</span>
+                </div>
               </div>
 
               <div className="space-y-1 text-right">
-                <p>
-                  <span className="font-bold">{isICS ? 'ICS No.:' : 'PAR No.:'}</span>{' '}
-                  <span className="font-mono font-bold underline">{slipModal.controlNo}</span>
-                </p>
-                <p>
-                  <span className="font-bold">Employee ID:</span>{' '}
-                  <span className="font-mono underline">{emp.employeeId}</span>
-                </p>
-                <p>
-                  <span className="font-bold">Date:</span>{' '}
-                  <span className="underline">{slipModal.issuedDate}</span>
-                </p>
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="font-semibold text-black">{isICS ? 'ICS NO.:' : 'PAR NO.:'}</span>
+                  <span className="font-mono font-bold underline text-black text-xs">{slipModal.controlNo}</span>
+                </div>
               </div>
             </div>
 
-            <div className="border border-black overflow-hidden my-2">
-              <table className="w-full text-left text-[11px] border-collapse">
+            {/* Main Items Table */}
+            <div className="border border-black overflow-hidden">
+              <table className="w-full text-left text-[11px] border-collapse border border-black">
                 {isICS ? (
                   <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black">
                     <tr>
-                      <th className="border border-black p-1.5 w-[6%]">Quantity</th>
-                      <th className="border border-black p-1.5 w-[7%]">Unit</th>
-                      <th className="border border-black p-1.5 w-[13%]">Unit Cost</th>
-                      <th className="border border-black p-1.5 w-[14%]">Total Cost</th>
-                      <th className="border border-black p-1.5 w-[34%]">Description</th>
+                      <th className="border border-black p-1.5 w-[7%]">QTY</th>
+                      <th className="border border-black p-1.5 w-[8%]">UNIT</th>
+                      <th className="border border-black p-1.5 w-[12%]">Unit Cost</th>
+                      <th className="border border-black p-1.5 w-[13%]">Total Cost</th>
+                      <th className="border border-black p-1.5 w-[34%]">DESCRIPTION</th>
                       <th className="border border-black p-1.5 w-[16%]">Inventory Item No.</th>
                       <th className="border border-black p-1.5 w-[10%]">Est. Useful Life</th>
                     </tr>
                   </thead>
                 ) : (
-                  <thead className="bg-slate-100 text-black text-center font-bold text-[10px] border-b border-black">
+                  <thead className="bg-slate-100 text-black text-center font-bold text-[10.5px] border-b border-black uppercase">
                     <tr>
-                      <th className="border border-black p-1.5 w-[6%]">Quantity</th>
-                      <th className="border border-black p-1.5 w-[7%]">Unit</th>
-                      <th className="border border-black p-1.5 w-[36%]">Description</th>
-                      <th className="border border-black p-1.5 w-[16%]">Property Number</th>
-                      <th className="border border-black p-1.5 w-[11%]">Date Acquired</th>
-                      <th className="border border-black p-1.5 w-[12%]">Unit Value</th>
-                      <th className="border border-black p-1.5 w-[12%]">Total Amount</th>
+                      <th className="border border-black p-1.5 w-[7%]">QTY</th>
+                      <th className="border border-black p-1.5 w-[9%]">UNIT</th>
+                      <th className="border border-black p-1.5 w-[38%]">DESCRIPTION</th>
+                      <th className="border border-black p-1.5 w-[18%]">Property Number</th>
+                      <th className="border border-black p-1.5 w-[13%]">Date Acquired</th>
+                      <th className="border border-black p-1.5 w-[15%]">Amount</th>
                     </tr>
                   </thead>
                 )}
-                <tbody className="divide-y divide-black">
+                <tbody>
                   {selectedItems.map((p, idx) => {
                     const qty = getItemQty(p);
                     const cost = getItemCost(p);
                     const lineTotal = cost * qty;
-                    const brandStr = p.brand ? `Brand: ${p.brand}, ` : '';
-                    const modelStr = p.model ? `Model: ${p.model}, ` : '';
-                    const snStr = p.serialNumber ? `SN: ${p.serialNumber}, ` : '';
+                    const descObj = formatPropertyDescription(p);
+                    const acqDate = p.acquisitionDate ? formatAcquiredDate(p.acquisitionDate) : '';
+                    const amtStr = cost > 0 ? `₱ ${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
                     const usefulLife = p.estimatedUsefulLife || (cost < 15000 ? '3 years' : '5 years');
-                    const acqDate = p.acquisitionDate ? new Date(p.acquisitionDate).toLocaleDateString() : 'N/A';
 
                     return isICS ? (
                       <tr key={idx} className="align-top">
                         <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
-                        <td className="border border-black p-1.5 text-center">{p.unit || 'unit'}</td>
+                        <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
                         <td className="border border-black p-1.5 text-right font-mono">
                           ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
@@ -2489,134 +2636,140 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                           ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="border border-black p-1.5 leading-snug">
-                          <div className="font-bold">{p.article}</div>
-                          <div className="text-[10px] text-slate-700">{brandStr}{modelStr}{snStr}{p.description}</div>
+                          <div className="font-bold text-black">{descObj.mainDesc}</div>
+                          {descObj.serialNo && (
+                            <div className="text-[10px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
+                          )}
                         </td>
-                        <td className="border border-black p-1.5 text-center font-mono font-bold">{p.propertyNumber || 'N/A'}</td>
+                        <td className="border border-black p-1.5 text-center font-mono font-bold text-black">{p.propertyNumber || 'N/A'}</td>
                         <td className="border border-black p-1.5 text-center">{usefulLife}</td>
                       </tr>
                     ) : (
                       <tr key={idx} className="align-top">
                         <td className="border border-black p-1.5 text-center font-bold">{qty}</td>
-                        <td className="border border-black p-1.5 text-center">{p.unit || 'unit'}</td>
-                        <td className="border border-black p-1.5 leading-snug">
-                          <div className="font-bold">{p.article}</div>
-                          <div className="text-[10px] text-slate-700">{brandStr}{modelStr}{snStr}{p.description}</div>
+                        <td className="border border-black p-1.5 text-center">{(p.unit || 'UNIT').toUpperCase()}</td>
+                        <td className="border border-black p-1.5 leading-snug text-left">
+                          <div className="font-bold text-black">{descObj.mainDesc}</div>
+                          {descObj.serialNo && (
+                            <div className="text-[10px] font-mono text-black mt-0.5">{descObj.serialNo}</div>
+                          )}
                         </td>
-                        <td className="border border-black p-1.5 text-center font-mono font-bold">{p.propertyNumber || 'N/A'}</td>
-                        <td className="border border-black p-1.5 text-center font-mono text-[10px]">{acqDate}</td>
-                        <td className="border border-black p-1.5 text-right font-mono">
-                          ₱{cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="border border-black p-1.5 text-right font-mono font-bold">
-                          ₱{lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
+                        <td className="border border-black p-1.5 text-center font-mono font-bold text-black">{p.propertyNumber || ''}</td>
+                        <td className="border border-black p-1.5 text-center font-mono text-[10.5px]">{acqDate}</td>
+                        <td className="border border-black p-1.5 text-right font-mono font-bold">{amtStr}</td>
                       </tr>
                     );
                   })}
 
-                  <tr className="bg-slate-50 font-bold border-t border-black">
-                    <td className="border border-black p-1.5 text-center">{totalQty}</td>
-                    <td className="border border-black p-1.5 text-center">units</td>
+                  {/* Nothing Follows Row */}
+                  <tr>
+                    <td className="border border-black h-5"></td>
+                    <td className="border border-black h-5"></td>
                     {isICS ? (
                       <>
-                        <td className="border border-black p-1.5 text-right uppercase text-[10px]">TOTAL:</td>
-                        <td className="border border-black p-1.5 text-right font-mono font-bold">
-                          ₱{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="border border-black h-5"></td>
+                        <td className="border border-black h-5"></td>
+                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-black italic">
+                          x-x-x-x- x-x-nothing follows-x-x-x-x-x
                         </td>
-                        <td colSpan="3" className="border border-black p-1.5"></td>
+                        <td className="border border-black h-5"></td>
+                        <td className="border border-black h-5"></td>
                       </>
                     ) : (
                       <>
-                        <td colSpan="4" className="border border-black p-1.5 text-right uppercase text-[10px]">TOTAL AMOUNT:</td>
-                        <td className="border border-black p-1.5 text-right font-mono font-bold">
-                          ₱{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="border border-black px-2 py-0.5 text-center font-mono text-[10px] text-black italic">
+                          x-x-x-x- x-x-nothing follows-x-x-x-x-x
                         </td>
+                        <td className="border border-black h-5"></td>
+                        <td className="border border-black h-5"></td>
+                        <td className="border border-black h-5"></td>
                       </>
                     )}
                   </tr>
+
+                  {/* Empty Filler Rows */}
+                  {Array.from({ length: Math.max(0, 18 - (selectedItems.length + 1)) }).map((_, rIdx) => (
+                    <tr key={`print-fill-${rIdx}`} className="h-5">
+                      <td className="border border-black h-5"></td>
+                      <td className="border border-black h-5"></td>
+                      <td className="border border-black h-5"></td>
+                      <td className="border border-black h-5"></td>
+                      <td className="border border-black h-5"></td>
+                      {isICS && <td className="border border-black h-5"></td>}
+                      {isICS && <td className="border border-black h-5"></td>}
+                      {!isICS && <td className="border border-black h-5"></td>}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="grid grid-cols-2 gap-0 border border-black pt-0 text-[11px] mt-4">
-              {isICS ? (
-                <>
-                  <div className="p-3 border-r border-black space-y-4">
-                    <p className="font-bold">Received from:</p>
-                    <div className="pt-6 text-center space-y-0.5">
-                      <p className="font-extrabold uppercase underline tracking-wide">
-                        {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
-                      </p>
-                      <p className="text-[10px]">Signature Over Printed Name</p>
-                      <p className="text-[10.5px] font-semibold pt-1">
-                        {slipModal.issuedByPosition || 'Supply and/or Property Custodian'}
-                      </p>
-                      <p className="text-[10px]">Position / Office</p>
-                    </div>
-                    <div className="pt-2">
-                      <span>Date: </span>
-                      <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                    </div>
+            {/* Dual Signatories Block (directly attached below table) */}
+            <div className="border border-black border-t-0 grid grid-cols-2 text-[11px]">
+              {/* Received by */}
+              <div className="p-3 border-r border-black flex flex-col justify-between min-h-[175px]">
+                <div>
+                  <p className="font-bold text-black text-left text-[11px]">Received by:</p>
+                  <div className="h-9"></div>
+                  <div className="text-center space-y-0.5">
+                    <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                      {slipModal.receivedByName || emp.name}
+                    </p>
+                    <p className="text-[10px] text-black">Signature Over Printed Name</p>
+                    <p className="text-[10px] text-black">of End User</p>
                   </div>
+                </div>
 
-                  <div className="p-3 space-y-4">
-                    <p className="font-bold">Received by:</p>
-                    <div className="pt-6 text-center space-y-0.5">
-                      <p className="font-extrabold uppercase underline tracking-wide">
-                        {slipModal.receivedByName || emp.name}
-                      </p>
-                      <p className="text-[10px]">Signature Over Printed Name</p>
-                      <p className="text-[10.5px] font-semibold pt-1">
-                        {slipModal.receivedByPosition || emp.position}
-                      </p>
-                      <p className="text-[10px]">Position / Office</p>
-                    </div>
-                    <div className="pt-2">
-                      <span>Date: </span>
-                      <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-3 border-r border-black space-y-4">
-                    <p className="font-bold">Received by:</p>
-                    <div className="pt-6 text-center space-y-0.5">
-                      <p className="font-extrabold uppercase underline tracking-wide">
-                        {slipModal.receivedByName || emp.name}
-                      </p>
-                      <p className="text-[10px]">Signature Over Printed Name</p>
-                      <p className="text-[10.5px] font-semibold pt-1">
-                        {slipModal.receivedByPosition || emp.position}
-                      </p>
-                      <p className="text-[10px]">Position / Office</p>
-                    </div>
-                    <div className="pt-2">
-                      <span>Date: </span>
-                      <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                    </div>
-                  </div>
+                <div className="mt-3 text-center space-y-0.5">
+                  <p className="font-extrabold uppercase underline text-black text-[11px]">
+                    {slipModal.receivedByPosition || emp.position || 'End User'}
+                  </p>
+                  <p className="text-[10px] text-black">Position / Office</p>
+                </div>
 
-                  <div className="p-3 space-y-4">
-                    <p className="font-bold">Issued by:</p>
-                    <div className="pt-6 text-center space-y-0.5">
-                      <p className="font-extrabold uppercase underline tracking-wide">
-                        {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
-                      </p>
-                      <p className="text-[10px]">Signature Over Printed Name</p>
-                      <p className="text-[10.5px] font-semibold pt-1">
-                        {slipModal.issuedByPosition || 'Supply and/or Property Custodian'}
-                      </p>
-                      <p className="text-[10px]">Position / Office</p>
-                    </div>
-                    <div className="pt-2">
-                      <span>Date: </span>
-                      <span className="underline font-semibold">{slipModal.issuedDate}</span>
-                    </div>
+                <div className="mt-3 text-center space-y-0.5">
+                  <p className="underline text-black font-semibold text-[11px]">
+                    {formatLongDate(slipModal.issuedDate)}
+                  </p>
+                  <p className="text-[10px] text-black">Date</p>
+                </div>
+              </div>
+
+              {/* Issued from */}
+              <div className="p-3 flex flex-col justify-between min-h-[175px]">
+                <div>
+                  <p className="font-bold text-black text-left text-[11px]">Issued from:</p>
+                  <div className="h-9"></div>
+                  <div className="text-center space-y-0.5">
+                    <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
+                      {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
+                    </p>
+                    <p className="text-[10px] text-black">Signature Over Printed Name of Supply and/or</p>
+                    <p className="text-[10px] text-black">Property Custodian</p>
                   </div>
-                </>
-              )}
+                </div>
+
+                <div className="mt-3 text-center space-y-0.5">
+                  <p className="underline text-black font-semibold text-[11px]">
+                    {slipModal.issuedByPosition || 'Supply Accountable Officer'}
+                  </p>
+                  <p className="text-[10px] text-black">Position / Office</p>
+                </div>
+
+                <div className="mt-3 text-center space-y-0.5">
+                  <p className="underline text-black font-semibold text-[11px]">
+                    {formatLongDate(slipModal.issuedDate)}
+                  </p>
+                  <p className="text-[10px] text-black">Date</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Form Code */}
+            <div className="flex justify-end pt-1">
+              <span className="font-mono text-[9px] text-black font-bold tracking-wider">
+                {isICS ? 'PPSC-NFSTI-ICS-2018-01-F4' : 'PPSC-NFSTI-PAR-2018-01-F5'}
+              </span>
             </div>
           </div>
         );
