@@ -469,19 +469,6 @@ export default function PersonnelPage() {
     // Exact PAR No format from official NFSTI document: 2026-10-08-0020 (YYYY-MM-DD-####)
     const autoControlNo = targetType === 'PAR' ? `${dateFormatted}-${cleanId}` : `ICS-${dateFormatted}-${cleanId}`;
 
-    const activeUser = StorageManager.getActiveUser();
-    const defaultIssuedName =
-      signatories?.preparedByName ||
-      signatories?.member1Name ||
-      settings?.contactPerson ||
-      activeUser?.fullName ||
-      activeUser?.name ||
-      'ELMER G. DOLOTALLAS';
-
-    const defaultIssuedPos =
-      signatories?.preparedByTitle ||
-      'Supply Accountable Officer';
-
     setSlipModal({
       isOpen: true,
       type: targetType,
@@ -491,8 +478,8 @@ export default function PersonnelPage() {
       entityName: 'NFSTI',
       fundCluster: '',
       issuedDate: dateFormatted,
-      issuedByName: defaultIssuedName,
-      issuedByPosition: defaultIssuedPos,
+      issuedByName: '',
+      issuedByPosition: '',
       receivedByName: emp.name || '',
       receivedByPosition: emp.position || 'End User',
     });
@@ -777,14 +764,14 @@ export default function PersonnelPage() {
               <div style="height: 25px;"></div>
               <div style="text-align: center;">
                 <p style="margin: 0; font-weight: bold; text-transform: uppercase; text-decoration: underline; font-size: 9pt;">
-                  ${slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
+                  ${slipModal.issuedByName ? slipModal.issuedByName : '______________________________'}
                 </p>
                 <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Signature Over Printed Name of Supply and/or</p>
                 <p style="margin: 0; font-size: 7.5pt;">Property Custodian</p>
               </div>
               <div style="text-align: center; margin-top: 10px;">
                 <p style="margin: 0; text-decoration: underline; font-weight: bold; font-size: 8.5pt;">
-                  ${slipModal.issuedByPosition || 'Supply Accountable Officer'}
+                  ${slipModal.issuedByPosition ? slipModal.issuedByPosition : '______________________________'}
                 </p>
                 <p style="margin: 1px 0 0 0; font-size: 7.5pt;">Position / Office</p>
               </div>
@@ -2115,96 +2102,17 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                 </div>
               </div>
 
-              {/* Slip Metadata & Parameters Controls Form */}
-              <div className="bg-slate-50 px-6 py-2.5 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Entity Name
-                  </label>
-                  <input
-                    type="text"
-                    value={slipModal.entityName || ''}
-                    onChange={(e) => setSlipModal({ ...slipModal, entityName: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="e.g. NFSTI"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Fund Cluster
-                  </label>
-                  <input
-                    type="text"
-                    value={slipModal.fundCluster || ''}
-                    onChange={(e) => setSlipModal({ ...slipModal, fundCluster: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="Leave blank or e.g. 01"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    {isICS ? 'ICS NO.' : 'PAR NO.'}
-                  </label>
-                  <input
-                    type="text"
-                    value={slipModal.controlNo}
-                    onChange={(e) => setSlipModal({ ...slipModal, controlNo: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="e.g. 2026-10-08-0020"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Document Date
-                  </label>
-                  <input
-                    type="date"
-                    value={slipModal.issuedDate}
-                    onChange={(e) => setSlipModal({ ...slipModal, issuedDate: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-slate-50 px-6 py-2 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Received by (End User Name)
-                  </label>
-                  <input
-                    type="text"
-                    value={slipModal.receivedByName}
-                    onChange={(e) => setSlipModal({ ...slipModal, receivedByName: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-bold uppercase text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="e.g. PCOL. ATTY. ERCY NANETTE P MADRIAGA, DPSSG"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    End User Position / Office
-                  </label>
-                  <input
-                    type="text"
-                    value={slipModal.receivedByPosition}
-                    onChange={(e) => setSlipModal({ ...slipModal, receivedByPosition: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    placeholder="e.g. DIRECTOR"
-                  />
-                </div>
-
+              {/* Supply Custodian Parameters (Only Issued From & Position) */}
+              <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                     Issued from (Supply Custodian)
                   </label>
                   <input
                     type="text"
-                    value={slipModal.issuedByName}
+                    value={slipModal.issuedByName || ''}
                     onChange={(e) => setSlipModal({ ...slipModal, issuedByName: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-bold uppercase text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 font-bold uppercase text-slate-800 placeholder:normal-case placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-2xs transition-all"
                     placeholder="e.g. ELMER G. DOLOTALLAS"
                   />
                 </div>
@@ -2215,9 +2123,9 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                   </label>
                   <input
                     type="text"
-                    value={slipModal.issuedByPosition}
+                    value={slipModal.issuedByPosition || ''}
                     onChange={(e) => setSlipModal({ ...slipModal, issuedByPosition: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 font-medium text-slate-800 placeholder:normal-case placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-2xs transition-all"
                     placeholder="e.g. Supply Accountable Officer"
                   />
                 </div>
@@ -2511,7 +2419,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                           <div className="h-9"></div>
                           <div className="text-center space-y-0.5">
                             <p className="font-extrabold uppercase underline text-black text-[12px] tracking-wide">
-                              {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
+                              {slipModal.issuedByName ? slipModal.issuedByName : '______________________________'}
                             </p>
                             <p className="text-[10px] text-black">Signature Over Printed Name of Supply and/or</p>
                             <p className="text-[10px] text-black">Property Custodian</p>
@@ -2520,7 +2428,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
 
                         <div className="mt-3 text-center space-y-0.5">
                           <p className="underline text-black font-semibold text-[11px]">
-                            {slipModal.issuedByPosition || 'Supply Accountable Officer'}
+                            {slipModal.issuedByPosition ? slipModal.issuedByPosition : '______________________________'}
                           </p>
                           <p className="text-[10px] text-black">Position / Office</p>
                         </div>
@@ -2795,7 +2703,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                   <div className="h-6"></div>
                   <div className="text-center space-y-0.5">
                     <p className="font-extrabold uppercase underline text-black text-[11px] tracking-wide">
-                      {slipModal.issuedByName || 'ELMER G. DOLOTALLAS'}
+                      {slipModal.issuedByName ? slipModal.issuedByName : '______________________________'}
                     </p>
                     <p className="text-[9px] text-black">Signature Over Printed Name of Supply and/or</p>
                     <p className="text-[9px] text-black">Property Custodian</p>
@@ -2804,7 +2712,7 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
 
                 <div className="mt-2 text-center space-y-0.5">
                   <p className="underline text-black font-semibold text-[10px]">
-                    {slipModal.issuedByPosition || 'Supply Accountable Officer'}
+                    {slipModal.issuedByPosition ? slipModal.issuedByPosition : '______________________________'}
                   </p>
                   <p className="text-[9px] text-black">Position / Office</p>
                 </div>
