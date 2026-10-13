@@ -1173,18 +1173,19 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                       const stats = getEmployeeStats(emp);
                       return (
                         <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors group">
-                          {/* ID & Name */}
-                          <td className="py-3.5 px-4">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedEmployeeForDetails(emp)}
-                              className="text-left font-extrabold text-slate-900 hover:text-emerald-700 hover:underline transition-colors flex items-center gap-1.5 cursor-pointer group/name"
-                              title="Click to view personnel details & accountability portfolio"
-                            >
-                              <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 group-hover/name:scale-110 transition-transform" />
-                              <span>{emp.name}</span>
-                            </button>
-                            <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 inline-block mt-0.5 ml-5.5">
+                          {/* ID & Name (Entire Column Clickable) */}
+                          <td
+                            onClick={() => setSelectedEmployeeForDetails(emp)}
+                            className="py-3.5 px-4 cursor-pointer hover:bg-emerald-50/60 transition-colors group/cell"
+                            title="Click to view personnel details & accountability portfolio"
+                          >
+                            <div className="font-extrabold text-slate-900 group-hover/cell:text-emerald-700 transition-colors flex items-center gap-1.5">
+                              <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 group-hover/cell:scale-110 transition-transform" />
+                              <span className="underline decoration-transparent group-hover/cell:decoration-emerald-600 underline-offset-2 transition-all">
+                                {emp.name}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 inline-block mt-0.5 ml-5.5 group-hover/cell:bg-emerald-100 transition-colors">
                               {emp.employeeId}
                             </span>
                           </td>
