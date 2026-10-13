@@ -683,18 +683,18 @@ export default function PersonnelPage() {
         <!-- Institutional Header with Embedded Logos -->
         <table style="width: 100%; border: none; margin-bottom: 6px;">
           <tr>
-            <td style="border: none; width: 15%; text-align: left; vertical-align: middle;">
-              ${ppscBase64 ? '<img src="ppsc_logo.png" width="65" height="65" style="width:65px; height:65px;" alt="PPSC" />' : ''}
+            <td style="border: none; width: 16%; text-align: left; vertical-align: middle;">
+              ${ppscBase64 ? '<img src="ppsc_logo.png" width="76" height="76" style="width:76px; height:76px;" alt="PPSC" />' : ''}
             </td>
-            <td style="border: none; width: 70%; text-align: center; vertical-align: middle;">
+            <td style="border: none; width: 68%; text-align: center; vertical-align: middle;">
               <p style="margin: 1px 0; font-size: 8pt;">Republic of the Philippines</p>
               <p style="margin: 1px 0; font-size: 8pt;">Department of the Interior and Local Government</p>
               <p style="margin: 1px 0; font-size: 9pt; font-weight: bold; color: #0284c7;">Philippine Public Safety College</p>
               <p style="margin: 1px 0; font-size: 10.5pt; font-weight: bold; color: #166534; text-transform: uppercase;">NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE</p>
               <p style="margin: 1px 0; font-size: 7.5pt; color: #333;">Camp Vicente Lim, Calamba City, Laguna</p>
             </td>
-            <td style="border: none; width: 15%; text-align: right; vertical-align: middle;">
-              ${nfstiBase64 ? '<img src="nfsti_logo.png" width="65" height="65" style="width:65px; height:65px;" alt="NFSTI" />' : ''}
+            <td style="border: none; width: 16%; text-align: right; vertical-align: middle;">
+              ${nfstiBase64 ? '<img src="nfsti_logo.png" width="76" height="76" style="width:76px; height:76px;" alt="NFSTI" />' : ''}
             </td>
           </tr>
         </table>
@@ -2310,11 +2310,11 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                   <div className="bg-white w-full max-w-4xl p-6 sm:p-10 border border-slate-300 shadow-xl text-black font-sans text-xs">
                     {/* Institutional Header with Logos matching Official Form */}
                     <div className="flex items-center justify-between border-b border-black pb-3">
-                      <div className="w-20 shrink-0 flex justify-start">
-                        <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-16 h-16 object-contain" />
+                      <div className="w-24 shrink-0 flex justify-start">
+                        <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-20 h-20 object-contain" />
                       </div>
 
-                      <div className="text-center flex-1 space-y-0.5 px-2">
+                      <div className="text-center flex-1 space-y-0.5 px-3">
                         <p className="text-[11px] font-medium text-slate-800 leading-tight">Republic of the Philippines</p>
                         <p className="text-[11px] font-medium text-slate-800 leading-tight">Department of the Interior and Local Government</p>
                         <p className="text-[12px] font-bold text-sky-600 leading-tight">Philippine Public Safety College</p>
@@ -2324,8 +2324,8 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
                         <p className="text-[10px] text-slate-700 leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
                       </div>
 
-                      <div className="w-20 shrink-0 flex justify-end">
-                        <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-16 h-16 object-contain" />
+                      <div className="w-24 shrink-0 flex justify-end">
+                        <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-20 h-20 object-contain" />
                       </div>
                     </div>
 
@@ -2594,22 +2594,22 @@ CREATE POLICY "Allow full access to employees" ON "employees" FOR ALL USING (tru
           <div id="printable-ics-par-document" className="hidden print:!block bg-white font-sans text-black text-[10.5px] p-6 max-w-[210mm] mx-auto">
             {/* Institutional Header with Logos */}
             <div className="flex items-center justify-between border-b border-black pb-2">
-              <div className="w-16 shrink-0 flex justify-start">
-                <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-14 h-14 object-contain" />
+              <div className="w-20 shrink-0 flex justify-start">
+                <img src="/Logo_PPSC.png" alt="PPSC Logo" className="w-[72px] h-[72px] object-contain" />
               </div>
 
-              <div className="text-center flex-1 space-y-0.5 px-2">
+              <div className="text-center flex-1 space-y-0.5 px-3">
                 <p className="text-[10px] font-medium text-black leading-tight">Republic of the Philippines</p>
                 <p className="text-[10px] font-medium text-black leading-tight">Department of the Interior and Local Government</p>
-                <p className="text-[11px] font-bold text-sky-700 leading-tight">Philippine Public Safety College</p>
-                <p className="text-[12px] font-black text-emerald-900 uppercase tracking-wide leading-tight">
+                <p className="text-[11.5px] font-bold text-sky-700 leading-tight">Philippine Public Safety College</p>
+                <p className="text-[12.5px] font-black text-emerald-900 uppercase tracking-wide leading-tight">
                   NATIONAL FORENSIC SCIENCE TRAINING INSTITUTE
                 </p>
                 <p className="text-[9.5px] text-black leading-tight">Camp Vicente Lim, Calamba City, Laguna</p>
               </div>
 
-              <div className="w-16 shrink-0 flex justify-end">
-                <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-14 h-14 object-contain" />
+              <div className="w-20 shrink-0 flex justify-end">
+                <img src="/nfsti logo.png" alt="NFSTI Logo" className="w-[72px] h-[72px] object-contain" />
               </div>
             </div>
 
